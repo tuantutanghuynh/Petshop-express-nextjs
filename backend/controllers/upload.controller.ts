@@ -25,7 +25,7 @@ cloudinary.config({
 function uploadBufferToCloudinary(buffer: Buffer): Promise<UploadApiResponse> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: 'miniecom-gomsu' },
+      { folder: process.env.CLOUDINARY_FOLDER || 'miniecom-petshop' },
       (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
         if (error) return reject(error);
         resolve(result as UploadApiResponse);

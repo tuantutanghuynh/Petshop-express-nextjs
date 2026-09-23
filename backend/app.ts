@@ -39,11 +39,9 @@ app.use(
 );
 
 // Restricts which origins may call the API, read from `FRONTEND_URLS` as a comma-separated
-// list. A list rather than a single origin is required because one backend serves several
-// frontends (frontend-petshop on :3000, frontend-gomsu on :3001, plus the real domains after
-// deploy). Requests with no Origin header — curl, Postman, server-to-server — are allowed
-// through, since the header is only sent by browsers and blocking them would break tooling.
-const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:3000,http://localhost:3001').split(',');
+// list. Defaults to http://localhost:3000 (frontend-petshop). Requests with no Origin
+// header — curl, Postman, server-to-server — are allowed through.
+const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:3000').split(',');
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
