@@ -2,16 +2,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '../../../lib/adminAuth';
+import type { BlogPost } from '../../../lib/types';
 
 export default function AdminPostsPage() {
-  const [posts, setPosts] = useState([]);
+  const [posts, setPosts] = useState<BlogPost[]>([]);
 
   useEffect(() => {
     if (!getToken()) {
       window.location.href = '/admin/login';
       return;
     }
-    authFetch('/blog/admin/list').then((res) => setPosts(res.data || []));
+    authFetch<BlogPost[]>('/blog/admin/list').then((res) => setPosts(res.data || []));
   }, []);
 
   return (

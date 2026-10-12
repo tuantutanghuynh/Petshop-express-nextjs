@@ -1,15 +1,17 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import type { Metadata } from 'next';
 import { apiFetch } from '../../lib/apiClient';
+import type { BlogPost } from '../../lib/types';
 
-export const metadata = { title: 'Blog' };
+export const metadata: Metadata = { title: 'Blog' };
 
 export default async function BlogListPage() {
   // cache: 'no-store' vì chưa có cơ chế revalidate on-demand khi admin publish bài —
   // dùng next.revalidate sẽ khiến bài mới publish "biến mất tạm thời" tới 60s (đã tự
   // gặp bug này với /gallery, xem log buổi 11). Đổi lại thành ISR đúng khi xây revalidate
   // on-demand (gọi revalidatePath từ 1 Route Handler ngay sau khi admin publish).
-  const { data: posts } = await apiFetch('/blog', { cache: 'no-store' });
+  const { data: posts } = await apiFetch<BlogPost[]>('/blog', { cache: 'no-store' });
 
   return (
     <div>

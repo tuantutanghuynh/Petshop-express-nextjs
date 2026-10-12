@@ -2,16 +2,17 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '../../../lib/adminAuth';
+import type { GalleryItem } from '../../../lib/types';
 
 export default function AdminGalleryPage() {
-  const [items, setItems] = useState([]);
+  const [items, setItems] = useState<GalleryItem[]>([]);
 
   useEffect(() => {
     if (!getToken()) {
       window.location.href = '/admin/login';
       return;
     }
-    authFetch('/gallery').then((res) => setItems(res.data || []));
+    authFetch<GalleryItem[]>('/gallery').then((res) => setItems(res.data || []));
   }, []);
 
   return (

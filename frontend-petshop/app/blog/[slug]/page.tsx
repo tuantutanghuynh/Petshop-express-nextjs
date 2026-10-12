@@ -1,12 +1,16 @@
 import { apiFetch } from '../../../lib/apiClient';
 import { renderMarkdown, excerptFromContent } from '../../../lib/markdown';
 import { notFound } from 'next/navigation';
+import type { Metadata } from 'next';
+import type { BlogPost } from '../../../lib/types';
 
-export async function generateMetadata({ params }) {
+type Props = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params; // Next.js 16: params là Promise, bắt buộc phải await
 
   try {
-    const { data: post } = await apiFetch(`/blog/${slug}`, { cache: 'no-store' });
+    const { data: post } = await apiFetch<BlogPost>(`/blog/${slug}`, { cache: 'no-store' });
     // Luôn phải có description — nếu cả seoDescription lẫn excerpt đều trống, description
     // trả về null sẽ XOÁ hẳn thẻ <meta name="description">, không phải kế thừa từ layout.
     const description = post.seoDescription || post.excerpt || excerptFromContent(post.content);
@@ -20,21 +24,21 @@ export async function generateMetadata({ params }) {
         type: 'article',
       },
     };
-  } catch (error) {
+  } catch {
     return {
       title: 'Không tìm thấy bài viết',
     };
   }
 }
 
-export default async function BlogDetailPage({ params }) {
+export default async function BlogDetailPage({ params }: Props) {
   const { slug } = await params; // Next.js 16: params là Promise, bắt buộc phải await
 
-  let post;
+  let post: BlogPost;
   try {
-    const { data } = await apiFetch(`/blog/${slug}`, { cache: 'no-store' });
+    const { data } = await apiFetch<BlogPost>(`/blog/${slug}`, { cache: 'no-store' });
     post = data;
-  } catch (error) {
+  } catch {
     notFound();
   }
 

@@ -1,12 +1,14 @@
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../../../lib/adminAuth';
+import type { BlogPost, UploadResult } from '../../../../lib/types';
 
-async function uploadImage(file) {
+async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
-  const json = await authFetch('/uploads/image', {
+  const json = await authFetch<UploadResult>('/uploads/image', {
     method: 'POST',
     body: formData,
   });
@@ -17,28 +19,28 @@ export default function NewPostPage() {
   const router = useRouter();
   const [form, setForm] = useState({ title: '', slug: '', excerpt: '', content: '', coverImageUrl: '' });
   const [submitting, setSubmitting] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  async function handleCoverUpload(e) {
-    const file = e.target.files[0];
+  async function handleCoverUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
     if (!file) return;
     setErrorMsg(null);
     try {
       const url = await uploadImage(file);
       setForm((f) => ({ ...f, coverImageUrl: url }));
-    } catch (err) {
+    } catch {
       setErrorMsg('Lỗi khi tải ảnh lên. Vui lòng thử lại.');
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      await authFetch('/blog', { method: 'POST', body: JSON.stringify(form) });
+      await authFetch<BlogPost>('/blog', { method: 'POST', body: JSON.stringify(form) });
       router.push('/admin/posts');
-    } catch (err) {
+    } catch {
       setErrorMsg('Lỗi khi lưu bài viết. Vui lòng kiểm tra lại (có thể trùng slug).');
     } finally {
       setSubmitting(false);

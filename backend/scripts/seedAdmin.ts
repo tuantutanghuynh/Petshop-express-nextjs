@@ -1,7 +1,7 @@
-const bcrypt = require('bcrypt');
-const prisma = require('../services/prisma');
+import bcrypt from 'bcryptjs';
+import prisma from '../services/prisma';
 
-async function main() {
+async function main(): Promise<void> {
   const email = 'admin@miniecom.local';
   const passwordHash = await bcrypt.hash('admin123456', 10);
   const admin = await prisma.user.upsert({

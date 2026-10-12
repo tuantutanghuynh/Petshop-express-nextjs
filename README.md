@@ -8,12 +8,12 @@ Dự án nền tảng thương mại điện tử chuyên biệt cho Petshop, đ
 
 | Layer | Technology |
 |---|---|
-| **Backend API** | Node.js, Express 5, TypeScript 5 (ES Modules) |
+| **Backend API** | Node.js, Express 5, TypeScript (CommonJS, chạy bằng tsx) |
 | **Database** | PostgreSQL 15 |
 | **ORM** | Prisma 7 (`@prisma/adapter-pg`) |
 | **Auth** | JWT (Access + Refresh token rotation & reuse detection), bcrypt |
 | **Cloud Storage** | Cloudinary (Stream upload directly from memory buffer) |
-| **Frontend** | Next.js 16 (App Router), React 19 |
+| **Frontend** | Next.js 16 (App Router), React 19, TypeScript (strict) |
 | **Styling** | Tailwind CSS v4 |
 | **Infrastructure** | Docker Compose (PostgreSQL 15) |
 

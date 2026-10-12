@@ -1,9 +1,11 @@
+import type { MetadataRoute } from 'next';
 import { apiFetch } from '../lib/apiClient';
+import type { BlogPost } from '../lib/types';
 
 const SITE_URL = 'https://miniecom-blog.vercel.app'; // TODO: thay domain thật ở Buổi 14
 
-export default async function sitemap() {
-  const { data: posts } = await apiFetch('/blog?pageSize=50', { cache: 'no-store' });
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const { data: posts } = await apiFetch<BlogPost[]>('/blog?pageSize=50', { cache: 'no-store' });
 
   const staticUrls = [
     { url: `${SITE_URL}/`, lastModified: new Date() },

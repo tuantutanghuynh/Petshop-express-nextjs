@@ -1,25 +1,27 @@
 'use client';
 
+import type { ApiEnvelope, AuthTokens } from './types';
+
 const ACCESS_KEY = 'miniecom_access_token';
 const REFRESH_KEY = 'miniecom_refresh_token';
 
-export function setTokens(accessToken, refreshToken) {
+export function setTokens(accessToken: string, refreshToken: string): void {
   if (typeof window === 'undefined') return;
   localStorage.setItem(ACCESS_KEY, accessToken);
   localStorage.setItem(REFRESH_KEY, refreshToken);
 }
 
-export function getToken() {
+export function getToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(ACCESS_KEY);
 }
 
-export function getRefreshToken() {
+export function getRefreshToken(): string | null {
   if (typeof window === 'undefined') return null;
   return localStorage.getItem(REFRESH_KEY);
 }
 
-export function clearTokens() {
+export function clearTokens(): void {
   if (typeof window === 'undefined') return;
   localStorage.removeItem(ACCESS_KEY);
   localStorage.removeItem(REFRESH_KEY);
@@ -31,9 +33,9 @@ export function clearTokens() {
 // đúng token vừa bị revoke đó -> cơ chế reuse-detection (Buổi 6) hiểu nhầm là bị đánh cắp
 // token -> logout oan toàn bộ session. Biến module-scope `refreshPromise` đảm bảo mọi lời
 // gọi authFetch() đang chờ refresh đều dùng chung 1 Promise, không bắn nhiều request.
-let refreshPromise = null;
+let refreshPromise: Promise<string> | null = null;
 
-async function refreshAccessToken() {
+async function refreshAccessToken(): Promise<string> {
   if (!refreshPromise) {
     refreshPromise = (async () => {
       const refreshToken = getRefreshToken();
@@ -46,7 +48,7 @@ async function refreshAccessToken() {
       });
       if (!refreshRes.ok) throw new Error('Session expired');
 
-      const { data } = await refreshRes.json();
+      const { data }: ApiEnvelope<AuthTokens> = await refreshRes.json();
       setTokens(data.accessToken, data.refreshToken);
       return data.accessToken;
     })().finally(() => {
@@ -56,13 +58,13 @@ async function refreshAccessToken() {
   return refreshPromise;
 }
 
-export async function authFetch(path, options = {}) {
+export async function authFetch<T>(path: string, options: RequestInit = {}): Promise<ApiEnvelope<T>> {
   const token = getToken();
   
   const isFormData = typeof window !== 'undefined' && options.body instanceof FormData;
-  const customHeaders = {
+  const customHeaders: Record<string, string> = {
     Authorization: `Bearer ${token}`,
-    ...options.headers,
+    ...(options.headers as Record<string, string> | undefined),
   };
 
   if (!isFormData && !customHeaders['Content-Type']) {

@@ -1,7 +1,9 @@
 'use client';
 import { useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../../../lib/adminAuth';
+import type { GalleryItem, UploadResult } from '../../../../lib/types';
 
 export default function NewGalleryItemPage() {
   const router = useRouter();
@@ -10,37 +12,37 @@ export default function NewGalleryItemPage() {
   const [imageUrl, setImageUrl] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  async function handleUpload(e) {
-    const file = e.target.files[0];
+  async function handleUpload(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
     if (!file) return;
     setErrorMsg(null);
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('image', file);
-      const json = await authFetch('/uploads/image', {
+      const json = await authFetch<UploadResult>('/uploads/image', {
         method: 'POST',
         body: formData,
       });
       setImageUrl(json.data.url);
-    } catch (err) {
+    } catch {
       setErrorMsg('Lỗi tải ảnh lên.');
     } finally {
       setUploading(false);
     }
   }
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setSubmitting(true);
     setErrorMsg(null);
     try {
-      await authFetch('/gallery', { method: 'POST', body: JSON.stringify({ title, altText, imageUrl }) });
+      await authFetch<GalleryItem>('/gallery', { method: 'POST', body: JSON.stringify({ title, altText, imageUrl }) });
       // Chuyển về trang quản lý gallery của admin
       router.push('/admin/gallery');
-    } catch (err) {
+    } catch {
       setErrorMsg('Lỗi lưu ảnh Gallery.');
     } finally {
       setSubmitting(false);

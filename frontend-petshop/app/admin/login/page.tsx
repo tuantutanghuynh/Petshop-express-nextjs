@@ -1,20 +1,22 @@
 'use client';
 import { useState } from 'react';
+import type { FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiFetch } from '../../../lib/apiClient';
 import { setTokens } from '../../../lib/adminAuth';
+import type { AuthTokens } from '../../../lib/types';
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
-  async function handleSubmit(e) {
+  async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     try {
-      const { data } = await apiFetch('/auth/login', {
+      const { data } = await apiFetch<AuthTokens>('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
