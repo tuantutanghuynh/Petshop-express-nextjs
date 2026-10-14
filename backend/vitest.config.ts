@@ -9,6 +9,8 @@ export default defineConfig({
     environment: 'node',
     setupFiles: ['./test/setup.ts'],
     include: ['test/**/*.test.ts'],
+    // test/db/** needs a real PostgreSQL; it runs through vitest.db.config.ts (`npm run test:db`).
+    exclude: ['test/db/**', 'node_modules/**'],
     env: {
       NODE_ENV: 'test',
       DATABASE_URL: 'postgresql://test:test@127.0.0.1:1/petshop_test',
