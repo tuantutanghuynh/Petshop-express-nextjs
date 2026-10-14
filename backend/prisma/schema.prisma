@@ -62,6 +62,8 @@ model Product {
   variants    ProductVariant[]
   images      ProductImage[]
   @@index([categoryId])
+  // Storefront list: WHERE status = 'active' ORDER BY createdAt DESC, id DESC (id = tie-breaker).
+  @@index([status, createdAt, id])
 }
 
 model ProductVariant {
@@ -123,6 +125,8 @@ model BlogPost {
   updatedAt      DateTime  @updatedAt
   @@index([authorId])
   @@index([categoryId])
+  // Public blog list: WHERE status = 'published' AND publishedAt <= now ORDER BY publishedAt DESC, id DESC.
+  @@index([status, publishedAt, id])
 }
 
 model GalleryItem {
