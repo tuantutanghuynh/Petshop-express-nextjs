@@ -5,6 +5,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { parsePagination } from '../utils/pagination';
 
 // CRUD for gallery images. Image files themselves are uploaded separately through
 // upload.controller.js and reach this file as a URL string. Rows created before the move to
@@ -18,9 +19,8 @@ import { sendSuccess } from '../utils/ApiResponse';
 // gallery. Ordering by `position` leaves room for manual curation; nothing sets it yet, so
 // in practice every item currently shares position 0 and ties fall back to database order.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { categorySlug, page = '1', pageSize = '10' } = req.query;
-  const take = Math.min(Number(pageSize) || 10, 50);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { categorySlug } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 10, 50);
 
   const where: { categoryId?: { in: string[] } } = {};
   if (categorySlug && typeof categorySlug === 'string') {
@@ -37,7 +37,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.galleryItem.findMany({
       where,
-      orderBy: { position: 'asc' },
+      orderBy: [{ position: 'asc' }, { id: 'asc' }],
       include: { category: true },
       skip,
       take,
@@ -45,7 +45,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     prisma.galleryItem.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Stores a new gallery item pointing at an already-uploaded image URL and answers 201.
@@ -71,6 +71,29 @@ export const getById = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, item);
 });
 
+const UPLOADS_DIR = path.resolve(__dirname, '..', 'public', 'uploads');
+
+// Deletes the file behind a legacy `/uploads/<name>` URL, and nothing else. `imageUrl` is plain
+// text an admin typed or pasted, so it can contain `../`: joining it onto the uploads folder as-is
+// let "/uploads/../../package.json" walk out of the folder and unlink any file the server process
+// can write. The resolved path must therefore stay strictly inside UPLOADS_DIR, otherwise the URL
+// is ignored. A missing file is only logged — it must not abort an otherwise valid update/delete.
+async function deleteLocalUpload(imageUrl: string | null): Promise<void> {
+  if (!imageUrl || !imageUrl.startsWith('/uploads/')) return;
+
+  const filePath = path.resolve(UPLOADS_DIR, imageUrl.slice('/uploads/'.length));
+  if (!filePath.startsWith(UPLOADS_DIR + path.sep)) {
+    console.error(`Bỏ qua xoá file ngoài thư mục uploads: ${imageUrl}`);
+    return;
+  }
+
+  try {
+    await fs.unlink(filePath);
+  } catch (err) {
+    console.error(`Lỗi khi xoá file ảnh: ${filePath}`, err);
+  }
+}
+
 // Updates an item, falling back to the stored value for every field the request omits so a
 // partial form submission cannot blank out the rest of the row. When the image is replaced
 // and the previous one was a local `/uploads/` file, that file is deleted from disk to stop
@@ -84,14 +107,8 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
   if (!existing) throw new ApiError(404, 'GALLERY_ITEM_NOT_FOUND', 'Không tìm thấy ảnh');
 
   // Nêu đổi ảnh, xoá ảnh cũ
-  if (imageUrl && existing.imageUrl !== imageUrl && existing.imageUrl.startsWith('/uploads/')) {
-    const filename = existing.imageUrl.replace('/uploads/', '');
-    const filePath = path.join(__dirname, '..', 'public', 'uploads', filename);
-    try {
-      await fs.unlink(filePath);
-    } catch (err) {
-      console.error(`Lỗi khi xoá file ảnh cũ: ${filePath}`, err);
-    }
+  if (imageUrl && existing.imageUrl !== imageUrl) {
+    await deleteLocalUpload(existing.imageUrl);
   }
 
   const updated = await prisma.galleryItem.update({
@@ -118,16 +135,7 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
   if (!existing) throw new ApiError(404, 'GALLERY_ITEM_NOT_FOUND', 'Không tìm thấy ảnh');
 
   // Xoá file vật lý trên ổ cứng nếu imageUrl là đường dẫn cục bộ
-  if (existing.imageUrl && existing.imageUrl.startsWith('/uploads/')) {
-    const filename = existing.imageUrl.replace('/uploads/', '');
-    const filePath = path.join(__dirname, '..', 'public', 'uploads', filename);
-    try {
-      await fs.unlink(filePath);
-    } catch (err) {
-      // Chỉ log ra console nếu file không tồn tại, tránh crash server
-      console.error(`Lỗi khi xoá file ảnh: ${filePath}`, err);
-    }
-  }
+  await deleteLocalUpload(existing.imageUrl);
 
   // Xoá record trong Database
   await prisma.galleryItem.delete({ where: { id } });

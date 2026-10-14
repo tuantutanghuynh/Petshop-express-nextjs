@@ -65,11 +65,15 @@ export const me = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { id: user.id, email: user.email, fullName: user.fullName, role: user.role });
 });
 
+// One answer for every email, registered or not. Answering "check the logs" for known emails and
+// something else for unknown ones let anyone test which addresses have an account here.
+const RESET_REQUESTED_MESSAGE = 'Nếu email tồn tại, link reset sẽ được gửi.';
+
 export const requestPasswordReset = asyncHandler(async (req: Request, res: Response) => {
   const { email } = req.body;
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user) {
-    return sendSuccess(res, { message: 'Nếu email tồn tại, link reset sẽ được gửi.' });
+    return sendSuccess(res, { message: RESET_REQUESTED_MESSAGE });
   }
   await prisma.passwordResetToken.deleteMany({ where: { userId: user.id } });
   const token = crypto.randomBytes(32).toString('hex');
@@ -81,9 +85,15 @@ export const requestPasswordReset = asyncHandler(async (req: Request, res: Respo
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     },
   });
-  const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/reset-password?token=${token}&email=${email}`;
-  console.log(`[PASSWORD RESET] ${email}:\n${resetLink}`);
-  sendSuccess(res, { message: 'Kiểm tra console/logs để lấy link reset password' });
+  // No email provider is wired up yet, so on a developer's machine the link is printed to the
+  // console as the only way to get it. Everywhere else it must never be logged: the raw token is a
+  // password-equivalent, and anyone who can read the hosting logs could take over every account
+  // that asks for a reset. Until an email service exists, resets therefore only work locally.
+  if (process.env.NODE_ENV === 'development') {
+    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
+    console.log(`[PASSWORD RESET] ${email}:\n${resetLink}`);
+  }
+  sendSuccess(res, { message: RESET_REQUESTED_MESSAGE });
 });
 
 export const resetPassword = asyncHandler(async (req: Request, res: Response) => {
@@ -99,8 +109,18 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     throw new ApiError(400, 'EXPIRED_TOKEN', 'Token reset đã hết hạn');
   }
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  await prisma.user.update({ where: { id: user.id }, data: { passwordHash } });
-  await prisma.passwordResetToken.delete({ where: { id: resetToken.id } });
+
+  // Spend the token and change the password in one transaction, and only if THIS request is the
+  // one that deleted the token. The lookup above is a snapshot: five concurrent submits of the same
+  // link all found the token, all changed the password, and all but one then crashed with a 500 on
+  // `delete` because the row was already gone. A token is single-use, so losing the race is the
+  // same as presenting an already-used token.
+  await prisma.$transaction(async (tx) => {
+    const { count } = await tx.passwordResetToken.deleteMany({ where: { id: resetToken.id } });
+    if (count !== 1) throw new ApiError(400, 'INVALID_TOKEN', 'Token reset không hợp lệ');
+    await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+  });
+
   sendSuccess(res, { message: 'Mật khẩu đã được đặt lại thành công' });
 });
 

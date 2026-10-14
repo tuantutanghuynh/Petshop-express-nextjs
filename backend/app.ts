@@ -41,15 +41,29 @@ app.use(
 // Restricts which origins may call the API, read from `FRONTEND_URLS` as a comma-separated
 // list. Defaults to http://localhost:3000 (frontend-petshop). Requests with no Origin
 // header — curl, Postman, server-to-server — are allowed through.
-const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:3000').split(',');
+const allowedOrigins = (process.env.FRONTEND_URLS || 'http://localhost:3000').split(',').map((o) => o.trim());
+
+// Optional regex for Vercel preview deployments, e.g.
+//   FRONTEND_ORIGIN_PATTERN=^https://tupetshop-[a-z0-9-]+-<team-slug>\.vercel\.app$
+// It used to accept every origin ending in ".vercel.app". Anyone can host a site there, and with
+// `credentials: true` such a site could call the API from a logged-in admin's browser and read
+// the responses. A pattern is never airtight on a shared domain: even one ending in your team slug
+// can be matched by a stranger's project NAMED "tupetshop-x-<team-slug>", whose production domain
+// is exactly that. Prefer listing exact URLs in FRONTEND_URLS (or a custom domain); use the pattern
+// only for short-lived preview testing. Unset = previews are not allowed.
+const previewPattern = process.env.FRONTEND_ORIGIN_PATTERN ? new RegExp(process.env.FRONTEND_ORIGIN_PATTERN) : null;
 
 const corsOptions: CorsOptions = {
   origin: (origin, callback) => {
-    // Allow no origin (Postman, S2S), specific allowed origins, or any Vercel domain
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.vercel.app')) {
+    // No Origin header: curl, Postman, server-to-server (including Next.js SSR). CORS is a browser
+    // mechanism and does not apply to them.
+    if (!origin || allowedOrigins.includes(origin) || previewPattern?.test(origin)) {
       return callback(null, true);
     }
-    callback(new Error(`Origin ${origin} không được phép bởi CORS`));
+    // `false`, not an Error: the request itself is answered normally but without CORS headers, so
+    // the browser blocks the page from reading it. Passing an Error turned every such request into
+    // a 500 from errorHandler.
+    callback(null, false);
   },
   credentials: true,
 };
@@ -68,6 +82,13 @@ const apiLimiter = rateLimit({
 });
 
 app.use('/api/', apiLimiter);
+
+// JSON endpoints are not pages: if a crawler ever reaches the API directly (a link in a log, a
+// public API domain) it must not index raw responses next to the real storefront pages.
+app.use('/api', (_req: Request, res: Response, next) => {
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  next();
+});
 
 // Request logging plus body parsing. The 10MB body cap is far above the usual JSON payload
 // because blog content comes from a rich text editor that can inline images as base64 data
