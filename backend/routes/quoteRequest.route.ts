@@ -8,6 +8,11 @@ import * as ctrl from '../controllers/quoteRequest.controller';
 
 const router = Router();
 
+// The admin gate runs BEFORE resolveBrand: checking a token costs no database round-trip, while
+// resolveBrand queries Category. In the reverse order every anonymous probe of /admin/* hit the
+// database first (and answered 500 instead of 401 whenever the database was unavailable).
+router.use('/admin', authenticate, requireRole('admin'));
+
 // Mọi endpoint ở đây đều cần biết yêu cầu thuộc storefront nào, kể cả đường công khai — nếu
 // không thì khi storefront thứ hai chạy, hai bên sẽ đọc lẫn yêu cầu của nhau.
 router.use(resolveBrand);
@@ -29,7 +34,6 @@ router.post('/', submitLimiter, optionalAuthenticate, ctrl.submit);
 // Đơn của chính mình — bắt buộc đăng nhập, khác đường gửi ở trên.
 router.get('/mine', authenticate, ctrl.listMine);
 
-router.use('/admin', authenticate, requireRole('admin'));
 router.get('/admin/list', ctrl.adminList);
 router.get('/admin/stats', ctrl.stats);
 router.patch('/admin/:id/status', ctrl.updateStatus);

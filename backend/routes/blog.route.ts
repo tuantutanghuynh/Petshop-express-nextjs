@@ -11,6 +11,11 @@ router.get('/', ctrl.list);
 router.get('/admin/list', authenticate, requireRole('admin'), ctrl.adminList);
 router.get('/:slug', ctrl.getBySlug);
 
+// A scheduled date must be a real calendar date. `new Date('2026-02-30')` silently rolls over to
+// 2 March, so without `strict` a typo publishes the post on a day nobody chose; an unparseable
+// string became an Invalid Date that crashed the insert.
+const publishedAtRule = body('publishedAt').optional({ values: 'falsy' }).isISO8601({ strict: true }).withMessage('Ngày xuất bản không hợp lệ');
+
 router.post(
   '/',
   authenticate,
@@ -20,6 +25,7 @@ router.post(
     body('slug').notEmpty(),
     body('content').notEmpty(),
     body('status').optional().isIn(['draft', 'published']),
+    publishedAtRule,
     validate,
   ],
   ctrl.create
@@ -29,7 +35,7 @@ router.patch(
   '/:id',
   authenticate,
   requireRole('admin'),
-  [body('status').optional().isIn(['draft', 'published']), validate],
+  [body('status').optional().isIn(['draft', 'published']), publishedAtRule, validate],
   ctrl.update
 );
 

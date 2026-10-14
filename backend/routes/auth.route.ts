@@ -6,10 +6,15 @@ import * as ctrl from '../controllers/auth.controller';
 
 const router = Router();
 
+// express-validator applies standard validators to EACH element when the value is an array, so
+// `{ "email": ["a@b.com"] }` passed isEmail and reached Prisma as an array → 500. Rejecting arrays
+// explicitly keeps every email field a single string.
+const emailRule = () => body('email').not().isArray().withMessage('Email không hợp lệ').bail().isEmail().normalizeEmail();
+
 router.post(
   '/register',
   [
-    body('email').isEmail().normalizeEmail(),
+    emailRule(),
     body('password')
       .isLength({ min: 8 }).withMessage('Mật khẩu phải ít nhất 8 ký tự')
       .matches(/[A-Z]/).withMessage('Mật khẩu phải chứa ít nhất một chữ hoa')
@@ -25,7 +30,7 @@ router.post(
 
 router.post(
   '/login',
-  [body('email').isEmail().normalizeEmail(), body('password').notEmpty(), validate],
+  [emailRule(), body('password').notEmpty(), validate],
   ctrl.login
 );
 
@@ -44,14 +49,14 @@ router.get('/me', authenticate, ctrl.me);
 
 router.post(
   '/request-password-reset',
-  [body('email').isEmail().normalizeEmail(), validate],
+  [emailRule(), validate],
   ctrl.requestPasswordReset
 );
 
 router.post(
   '/reset-password',
   [
-    body('email').isEmail().normalizeEmail(),
+    emailRule(),
     body('token').notEmpty(),
     body('newPassword')
       .isLength({ min: 8 }).withMessage('Mật khẩu phải ít nhất 8 ký tự')

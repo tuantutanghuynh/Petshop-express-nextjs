@@ -1,6 +1,7 @@
 import type { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import asyncHandler from '../utils/asyncHandler';
+import ApiError from '../utils/ApiError';
 import { sendSuccess } from '../utils/ApiResponse';
 
 // Lấy danh sách các cài đặt. Public endpoint để frontend load trang chủ
@@ -25,7 +26,9 @@ export const updateSettings = asyncHandler(async (req: Request, res: Response) =
   const { settings } = req.body; // Expect: { "homepage_hero_image": "url...", "homepage_quote": "..." }
 
   if (!settings || typeof settings !== 'object') {
-    return res.status(400).json({ success: false, message: 'Dữ liệu không hợp lệ' });
+    // Through ApiError like every other endpoint, so the answer is the standard
+    // { data, meta, error } envelope the frontend reads (`json.error?.message`).
+    throw new ApiError(422, 'VALIDATION_ERROR', 'Dữ liệu không hợp lệ');
   }
 
   const upsertPromises = Object.entries(settings).map(([key, value]) => {

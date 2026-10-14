@@ -15,4 +15,9 @@ export type ProductStatus = (typeof PRODUCT_STATUS)[keyof typeof PRODUCT_STATUS]
 
 export const PRODUCT_STATUS_VALUES = Object.freeze(Object.values(PRODUCT_STATUS));
 
-export default { PRODUCT_STATUS, PRODUCT_STATUS_VALUES };
+// Largest value the price and stock columns can hold: they are PostgreSQL `integer` (32-bit). A
+// bigger number passed `isInt` and then crashed the INSERT with "value out of range" → 500, so the
+// routes validate against this bound instead. 2.1 billion VND is far above any real price.
+export const MAX_DB_INT = 2_147_483_647;
+
+export default { PRODUCT_STATUS, PRODUCT_STATUS_VALUES, MAX_DB_INT };

@@ -4,6 +4,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { parsePagination } from '../utils/pagination';
 
 // Every read and write path for blog posts, serving both the public site and the admin
 // dashboard. Two ideas shape this file: scheduled publishing is derived from `publishedAt`
@@ -18,9 +19,8 @@ import { sendSuccess } from '../utils/ApiResponse';
 // table in one query. The category filter expands to include child categories, otherwise a
 // post filed under "Bình gốm" would vanish from the parent brand's listing.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { page = '1', pageSize = '10', categorySlug } = req.query;
-  const take = Math.min(Number(pageSize) || 10, 50);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { categorySlug } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 10, 50);
 
   const where: Prisma.BlogPostWhereInput = {
     status: 'published',
@@ -38,7 +38,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.blogPost.findMany({
       where,
-      orderBy: { publishedAt: 'desc' },
+      orderBy: [{ publishedAt: 'desc' }, { id: 'desc' }],
       include: { category: true, author: { select: { id: true, fullName: true } } },
       skip,
       take,
@@ -46,7 +46,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     prisma.blogPost.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Fetches one post by its slug for the public detail page, including its category and
@@ -78,9 +78,8 @@ export const getBySlug = asyncHandler(async (req: Request, res: Response) => {
 // `categorySlug` filter is just as mandatory as on the public side — leaving it out is what
 // once let one brand's dashboard display the other brand's articles.
 export const adminList = asyncHandler(async (req: Request, res: Response) => {
-  const { page = '1', pageSize = '20', status, categorySlug, search } = req.query;
-  const take = Math.min(Number(pageSize) || 20, 100);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { status, categorySlug, search } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 20, 100);
 
   const where: Prisma.BlogPostWhereInput = {};
 
@@ -109,7 +108,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.blogPost.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: { category: true, author: { select: { id: true, fullName: true } } },
       skip,
       take,
@@ -117,7 +116,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
     prisma.blogPost.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Creates a post and answers 201 with the stored row. The slug is checked for collisions up

@@ -3,6 +3,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { parsePagination } from '../utils/pagination';
 
 // Handles the public contact form and the admin inbox that reads it. This is the only place
 // in the API where an anonymous visitor writes to the database, so the submit path carries
@@ -41,9 +42,8 @@ export const submitContact = asyncHandler(async (req: Request, res: Response) =>
 // filter here — the contact table has no category, so both storefronts would share this
 // inbox if the second one ever goes live.
 export const adminList = asyncHandler(async (req: Request, res: Response) => {
-  const { page = '1', pageSize = '20', isRead } = req.query;
-  const take = Math.min(Number(pageSize) || 20, 100);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { isRead } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 20, 100);
 
   const where: { isRead?: boolean } = {};
   if (isRead !== undefined && isRead !== '') {
@@ -53,14 +53,14 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.contactMessage.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       skip,
       take,
     }),
     prisma.contactMessage.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Flags one message as read, which is what dims it in the admin inbox. The row is fetched

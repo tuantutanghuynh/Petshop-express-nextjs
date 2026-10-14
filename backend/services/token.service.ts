@@ -65,10 +65,24 @@ export async function rotateRefreshToken(rawToken: string): Promise<{ userId: st
         return null;
     }
 
-    await prisma.refreshToken.update({
-        where: { id: record.id },
+    // Revoke with a conditional update and check that THIS call is the one that did it. The read
+    // above is only a snapshot: ten concurrent refreshes with the same token all saw
+    // `revokedAt = null`, and with an unconditional update every one of them went on to issue a
+    // fresh token — one stolen token became ten live sessions and reuse detection never fired.
+    // Losing this race means somebody else already spent the token, which is exactly the replay
+    // signal handled above, so it is treated the same way.
+    const { count } = await prisma.refreshToken.updateMany({
+        where: { id: record.id, revokedAt: null },
         data: { revokedAt: new Date() },
     });
+
+    if (count !== 1) {
+        await prisma.refreshToken.updateMany({
+            where: { userId: record.userId, revokedAt: null },
+            data: { revokedAt: new Date() }
+        });
+        return null;
+    }
 
     const newRawToken = await issueRefreshToken(record.userId);
     return { userId: record.userId, rawToken: newRawToken };

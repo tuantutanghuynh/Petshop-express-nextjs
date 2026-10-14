@@ -4,6 +4,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { parsePagination } from '../utils/pagination';
 
 // Yêu cầu tư vấn mua hàng: khách chọn sản phẩm, để lại số điện thoại, nhân viên gọi lại và
 // chốt đơn thủ công. Không có thanh toán, không trừ kho, không giữ hàng — nên ở đây không có
@@ -19,17 +20,33 @@ export type QuoteStatus = (typeof QUOTE_STATUS)[keyof typeof QUOTE_STATUS];
 
 const MAX_ITEMS = 50;
 
+// The only accepted status values. A whitelist rather than `status in QUOTE_STATUS`: the `in`
+// operator also sees Object.prototype, so "toString" or "constructor" passed and were written to
+// the status column.
+const QUOTE_STATUS_VALUES: readonly string[] = Object.values(QUOTE_STATUS);
+const isQuoteStatus = (v: unknown): v is QuoteStatus => typeof v === 'string' && QUOTE_STATUS_VALUES.includes(v);
+
+// Trimmed text, or '' for anything that is not a string. This endpoint is public and has no
+// express-validator chain, so a field posted as a number or array used to reach `.trim()` and
+// crash the request with a 500 instead of the 400 below.
+const text = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+
 // Nhận yêu cầu từ khách vãng lai.
 export const submit = asyncHandler(async (req: Request, res: Response) => {
   if (!req.brand) throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu thông tin thương hiệu');
-  const { customerName, phone, email, address, note, items, website_url } = req.body;
+  const { items, website_url } = req.body;
+  const customerName = text(req.body.customerName);
+  const phone = text(req.body.phone);
+  const address = text(req.body.address);
+  const email = text(req.body.email);
+  const note = text(req.body.note);
 
   // Bot điền vào trường ẩn -> trả 200 giả rồi vứt đi. Báo lỗi tử tế chỉ dạy bot lần sau né.
   if (website_url) {
     return sendSuccess(res, { message: 'Đã nhận yêu cầu tư vấn.' }, null, 201);
   }
 
-  if (!customerName?.trim() || !phone?.trim() || !address?.trim()) {
+  if (!customerName || !phone || !address) {
     throw new ApiError(400, 'MISSING_FIELDS', 'Vui lòng điền họ tên, số điện thoại và địa chỉ.');
   }
 
@@ -82,11 +99,11 @@ export const submit = asyncHandler(async (req: Request, res: Response) => {
     data: {
       brandSlug: req.brand.slug,
       userId: req.user?.id || null,
-      customerName: customerName.trim(),
-      phone: phone.trim(),
-      email: email?.trim() || null,
-      address: address.trim(),
-      note: note?.trim() || null,
+      customerName,
+      phone,
+      email: email || null,
+      address,
+      note: note || null,
       items: snapshot,
     },
   });
@@ -99,7 +116,7 @@ export const listMine = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user || !req.brand) throw new ApiError(401, 'UNAUTHENTICATED', 'Chưa xác thực');
   const rows = await prisma.quoteRequest.findMany({
     where: { userId: req.user.id, brandSlug: req.brand.slug },
-    orderBy: { createdAt: 'desc' },
+    orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
     take: 50,
   });
 
@@ -109,28 +126,27 @@ export const listMine = asyncHandler(async (req: Request, res: Response) => {
 // Danh sách cho nhân viên, mới nhất trước.
 export const adminList = asyncHandler(async (req: Request, res: Response) => {
   if (!req.brand) throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu thông tin thương hiệu');
-  const { page = '1', pageSize = '20', status } = req.query;
-  const take = Math.min(Number(pageSize) || 20, 100);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { status } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 20, 100);
 
   const where: Prisma.QuoteRequestWhereInput = { brandSlug: req.brand.slug };
-  if (status && typeof status === 'string' && status in QUOTE_STATUS) {
+  if (isQuoteStatus(status)) {
     where.status = status;
   }
 
   const [rows, total] = await Promise.all([
-    prisma.quoteRequest.findMany({ where, orderBy: { createdAt: 'desc' }, skip, take }),
+    prisma.quoteRequest.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip, take }),
     prisma.quoteRequest.count({ where }),
   ]);
 
-  sendSuccess(res, rows, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, rows, { page, pageSize: take, total });
 });
 
 // Nhân viên đánh dấu đã gọi hoặc đã chốt.
 export const updateStatus = asyncHandler(async (req: Request, res: Response) => {
   if (!req.brand) throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu thông tin thương hiệu');
   const { status, finalAmount } = req.body;
-  if (!status || !(status in QUOTE_STATUS)) {
+  if (!isQuoteStatus(status)) {
     throw new ApiError(400, 'INVALID_STATUS', 'Trạng thái không hợp lệ.');
   }
 

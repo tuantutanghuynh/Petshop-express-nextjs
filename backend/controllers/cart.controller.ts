@@ -1,9 +1,13 @@
+import crypto from 'crypto';
 import type { Request, Response } from 'express';
 import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
 import { PRODUCT_STATUS } from '../constants/product';
+
+// Upper bound for one cart line, matching the `max: 99` rule in routes/cart.route.ts.
+const MAX_LINE_QUANTITY = 99;
 
 // The shopping cart, one per user per brand. A cart row stores only which variant and how many —
 // never a price. Prices are read back from the database on every display and again when the order
@@ -85,7 +89,9 @@ export const getCart = asyncHandler(async (req: Request, res: Response) => {
 // duplicate, which is what the unique index on (cartId, variantId) enforces.
 export const addItem = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user || !req.brand) throw new ApiError(401, 'UNAUTHENTICATED', 'Chưa xác thực');
-  const { variantId, quantity = 1 } = req.body;
+  const { variantId } = req.body;
+  // The route accepts "2" as well as 2 (isInt); the raw INSERT below needs a real integer.
+  const quantity = Number(req.body.quantity ?? 1);
 
   const variant = await prisma.productVariant.findUnique({
     where: { id: variantId },
@@ -103,17 +109,24 @@ export const addItem = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể sản phẩm');
   }
 
-  const cart = await prisma.cart.upsert({
-    where: { userId_brandSlug: { userId: req.user.id, brandSlug: req.brand.slug } },
-    create: { userId: req.user.id, brandSlug: req.brand.slug },
-    update: {},
-  });
+  // Both writes are single `INSERT … ON CONFLICT` statements rather than Prisma's upsert. Prisma's
+  // upsert is a SELECT followed by an INSERT, so a customer tapping "add" several times on a slow
+  // connection sent concurrent first-adds that all saw "no cart yet", all inserted, and all but one
+  // died on the unique index. ON CONFLICT lets PostgreSQL resolve that race inside one statement.
+  const [cart] = await prisma.$queryRaw<{ id: string }[]>`
+    INSERT INTO "Cart" ("id", "userId", "brandSlug", "updatedAt")
+    VALUES (${crypto.randomUUID()}, ${req.user.id}, ${req.brand.slug}, now())
+    ON CONFLICT ("userId", "brandSlug") DO UPDATE SET "updatedAt" = now()
+    RETURNING "id"`;
 
-  const item = await prisma.cartItem.upsert({
-    where: { cartId_variantId: { cartId: cart.id, variantId } },
-    create: { cartId: cart.id, variantId, quantity },
-    update: { quantity: { increment: quantity } },
-  });
+  // LEAST keeps the 99-per-line cap on the accumulated quantity too. The route only caps a single
+  // request, so "add 99" twice used to produce a line of 198.
+  const [item] = await prisma.$queryRaw<{ id: string; quantity: number }[]>`
+    INSERT INTO "CartItem" ("id", "cartId", "variantId", "quantity")
+    VALUES (${crypto.randomUUID()}, ${cart.id}, ${variantId}, ${quantity})
+    ON CONFLICT ("cartId", "variantId")
+      DO UPDATE SET "quantity" = LEAST("CartItem"."quantity" + EXCLUDED."quantity", ${MAX_LINE_QUANTITY})
+    RETURNING "id", "quantity"`;
 
   const available = variant.stockQuantity - variant.reservedQuantity;
   const warning = item.quantity > available ? 'INSUFFICIENT_STOCK' : null;

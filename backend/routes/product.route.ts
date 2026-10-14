@@ -4,7 +4,7 @@ import validate from '../middlewares/validate';
 import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
 import * as ctrl from '../controllers/product.controller';
-import { PRODUCT_STATUS_VALUES } from '../constants/product';
+import { PRODUCT_STATUS_VALUES, MAX_DB_INT } from '../constants/product';
 
 const router = Router();
 
@@ -19,7 +19,7 @@ router.get('/admin/list', authenticate, requireRole('admin'), ctrl.adminList);
 router.get('/:slug', ctrl.getBySlug);
 
 // Prices are validated as integers because the column is `Int` and money is never stored as a
-// float. `isInt({ min: 0 })` also rejects the string "12000" silently becoming NaN later, and
+// float. `isInt({ min: 0, max: MAX_DB_INT })` also rejects the string "12000" silently becoming NaN later, and
 // blocks negative prices that would make an order total smaller than it should be.
 router.post(
   '/',
@@ -32,9 +32,9 @@ router.post(
     body('status').optional().isIn(PRODUCT_STATUS_VALUES),
     body('variants').isArray({ min: 1 }).withMessage('Sản phẩm phải có ít nhất một biến thể'),
     body('variants.*.sku').notEmpty(),
-    body('variants.*.price').isInt({ min: 0 }),
-    body('variants.*.compareAtPrice').optional({ nullable: true }).isInt({ min: 0 }),
-    body('variants.*.stockQuantity').optional().isInt({ min: 0 }),
+    body('variants.*.price').isInt({ min: 0, max: MAX_DB_INT }),
+    body('variants.*.compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
+    body('variants.*.stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
     body('images').optional().isArray(),
     body('images.*.url').optional().notEmpty(),
     validate,
@@ -48,9 +48,9 @@ router.post(
   requireRole('admin'),
   [
     body('sku').notEmpty().withMessage('SKU không được để trống'),
-    body('price').isInt({ min: 0 }).withMessage('Giá không hợp lệ'),
-    body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0 }),
-    body('stockQuantity').optional().isInt({ min: 0 }),
+    body('price').isInt({ min: 0, max: MAX_DB_INT }).withMessage('Giá không hợp lệ'),
+    body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
+    body('stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
     validate,
   ],
   ctrl.addVariant
@@ -73,9 +73,9 @@ router.patch(
   authenticate,
   requireRole('admin'),
   [
-    body('price').optional().isInt({ min: 0 }),
-    body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0 }),
-    body('stockQuantity').optional().isInt({ min: 0 }),
+    body('price').optional().isInt({ min: 0, max: MAX_DB_INT }),
+    body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
+    body('stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
     validate,
   ],
   ctrl.updateVariant

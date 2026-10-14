@@ -4,6 +4,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { parsePagination } from '../utils/pagination';
 import { PRODUCT_STATUS } from '../constants/product';
 
 // Every read and write path for products, serving both the storefront and the admin dashboard.
@@ -18,9 +19,8 @@ import { PRODUCT_STATUS } from '../constants/product';
 // expands to include child categories, otherwise a product filed under "Bình gốm" would be missing
 // from the parent brand's listing.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { page = '1', pageSize = '12', categorySlug } = req.query;
-  const take = Math.min(Number(pageSize) || 12, 50);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { categorySlug } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 12, 50);
 
   const where: Prisma.ProductWhereInput = { status: PRODUCT_STATUS.ACTIVE };
 
@@ -35,7 +35,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         category: true,
         images: { orderBy: { position: 'asc' } },
@@ -47,7 +47,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
     prisma.product.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Fetches one product by slug for the public detail page, including its category, images and
@@ -78,9 +78,8 @@ export const getBySlug = asyncHandler(async (req: Request, res: Response) => {
 // `status` filter. The `categorySlug` filter matters just as much here as on the public side:
 // leaving it out is what would let one brand's dashboard display the other brand's catalogue.
 export const adminList = asyncHandler(async (req: Request, res: Response) => {
-  const { page = '1', pageSize = '20', status, categorySlug, search } = req.query;
-  const take = Math.min(Number(pageSize) || 20, 100);
-  const skip = (Math.max(Number(page) || 1, 1) - 1) * take;
+  const { status, categorySlug, search } = req.query;
+  const { page, take, skip } = parsePagination(req.query, 20, 100);
 
   const where: Prisma.ProductWhereInput = {};
   if (status && typeof status === 'string') where.status = status;
@@ -97,7 +96,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
       include: {
         category: true,
         images: { orderBy: { position: 'asc' } },
@@ -109,7 +108,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
     prisma.product.count({ where }),
   ]);
 
-  sendSuccess(res, items, { page: Number(page), pageSize: take, total });
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Creates a product together with its variants and images in a single transaction, answering 201
@@ -269,7 +268,28 @@ export const updateVariant = asyncHandler(async (req: Request, res: Response) =>
     data.variantAttributes = { ...existingAttrs, label };
   }
 
-  const updated = await prisma.productVariant.update({ where: { id: variant.id }, data });
+  // The check above compared against a snapshot. A checkout that is mid-transaction holds the row
+  // lock with more units reserved than that snapshot shows; an unconditional write would wait for
+  // it and then set stock below what is now promised to customers. Putting the condition in the
+  // WHERE makes PostgreSQL re-check it against the committed row once the lock is released.
+  const { count } = await prisma.productVariant.updateMany({
+    where: {
+      id: variant.id,
+      ...(stockQuantity !== undefined && { reservedQuantity: { lte: stockQuantity } }),
+    },
+    data,
+  });
+  if (count !== 1) {
+    const current = await prisma.productVariant.findUnique({ where: { id: variant.id } });
+    if (!current) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
+    throw new ApiError(
+      409,
+      'STOCK_BELOW_RESERVED',
+      `Không thể đặt tồn kho thấp hơn ${current.reservedQuantity} đang giữ cho đơn chờ thanh toán`
+    );
+  }
+
+  const updated = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } });
   sendSuccess(res, updated);
 });
 
