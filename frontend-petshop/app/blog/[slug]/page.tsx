@@ -3,6 +3,7 @@ import { renderMarkdown, excerptFromContent } from '../../../lib/markdown';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import type { BlogPost } from '../../../lib/types';
+import { JsonLd } from '../../../components/seo/JsonLd';
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -55,7 +56,7 @@ export default async function BlogDetailPage({ params }: Props) {
 
   return (
     <article className="prose max-w-none">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd data={jsonLd} />
       <h1 className="text-3xl font-bold mb-4">{post.title}</h1>
       <div dangerouslySetInnerHTML={{ __html: html }} />
     </article>
