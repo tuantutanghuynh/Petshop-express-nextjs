@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wireframe · Siêu thị của chó mèo</title>
+<link rel="stylesheet" href="wireframes/wf.css">
+<style>
+  body { background: var(--surface-alt); }
+  .app { display: grid; min-height: 100dvh; }
+  @media (min-width: 1024px) { .app { grid-template-columns: 300px 1fr; } }
+  .list { background: #fff; border-right: 1px solid var(--border); padding: 16px; overflow-y: auto; }
+  @media (min-width: 1024px) { .list { height: 100dvh; position: sticky; top: 0; } }
+  .list h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin: 20px 0 6px; }
+  .list a { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 8px; color: var(--ink); font-size: .9rem; min-height: 40px; }
+  .list a.on { background: var(--mint); font-weight: 700; color: var(--brand-teal-deep); }
+  .list a small { color: var(--text-muted); font-size: .7rem; text-align: right; }
+  .stage { padding: 16px; display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .bar button { min-height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid var(--border); background: #fff; font: 600 .85rem var(--font-sans); color: var(--ink); cursor: pointer; }
+  .bar button.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .frame-wrap { flex: 1; overflow: auto; display: flex; justify-content: center; background: #D9DFE1; border-radius: 12px; padding: 16px; }
+  iframe { border: 0; background: #fff; height: 82dvh; box-shadow: 0 8px 32px #0003; border-radius: 8px; transition: width .2s; max-width: none; }
+  @media (max-width: 1023px) { .stage { display: none; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="list" aria-label="Danh sách trang">
+    <a class="logo" href="index.html" style="padding:0;margin-bottom:8px"><span class="paw">🐾</span><span>Wireframe<small>Siêu thị của chó mèo</small></span></a>
+    <a href="palette.html" target="_self">🎨 Palette màu <small>màu đo từ ảnh mẫu</small></a>
+    <a href="README.md">📄 README <small>cách dùng, API còn thiếu</small></a>
+
+    <h2>Cửa hàng (public)</h2>
+    <a data-p="home.html" href="wireframes/home.html">Trang chủ <small>giống ảnh mẫu</small></a>
+    <a data-p="category.html" href="wireframes/category.html">Danh mục sản phẩm <small>/danh-muc/[slug]</small></a>
+    <a data-p="product.html" href="wireframes/product.html">Chi tiết sản phẩm <small>/san-pham/[slug]</small></a>
+    <a data-p="quote.html" href="wireframes/quote.html">Tư vấn báo giá <small>/tu-van</small></a>
+    <a data-p="blog.html" href="wireframes/blog.html">Kiến thức (blog) <small>/kien-thuc</small></a>
+    <a data-p="blog-post.html" href="wireframes/blog-post.html">Bài viết <small>/kien-thuc/[slug]</small></a>
+    <a data-p="gallery.html" href="wireframes/gallery.html">Thư viện ảnh <small>/thu-vien-anh</small></a>
+    <a data-p="contact.html" href="wireframes/contact.html">Liên hệ <small>/lien-he</small></a>
+    <a data-p="about.html" href="wireframes/about.html">Giới thiệu <small>/gioi-thieu</small></a>
+    <a data-p="policy.html" href="wireframes/policy.html">Chính sách <small>/chinh-sach/[slug]</small></a>
+    <a data-p="404.html" href="wireframes/404.html">404 &amp; trang lỗi</a>
+
+    <h2>Mua hàng &amp; tài khoản (noindex)</h2>
+    <a data-p="cart.html" href="wireframes/cart.html">Giỏ hàng <small>/gio-hang</small></a>
+    <a data-p="checkout.html" href="wireframes/checkout.html">Đặt hàng <small>/dat-hang</small></a>
+    <a data-p="order-success.html" href="wireframes/order-success.html">Đặt hàng thành công <small>COD + chuyển khoản</small></a>
+    <a data-p="account.html" href="wireframes/account.html">Tài khoản: đơn &amp; tư vấn <small>/tai-khoan</small></a>
+    <a data-p="order-detail.html" href="wireframes/order-detail.html">Chi tiết đơn <small>/tai-khoan/don-hang/[code]</small></a>
+    <a data-p="auth.html" href="wireframes/auth.html">Đăng nhập / ký / quên MK <small>4 màn hình</small></a>
+
+    <h2>Quản trị (/admin)</h2>
+    <a data-p="admin-login.html" href="wireframes/admin-login.html">Đăng nhập admin</a>
+    <a data-p="admin-dashboard.html" href="wireframes/admin-dashboard.html">Tổng quan</a>
+    <a data-p="admin-orders.html" href="wireframes/admin-orders.html">Đơn hàng</a>
+    <a data-p="admin-quotes.html" href="wireframes/admin-quotes.html">Yêu cầu báo giá</a>
+    <a data-p="admin-products.html" href="wireframes/admin-products.html">Sản phẩm</a>
+    <a data-p="admin-product-edit.html" href="wireframes/admin-product-edit.html">Thêm / sửa sản phẩm</a>
+    <a data-p="admin-categories.html" href="wireframes/admin-categories.html">Danh mục &amp; thông số</a>
+    <a data-p="admin-blog.html" href="wireframes/admin-blog.html">Bài viết (danh sách + soạn)</a>
+    <a data-p="admin-gallery.html" href="wireframes/admin-gallery.html">Thư viện ảnh</a>
+    <a data-p="admin-contacts.html" href="wireframes/admin-contacts.html">Tin nhắn liên hệ</a>
+    <a data-p="admin-settings.html" href="wireframes/admin-settings.html">Cấu hình trang chủ</a>
+  </nav>
+
+  <div class="stage">
+    <div class="bar">
+      <strong id="title" style="color:var(--ink);margin-right:auto">Trang chủ</strong>
+      <button data-w="360">📱 360</button><button data-w="390" class="on">📱 390</button><button data-w="768">▭ 768</button><button data-w="1024">▭ 1024</button><button data-w="1280">🖥 1280</button>
+      <a class="btn btn-outline" id="open" style="min-height:40px" href="wireframes/home.html" target="_blank">Mở tab mới ↗</a>
+    </div>
+    <div class="frame-wrap"><iframe id="frame" src="wireframes/home.html" style="width:390px" title="Xem trước wireframe"></iframe></div>
+    <div class="note">Bên trái chọn trang, bên trên chọn bề rộng màn hình (đúng các mốc phải kiểm tra trong <code>mobile-ui.md</code>). Trên điện thoại, bấm thẳng vào tên trang. Mỗi trang có nút "Ẩn ghi chú" để xem giao diện sạch.</div>
+  </div>
+</div>
+<script>
+  // Desktop: clicking a page loads it in the preview frame instead of navigating away.
+  const frame = document.getElementById('frame');
+  const open = document.getElementById('open');
+  const title = document.getElementById('title');
+  const wide = matchMedia('(min-width: 1024px)');
+  document.querySelectorAll('.list a[data-p]').forEach((a) => {
+    a.addEventListener('click', (e) => {
+      if (!wide.matches) return;
+      e.preventDefault();
+      frame.src = a.getAttribute('href');
+      open.href = a.getAttribute('href');
+      title.textContent = a.firstChild.textContent.trim();
+      document.querySelectorAll('.list a.on').forEach((x) => x.classList.remove('on'));
+      a.classList.add('on');
+    });
+  });
+  document.querySelectorAll('.bar button[data-w]').forEach((b) => {
+    b.addEventListener('click', () => {
+      frame.style.width = b.dataset.w + 'px';
+      document.querySelectorAll('.bar button').forEach((x) => x.classList.remove('on'));
+      b.classList.add('on');
+    });
+  });
+  document.querySelector('.list a[data-p="home.html"]').classList.add('on');
+</script>
+</body>
+</html>

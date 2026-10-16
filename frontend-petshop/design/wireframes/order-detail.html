@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Chi tiết đơn hàng · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .od { display: grid; gap: 16px; }
+  @media (min-width: 1024px) { .od { grid-template-columns: 1fr 340px; align-items: start; } }
+  .track { display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px; text-align: center; font-size: .75rem; font-weight: 600; color: var(--text-muted); }
+  .track span { padding-top: 10px; border-top: 4px solid var(--border); }
+  .track span.on { border-color: var(--brand-teal); color: var(--brand-teal-ink); }
+  .it { display: grid; grid-template-columns: 64px 1fr auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border); }
+  .it .img { min-height: 0; }
+</style>
+</head>
+<body data-layout="store" data-nav="account">
+<main class="container">
+  <nav class="crumbs"><a href="account.html">Tài khoản</a> › <a href="account.html">Đơn hàng</a> › <span aria-current="page">NP-261016-K3F9A2</span></nav>
+  <div class="row between"><h1 style="font-size:1.4rem;margin:0">Đơn NP-261016-K3F9A2</h1><span class="badge b-yellow">Chờ thanh toán · còn 23 giờ</span></div>
+
+  <section class="od">
+    <div class="stack">
+      <div class="card card-pad"><div class="track"><span class="on">Đặt hàng</span><span>Đã thanh toán</span><span>Đang giao</span><span>Hoàn tất</span></div></div>
+      <div class="card card-pad" style="background:var(--yellow-bg);border:0"><b style="color:var(--yellow-ink)">Chuyển khoản trước 14:30 · 17/10</b><p style="margin:4px 0 0;font-size:.9rem">Nội dung chuyển khoản: <b>NP-261016-K3F9A2</b>. <a href="order-success.html">Xem thông tin tài khoản</a></p></div>
+      <div class="card card-pad">
+        <h2 style="font-size:1.1rem">Sản phẩm</h2>
+        <div class="it"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Pate mèo vị cá ngừ</b><br><small>PATE-CN-170 · 28.000₫ × 2</small></div><span class="price">56.000₫</span></div>
+        <div class="it"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Hạt cho mèo con vị cá hồi 1.5kg</b><br><small>HAT-MC-15 · 215.000₫ × 1</small></div><span class="price">215.000₫</span></div>
+        <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/orders/:code</code> — tìm theo <code>code</code> <b>và</b> <code>userId</code> (người khác → 404). Dòng hàng là <b>bản chụp</b> lúc đặt (<code>productName</code>, <code>sku</code>, <code>unitPrice</code>, <code>lineTotal</code>) — vẫn hiện đúng dù sản phẩm đã đổi giá / bị xoá. Link về sản phẩm chỉ khi <code>variantId</code> còn. <span style="color:#7A1030">⚠ OrderItem không lưu ảnh</span> → ảnh lấy theo <code>variantId</code> nếu còn, không thì placeholder.</div>
+      </div>
+    </div>
+    <aside class="stack">
+      <div class="card card-pad stack"><h2 style="font-size:1.1rem">Thanh toán</h2>
+        <div class="row between"><span>Tạm tính</span><span class="price">271.000₫</span></div>
+        <div class="row between"><span>Phí giao hàng</span><span class="muted">Báo sau</span></div>
+        <div class="row between"><b style="color:var(--ink)">Tổng</b><span class="price">271.000₫</span></div>
+        <small>Phương thức: Chuyển khoản ngân hàng</small></div>
+      <div class="card card-pad"><h2 style="font-size:1.1rem">Giao tới</h2><p style="margin:0">Nguyễn Thị Ánh · 0901 234 567<br>12 Lê Lợi, Phường Bến Nghé, TP. Hồ Chí Minh</p><small>Ghi chú: Giao giờ hành chính</small></div>
+      <div class="note gap"><b>⚠ Khách chưa tự huỷ đơn được.</b> Huỷ chỉ có ở admin (<code>PATCH /orders/admin/:id/cancel</code>). Muốn có nút "Huỷ đơn" cho khách cần endpoint mới (chỉ khi <code>PENDING_PAYMENT</code>). Tạm thời: nút "Liên hệ shop".</div>
+    </aside>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

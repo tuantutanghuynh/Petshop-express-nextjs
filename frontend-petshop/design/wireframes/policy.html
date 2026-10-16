@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chính sách · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .pol { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .pol { grid-template-columns: 240px 1fr; align-items: start; } .side { position: sticky; top: 140px; } }
+  .side a { display: block; padding: 10px 12px; border-radius: 8px; color: var(--ink); min-height: 44px; }
+  .side a.on { background: var(--mint); font-weight: 700; color: var(--brand-teal-deep); }
+  .prose { max-width: 68ch; line-height: 1.7; }
+</style>
+</head>
+<body data-layout="store" data-nav="policy">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Chính sách giao hàng &amp; đổi trả</span></nav>
+  <section class="pol" style="padding-top:0">
+    <nav class="side card" aria-label="Chính sách"><a class="on" href="#">Giao hàng &amp; thanh toán</a><a href="#">Đổi trả</a><a href="#">Bảo mật thông tin</a><a href="#">Điều khoản sử dụng</a></nav>
+    <article class="prose">
+      <h1 style="font-size:1.7rem">Chính sách giao hàng &amp; thanh toán</h1>
+      <small>Cập nhật lần cuối: 16/10/2026</small>
+      <h2>Shop nhận những hình thức thanh toán nào?</h2><p>COD (trả khi nhận hàng) và chuyển khoản. Đơn chuyển khoản được giữ 24 giờ…</p>
+      <h2>Phí giao hàng tính thế nào?</h2><p>…</p>
+      <h2>Bao lâu nhận được hàng?</h2><p>…</p>
+    </article>
+  </section>
+  <div class="note"><b>Trang tĩnh</b>, nội dung do bạn viết — phải khớp hành vi thật của hệ thống (24 giờ = <code>PAYMENT_WINDOW_HOURS</code>; phí ship hiện chưa tính). Đây là "tín hiệu tin cậy thật" (CRO / SXO). URL dự kiến <code>/chinh-sach/[slug]</code>.</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

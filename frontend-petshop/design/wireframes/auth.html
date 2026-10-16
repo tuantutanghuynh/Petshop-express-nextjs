@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Đăng nhập · Đăng ký · Quên mật khẩu · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .auth-grid { display: grid; gap: 24px; padding: 24px 0; }
+  @media (min-width: 1024px) { .auth-grid { grid-template-columns: repeat(2, 1fr); } }
+  .panel { max-width: 440px; width: 100%; margin: 0 auto; }
+  .tag { font-size: .75rem; font-weight: 700; color: var(--purple-ink); text-transform: uppercase; letter-spacing: .04em; }
+  .pw-rules { list-style: none; padding: 0; margin: 4px 0 0; font-size: .8rem; display: grid; gap: 2px; }
+  .pw-rules li::before { content: "○ "; } .pw-rules li.ok { color: var(--brand-teal-ink); } .pw-rules li.ok::before { content: "✓ "; }
+</style>
+</head>
+<body data-layout="store" data-nav="account">
+<main class="container">
+  <div class="note">4 màn hình trong 1 file để đối chiếu. URL thật dự kiến: <code>/dang-nhap</code>, <code>/dang-ky</code>, <code>/quen-mat-khau</code>, <code>/dat-lai-mat-khau?token=&amp;email=</code>. Tất cả <code>noindex</code>. Form 1 cột, label trên input, nút full-width trên phone.</div>
+  <div class="auth-grid">
+
+    <section class="card card-pad panel">
+      <div class="tag">/dang-nhap</div>
+      <h1 style="font-size:1.5rem">Đăng nhập</h1>
+      <div class="field"><label for="le">Email</label><input id="le" type="email" autocomplete="email" enterkeyhint="next"></div>
+      <div class="field"><label for="lp">Mật khẩu</label><input id="lp" type="password" autocomplete="current-password" enterkeyhint="done"></div>
+      <div class="error" role="alert" style="margin-bottom:12px">Email hoặc mật khẩu không đúng</div>
+      <button class="btn btn-primary btn-block">Đăng nhập</button>
+      <div class="row between" style="margin-top:12px"><a href="#quen">Quên mật khẩu?</a><a href="#dang-ky">Tạo tài khoản</a></div>
+      <div class="note"><code>POST /api/v1/auth/login {email, password}</code> → <code>{user, accessToken, refreshToken}</code>. Sai email hay sai mật khẩu đều trả cùng 401 → <b>một</b> thông báo chung. Rate limit chung 100 req/15 phút. Sau khi đăng nhập quay về <code>?next=</code>. <span style="color:#7A1030">Lưu token: nên httpOnly cookie qua route handler của Next (hiện <code>adminAuth.ts</code> dùng localStorage — nợ kỹ thuật).</span></div>
+    </section>
+
+    <section class="card card-pad panel" id="dang-ky">
+      <div class="tag">/dang-ky</div>
+      <h1 style="font-size:1.5rem">Tạo tài khoản</h1>
+      <div class="field"><label for="rn">Họ và tên</label><input id="rn" autocomplete="name"></div>
+      <div class="field"><label for="re">Email *</label><input id="re" type="email" autocomplete="email"></div>
+      <div class="field"><label for="rp">Mật khẩu *</label><input id="rp" type="password" autocomplete="new-password">
+        <ul class="pw-rules"><li class="ok">Ít nhất 8 ký tự</li><li class="ok">Có chữ hoa và chữ thường</li><li>Có chữ số</li><li>Có ký tự đặc biệt (!@#$…)</li></ul></div>
+      <div class="field"><label for="rc">Nhập lại mật khẩu *</label><input id="rc" type="password" autocomplete="new-password"></div>
+      <button class="btn btn-primary btn-block">Đăng ký</button>
+      <div class="note"><code>POST /auth/register {email, password, confirmPassword, fullName?}</code>. Luật mật khẩu y hệt <code>routes/auth.route.ts</code> → kiểm tra ngay khi gõ. Email trùng → <code>409 EMAIL_TAKEN</code> ("Email đã được đăng ký — đăng nhập?"). Role luôn là <code>customer</code>.</div>
+    </section>
+
+    <section class="card card-pad panel" id="quen">
+      <div class="tag">/quen-mat-khau</div>
+      <h1 style="font-size:1.5rem">Quên mật khẩu</h1>
+      <p>Nhập email, chúng tôi sẽ gửi link đặt lại mật khẩu.</p>
+      <div class="field"><label for="fe">Email</label><input id="fe" type="email" autocomplete="email"></div>
+      <button class="btn btn-primary btn-block">Gửi link</button>
+      <div class="card" style="margin-top:12px;background:var(--mint);border:0">✓ Nếu email tồn tại, link đặt lại sẽ được gửi.</div>
+      <div class="note gap"><b>⚠ Chưa gửi email được.</b> <code>POST /auth/request-password-reset</code> luôn trả cùng một câu (không lộ email nào có tài khoản), nhưng link <b>chỉ được in ra log khi NODE_ENV=development</b>. Production cần dịch vụ email (dependency mới) trước khi mở trang này — tạm ẩn link "Quên mật khẩu?" hoặc ghi "liên hệ shop".</div>
+    </section>
+
+    <section class="card card-pad panel">
+      <div class="tag">/dat-lai-mat-khau?token=…&amp;email=…</div>
+      <h1 style="font-size:1.5rem">Đặt lại mật khẩu</h1>
+      <div class="field"><label for="np">Mật khẩu mới</label><input id="np" type="password" autocomplete="new-password"></div>
+      <button class="btn btn-primary btn-block">Lưu mật khẩu</button>
+      <div class="note"><code>POST /auth/reset-password {email, token, newPassword}</code>. Token dùng 1 lần, hết hạn sau 1 giờ: <code>400 INVALID_TOKEN</code> / <code>EXPIRED_TOKEN</code> → "Link đã hết hạn, gửi lại". Thành công → về đăng nhập.</div>
+    </section>
+  </div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

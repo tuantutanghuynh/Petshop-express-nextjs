@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Thư viện ảnh · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .masonry { columns: 2; column-gap: 12px; }
+  @media (min-width: 768px) { .masonry { columns: 3; } }
+  @media (min-width: 1024px) { .masonry { columns: 4; } }
+  .masonry figure { break-inside: avoid; margin: 0 0 12px; }
+  .masonry figcaption { font-size: .85rem; color: var(--text); padding: 6px 2px; }
+  .lightbox { max-width: 720px; margin: 24px auto 0; }
+</style>
+</head>
+<body data-layout="store" data-nav="gallery">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Thư viện ảnh</span></nav>
+  <h1 style="font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem)">Thư viện ảnh các bé</h1>
+  <p>Những khoảnh khắc đáng yêu của khách hàng và các bé ở cửa hàng.</p>
+  <section class="masonry">
+    <figure><div class="img" style="aspect-ratio:3/4"><span>Ảnh</span></div><figcaption>Bé Mochi lần đầu tắm</figcaption></figure>
+    <figure><div class="img sq"><span>Ảnh</span></div><figcaption>Corgi Bơ</figcaption></figure>
+    <figure><div class="img r43"><span>Ảnh</span></div><figcaption>Mèo Anh lông ngắn</figcaption></figure>
+    <figure><div class="img" style="aspect-ratio:3/4"><span>Ảnh</span></div></figure>
+    <figure><div class="img sq"><span>Ảnh</span></div><figcaption>Góc chơi ở shop</figcaption></figure>
+    <figure><div class="img r43"><span>Ảnh</span></div></figure>
+    <figure><div class="img" style="aspect-ratio:3/4"><span>Ảnh</span></div><figcaption>Poodle Kem</figcaption></figure>
+    <figure><div class="img sq"><span>Ảnh</span></div></figure>
+  </section>
+  <button class="btn btn-outline" style="display:flex;margin:16px auto 0">Xem thêm ảnh</button>
+  <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/gallery?page=&amp;pageSize=</code> (sắp theo <code>position</code>, tối đa 50/trang), lọc theo <code>categorySlug</code> nếu cần. <code>alt</code> = <code>altText</code> (bắt buộc ở backend). Mỗi ảnh có width/height (giữ chỗ, tránh CLS), <code>sizes="(max-width:768px) 50vw, 25vw"</code>. Nút "Xem thêm" là link <code>?page=2</code> thật (vẫn crawl được). <span style="color:#7A1030">⚠ Trang hiện tại dùng <code>no-store</code> và ghép <code>NEXT_PUBLIC_BACKEND_ORIGIN</code> vào URL Cloudinary — cần sửa.</span></div>
+  <div class="sheet lightbox"><div class="img r43"><span>Ảnh phóng to (dialog)</span></div><div class="row between" style="margin-top:12px"><b style="color:var(--ink)">Bé Mochi lần đầu tắm</b><button class="icon-btn" aria-label="Đóng">✕</button></div></div>
+  <div class="note">Bấm ảnh → <code>&lt;dialog&gt;</code> toàn màn hình trên phone (vuốt trái/phải, Esc / chạm nền để đóng, trả focus về ảnh).</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

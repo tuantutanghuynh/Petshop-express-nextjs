@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Đặt hàng · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .co { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .co { grid-template-columns: 1fr 380px; align-items: start; } }
+  .two { display: grid; gap: 0 16px; }
+  @media (min-width: 768px) { .two { grid-template-columns: 1fr 1fr; } }
+  .mini { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; padding: 8px 0; font-size: .9rem; }
+  .mini .img { min-height: 0; }
+</style>
+</head>
+<body data-layout="store" data-nav="cart">
+<main class="container">
+  <div class="steps" style="margin:16px 0"><span>1. Giỏ hàng</span><span class="on">2. Thông tin giao hàng</span><span>3. Hoàn tất</span></div>
+  <h1 style="font-size:1.6rem">Thông tin đặt hàng</h1>
+
+  <form class="co" novalidate>
+    <div>
+      <section class="card card-pad" style="padding-top:16px">
+        <h2 style="font-size:1.1rem">Người nhận</h2>
+        <div class="two">
+          <div class="field"><label for="n">Họ và tên *</label><input id="n" autocomplete="name" enterkeyhint="next" value="Nguyễn Thị Ánh"></div>
+          <div class="field"><label for="p">Số điện thoại *</label><input id="p" type="tel" autocomplete="tel" enterkeyhint="next" aria-describedby="p-err"><div class="error" id="p-err">Vui lòng nhập số điện thoại</div></div>
+        </div>
+        <div class="field"><label for="a">Địa chỉ (số nhà, đường, phường/xã) *</label><input id="a" autocomplete="street-address" enterkeyhint="next"></div>
+        <div class="field"><label for="c">Tỉnh / Thành phố *</label><input id="c" autocomplete="address-level1" enterkeyhint="next"></div>
+        <div class="field"><label for="note">Ghi chú cho shop</label><textarea id="note" maxlength="500" placeholder="Giờ nhận hàng, chỉ dẫn đường…"></textarea><div class="hint">Tối đa 500 ký tự</div></div>
+        <div class="note"><b>Khớp validate backend</b> (<code>routes/order.route.ts</code>): <code>shippingAddress.fullName</code>, <code>.phone</code>, <code>.addressLine</code>, <code>.city</code> bắt buộc (trim, không rỗng); <code>note</code> ≤ 500. Lỗi 422 trả <code>details[]</code> theo field → hiện dưới đúng ô, cuộn + focus ô lỗi đầu tiên. Có thể điền sẵn họ tên từ <code>GET /auth/me</code>.</div>
+      </section>
+
+      <section class="card card-pad" style="margin-top:16px">
+        <h2 style="font-size:1.1rem">Phương thức thanh toán</h2>
+        <label class="check on"><input type="radio" name="pm" checked><span><b style="color:var(--ink)">Thanh toán khi nhận hàng (COD)</b><br><small>Đơn được xác nhận ngay, shop đóng gói và giao.</small></span></label>
+        <label class="check"><input type="radio" name="pm"><span><b style="color:var(--ink)">Chuyển khoản ngân hàng</b><br><small>Shop giữ hàng cho bạn <b>24 giờ</b>. Quá hạn chưa nhận tiền, đơn tự huỷ.</small></span></label>
+        <div class="note"><code>paymentMethod</code>: <code>COD</code> → đơn <code>CONFIRMED</code>, trừ kho ngay · <code>BANK_TRANSFER</code> → <code>PENDING_PAYMENT</code>, chỉ giữ hàng, có <code>expiresAt</code> (+24h, <code>PAYMENT_WINDOW_HOURS</code>). <code>VNPAY</code> đã giữ chỗ trong backend nhưng <b>chưa nhận</b> — không hiện.</div>
+      </section>
+    </div>
+
+    <aside class="card card-pad stack">
+      <h2 style="font-size:1.1rem">Đơn hàng (3 sản phẩm)</h2>
+      <div class="mini"><div class="img sq"><span></span></div><span>Pate mèo cá ngừ ×2</span><span class="price">56.000₫</span></div>
+      <div class="mini"><div class="img sq"><span></span></div><span>Hạt mèo con 1.5kg ×1</span><span class="price">215.000₫</span></div>
+      <hr style="border:0;border-top:1px solid var(--border);width:100%">
+      <div class="row between"><span>Tạm tính</span><span class="price">271.000₫</span></div>
+      <div class="row between"><span>Phí giao hàng</span><span class="muted">Báo sau</span></div>
+      <div class="row between"><b style="color:var(--ink)">Tổng</b><span class="price" style="font-size:1.3rem">271.000₫</span></div>
+      <button class="btn btn-primary btn-block hide-mobile" type="submit">Đặt hàng</button>
+      <small>Bằng việc đặt hàng, bạn đồng ý với <a href="policy.html">chính sách giao hàng &amp; đổi trả</a>.</small>
+      <div class="note"><b>Gửi đơn:</b> <code>POST /api/v1/orders</code> + <code>X-Brand-Slug</code> + <b><code>Idempotency-Key</code></b> (tạo bằng <code>crypto.randomUUID()</code> một lần khi mở trang, giữ nguyên khi bấm lại / retry). Server khoá giỏ, tính lại giá từ DB — <b>không gửi giá từ client</b>. 201 = tạo mới, 200 = trả lại đơn của lần bấm trước → cả hai đều chuyển sang trang Hoàn tất. Khoá nút + "Đang đặt hàng…" trong lúc chờ.</div>
+      <div class="note"><b>Lỗi cần xử lý:</b> <code>422 CART_EMPTY</code> → về giỏ · <code>409 OUT_OF_STOCK</code> → về giỏ, chỉ ra sản phẩm · <code>409 PRODUCT_UNAVAILABLE</code> · <code>401</code> → đăng nhập lại (giữ dữ liệu form) · lỗi mạng → giữ nguyên form, cho thử lại <b>cùng key</b>.</div>
+    </aside>
+  </form>
+  <div class="sticky-cta"><div><small>Tổng</small><div class="price">271.000₫</div></div><button class="btn btn-primary" style="flex:1">Đặt hàng</button></div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

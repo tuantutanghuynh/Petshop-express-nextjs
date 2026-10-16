@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Bài viết · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .ed { display: grid; gap: 16px; margin-top: 32px; } @media (min-width: 1024px) { .ed { grid-template-columns: 1fr 320px; align-items: start; } }
+  .split { display: grid; gap: 12px; } @media (min-width: 1024px) { .split { grid-template-columns: 1fr 1fr; } }
+  .preview { border: 1px solid var(--border); border-radius: 8px; padding: 12px; min-height: 260px; font-size: .9rem; }
+  .serp { font-family: Arial, sans-serif; } .serp .t { color: #1a0dab; font-size: 1.05rem; } .serp .u { color: #006621; font-size: .8rem; }
+</style>
+</head>
+<body data-layout="admin" data-nav="blog">
+<main>
+  <div class="row between"><h1 style="font-size:1.4rem;margin:0">Bài viết</h1><a class="btn btn-primary" href="#soan">+ Viết bài</a></div>
+  <div class="tabs" style="margin-top:12px"><a class="on" href="#">Tất cả</a><a href="#">Đã đăng</a><a href="#">Hẹn giờ</a><a href="#">Nháp</a></div>
+  <div class="card table-wrap" style="padding:0"><table>
+    <thead><tr><th>Tiêu đề</th><th class="hide-mobile">Chuyên mục</th><th>Trạng thái</th><th class="hide-mobile">Ngày đăng</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><b>Bao lâu tẩy giun cho mèo một lần?</b></td><td class="hide-mobile">Sức khoẻ</td><td><span class="badge b-teal">Đã đăng</span></td><td class="hide-mobile">12/10/2026</td><td><a href="#soan">Sửa</a></td></tr>
+      <tr><td><b>Lịch tiêm phòng cho mèo</b></td><td class="hide-mobile">Sức khoẻ</td><td><span class="badge b-purple">Hẹn 20/10 08:00</span></td><td class="hide-mobile">—</td><td><a href="#soan">Sửa</a></td></tr>
+      <tr><td><b>Tắm cho chó lần đầu</b></td><td class="hide-mobile">Chăm sóc</td><td><span class="badge">Nháp</span></td><td class="hide-mobile">—</td><td><a href="#soan">Sửa</a></td></tr>
+    </tbody></table></div>
+  <div class="note"><code>GET /api/v1/blog/admin/list?status=draft|published|scheduled&amp;search=&amp;categorySlug=&amp;page=</code>. "Hẹn giờ" = <code>published</code> + <code>publishedAt</code> trong tương lai.</div>
+
+  <section class="ed" id="soan" style="padding:0">
+    <div class="card card-pad stack">
+      <label for="bt">Tiêu đề (H1) *</label><input id="bt" value="Bao lâu tẩy giun cho mèo một lần?">
+      <label for="bs">Slug *</label><input id="bs" value="bao-lau-tay-giun-cho-meo">
+      <label for="be">Tóm tắt (hiện ở danh sách)</label><input id="be">
+      <div class="split"><div><label for="bc">Nội dung (Markdown) *</label><textarea id="bc" style="min-height:260px" placeholder="**Trả lời ngắn:** …&#10;&#10;## Câu hỏi 1?"></textarea></div><div><label>Xem trước</label><div class="preview">Bản xem trước render qua <code>renderMarkdown()</code> giống hệt trang public.</div></div></div>
+      <div class="note">Mẫu bài gợi ý (answer-first + H2 dạng câu hỏi + FAQ + nguồn) chèn sẵn khi tạo bài mới. Trên phone: 2 tab "Soạn / Xem trước" thay vì chia đôi. Trang hiện tại đang có form tạo bài (<code>app/admin/posts/new</code>) — wireframe này thay thế.</div>
+    </div>
+    <aside class="stack">
+      <div class="card card-pad stack"><label for="bst">Trạng thái</label><select id="bst"><option>Nháp</option><option>Đăng ngay</option><option>Hẹn giờ</option></select><label for="bp">Ngày giờ đăng</label><input id="bp" type="datetime-local"><label for="bcat">Chuyên mục</label><select id="bcat"><option>Sức khoẻ &amp; thú y</option></select><button class="btn btn-primary btn-block">Lưu</button><button class="btn btn-danger btn-block">Xoá bài</button>
+        <div class="note">Tạo <code>POST /blog</code> · sửa <code>PATCH /blog/:id</code> · xoá <code>DELETE /blog/:id</code>. <code>publishedAt</code> phải là ngày ISO hợp lệ (ngày không tồn tại → 422). Chuyển về nháp → tự xoá <code>publishedAt</code>. Tác giả lấy từ token, không chọn được. Sau khi lưu: gọi revalidate trang blog (khi đã làm ISR).</div></div>
+      <div class="card card-pad stack"><h3>Ảnh bìa</h3><label class="img r169" style="cursor:pointer"><span>+ Tải ảnh (POST /uploads/image)</span></label></div>
+      <div class="card card-pad stack"><h3>SEO</h3><label for="sti">SEO title</label><input id="sti"><div class="hint">42/60 ký tự</div><label for="sde">Meta description</label><textarea id="sde" style="min-height:80px"></textarea><div class="hint">120/155 ký tự</div>
+        <div class="serp"><div class="u">sieuthichomeo.vn › kien-thuc › …</div><div class="t">Bao lâu tẩy giun cho mèo một lần? | Siêu thị của chó mèo</div><div style="font-size:.85rem">Mô tả…</div></div>
+        <div class="note"><code>seoTitle</code> / <code>seoDescription</code> (fallback: <code>title</code> / <code>excerpt</code> / rút từ content). Khung xem trước kết quả Google giúp viết đúng độ dài.</div></div>
+    </aside>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

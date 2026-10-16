@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Palette · Siêu thị của chó mèo</title>
+<link rel="stylesheet" href="wireframes/wf.css">
+<style>
+  body { background: var(--surface); }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .group { margin-top: 32px; }
+  .sw { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); }
+  .chip { border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #fff; }
+  .chip .c { height: 84px; }
+  .chip .m { padding: 10px 12px; font-size: .8rem; }
+  .chip .m b { color: var(--ink); display: block; font-size: .85rem; }
+  .chip code { font-size: .78rem; }
+  .pairs { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 250px), 1fr)); }
+  .pair { border-radius: 12px; padding: 14px; font-weight: 700; min-height: 84px; display: flex; flex-direction: column; justify-content: space-between; }
+  .pair small { font-weight: 600; font-size: .75rem; color: inherit; opacity: .95; }
+  .ref { display: grid; gap: 16px; } @media (min-width: 900px) { .ref { grid-template-columns: 280px 1fr; align-items: start; } }
+  .ref img { width: 100%; border-radius: 12px; border: 1px solid var(--border); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="index.html">← Mục lục</a>
+  <h1>Palette màu</h1>
+  <p>Màu thương hiệu được <b>đo từ pixel của ảnh mẫu</b> (màu xuất hiện nhiều nhất trong từng vùng), không chọn bằng mắt. Biến thể <b>-ink</b> là cùng tông nhưng đậm hơn, chỉ dùng cho <b>chữ nhỏ, link và nút có chữ trắng</b> — vì một số màu gốc chưa đạt tương phản 4.5:1 (rule <code>mobile-ui.md</code>). Nguồn sự thật: <a href="tokens.css">tokens.css</a>.</p>
+
+  <div class="ref group"><img src="reference/homepage-mockup.jpg" alt="Ảnh mẫu trang chủ PetCity dùng để đo màu"><div>
+    <h2>Đo ở đâu</h2>
+    <table><thead><tr><th>Vùng trong ảnh mẫu</th><th>Đo được</th><th>Token</th></tr></thead><tbody>
+      <tr><td>Thanh thông báo trên cùng, dải newsletter</td><td><code>#12A2A2</code></td><td><code>--brand-teal</code></td></tr>
+      <tr><td>Nút "Shop Now" hero, nút tìm kiếm</td><td><code>#069090 / #0C9696</code></td><td><code>--brand-teal-hover</code></td></tr>
+      <tr><td>Tiêu đề hero dòng 1</td><td><code>#0C1E30</code></td><td><code>--ink</code></td></tr>
+      <tr><td>Chữ mô tả hero</td><td><code>#3C4E54</code></td><td><code>--text</code></td></tr>
+      <tr><td>Nền hero</td><td><code>#D8EAEA</code></td><td><code>--mint</code></td></tr>
+      <tr><td>Khối vàng / hồng bên phải hero</td><td><code>#FCB430 / #FCA2A2</code></td><td><code>--yellow-hero / --coral</code></td></tr>
+      <tr><td>Thẻ "50% Pet Toys": nền / chữ / nút</td><td><code>#FCDEEA / #D82A60 / #DE2A5A</code></td><td><code>--pink-bg / --pink</code></td></tr>
+      <tr><td>Thẻ "Buy 1 Get 1": nền / chữ / nút</td><td><code>#FCEACC / #FCBA12 / #FCC018</code></td><td><code>--yellow-bg / --yellow</code></td></tr>
+      <tr><td>Thẻ "30% Dried Food": nền</td><td><code>#D8F0EA</code></td><td><code>--mint-card</code></td></tr>
+      <tr><td>Banner "Fun toys": nền / nút "Explore"</td><td><code>#FCDECC / #F06C18</code></td><td><code>--peach-bg / --orange</code></td></tr>
+      <tr><td>Banner "Snacks": nền / tiêu đề / nút</td><td><code>#DED2EA / #E47E2A / #5430C0</code></td><td><code>--lavender-bg / --purple</code></td></tr>
+      <tr><td>Footer</td><td><code>#E4F0F0</code></td><td><code>--mint-soft</code></td></tr>
+      <tr><td>Thẻ "trust strip"</td><td><code>#F6F6F6</code></td><td><code>--surface-alt</code></td></tr>
+    </tbody></table>
+  </div></div>
+
+  <div class="group"><h2>1. Màu chính — Teal</h2><div class="sw">
+    <div class="chip"><div class="c" style="background:var(--brand-teal)"></div><div class="m"><b>Brand teal</b><code>--brand-teal #0FA0A0</code><br>Mảng lớn, icon, chữ to ≥ 24px</div></div>
+    <div class="chip"><div class="c" style="background:var(--brand-teal-hover)"></div><div class="m"><b>Teal hover</b><code>--brand-teal-hover #0B9090</code></div></div>
+    <div class="chip"><div class="c" style="background:var(--brand-teal-ink)"></div><div class="m"><b>Teal ink</b><code>--brand-teal-ink #087878</code><br>Nút chính, link (5.29:1)</div></div>
+    <div class="chip"><div class="c" style="background:var(--brand-teal-deep)"></div><div class="m"><b>Teal deep</b><code>--brand-teal-deep #066B6B</code><br>Chữ trên nền mint / peach</div></div>
+  </div></div>
+
+  <div class="group"><h2>2. Trung tính</h2><div class="sw">
+    <div class="chip"><div class="c" style="background:var(--ink)"></div><div class="m"><b>Ink</b><code>--ink #0B1B2B</code><br>Tiêu đề, giá</div></div>
+    <div class="chip"><div class="c" style="background:var(--text)"></div><div class="m"><b>Text</b><code>--text #3A4C52</code><br>Chữ thường</div></div>
+    <div class="chip"><div class="c" style="background:var(--text-muted)"></div><div class="m"><b>Muted</b><code>--text-muted #5B6B71</code><br>Chữ phụ (không nhạt hơn)</div></div>
+    <div class="chip"><div class="c" style="background:var(--border)"></div><div class="m"><b>Border</b><code>--border #E6EAEB</code></div></div>
+    <div class="chip"><div class="c" style="background:var(--surface-alt)"></div><div class="m"><b>Surface alt</b><code>--surface-alt #F6F6F6</code></div></div>
+    <div class="chip"><div class="c" style="background:var(--mint)"></div><div class="m"><b>Mint</b><code>--mint #D8EBEB</code><br>Nền hero</div></div>
+    <div class="chip"><div class="c" style="background:var(--mint-soft)"></div><div class="m"><b>Mint soft</b><code>--mint-soft #E4F0F0</code><br>Footer</div></div>
+  </div></div>
+
+  <div class="group"><h2>3. Cặp màu thẻ khuyến mãi (nền + điểm nhấn)</h2><div class="sw">
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--pink-bg) 60%,var(--pink) 60%)"></div><div class="m"><b>Hồng</b><code>--pink-bg #FCDDE9 · --pink #DC2B5E · --pink-ink #B8204F</code></div></div>
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--yellow-bg) 60%,var(--yellow) 60%)"></div><div class="m"><b>Vàng</b><code>--yellow-bg #FCEAC9 · --yellow #FCBE1C · --yellow-ink #8A5A00</code></div></div>
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--mint-card) 60%,var(--brand-teal) 60%)"></div><div class="m"><b>Mint</b><code>--mint-card #DAF0EA · --brand-teal</code></div></div>
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--peach-bg) 60%,var(--orange) 60%)"></div><div class="m"><b>Cam / peach</b><code>--peach-bg #FCDECD · --orange #F06E1C · --orange-ink #C2510C · --orange-text #A9470D</code></div></div>
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--lavender-bg) 60%,var(--purple) 60%)"></div><div class="m"><b>Tím / lavender</b><code>--lavender-bg #DED0EA · --purple #5632BE · --purple-ink #4A2AA6</code></div></div>
+    <div class="chip"><div class="c" style="background:linear-gradient(90deg,var(--yellow-hero) 50%,var(--coral) 50%)"></div><div class="m"><b>Hero (trang trí)</b><code>--yellow-hero #FCB636 · --coral #FC9FA0</code><br>Không đặt chữ lên</div></div>
+  </div></div>
+
+  <div class="group"><h2>4. Cặp chữ / nền đã kiểm tra tương phản</h2><div class="pairs">
+    <div class="pair" style="background:var(--brand-teal-ink);color:#fff">Nút chính<small>trắng / teal-ink · 5.29:1 ✓</small></div>
+    <div class="pair" style="background:var(--brand-teal);color:#fff">Teal gốc + chữ trắng<small>3.20:1 · chỉ chữ ≥ 24px (hoặc 19px đậm)</small></div>
+    <div class="pair" style="background:var(--pink);color:#fff">Nút hồng<small>trắng / pink · 4.62:1 ✓</small></div>
+    <div class="pair" style="background:var(--yellow);color:var(--ink)">Nút vàng — chữ NAVY<small>10.38:1 ✓ · không dùng chữ trắng</small></div>
+    <div class="pair" style="background:var(--orange-ink);color:#fff">Nút cam<small>trắng / orange-ink · 4.69:1 ✓ (cam gốc 3.02:1 ✗)</small></div>
+    <div class="pair" style="background:var(--purple);color:#fff">Nút tím<small>trắng / purple · 8.09:1 ✓</small></div>
+    <div class="pair" style="background:var(--peach-bg);color:var(--orange-text)">Tiêu đề cam trên peach<small>orange-text · 4.58:1 ✓ (màu ảnh mẫu 2.28:1 ✗)</small></div>
+    <div class="pair" style="background:var(--peach-bg);color:var(--brand-teal-deep)">Teal trên peach<small>teal-deep · 4.96:1 ✓ (màu ảnh mẫu 2.63:1 ✗)</small></div>
+    <div class="pair" style="background:var(--mint);color:var(--brand-teal-deep)">Teal trên mint<small>teal-deep · 5.12:1 ✓</small></div>
+    <div class="pair" style="background:var(--pink-bg);color:var(--pink-ink)">Chữ hồng trên nền hồng<small>pink-ink · 4.96:1 ✓</small></div>
+    <div class="pair" style="background:var(--yellow-bg);color:var(--yellow-ink)">Chữ vàng trên nền vàng<small>yellow-ink · 5.01:1 ✓</small></div>
+    <div class="pair" style="background:var(--lavender-bg);color:var(--purple-ink)">Chữ tím trên lavender<small>purple-ink · 6.59:1 ✓</small></div>
+  </div></div>
+
+  <div class="group"><h2>5. Chữ, bo góc, nút</h2>
+    <p><b>Font:</b> <code>Be Vietnam Pro</code> (tròn, hình học như ảnh mẫu, đủ dấu tiếng Việt) qua <code>next/font/google</code> với <code>subsets: ['latin', 'vietnamese']</code>. Tiêu đề 700–800, line-height ≥ 1.3 để không mất dấu.</p>
+    <h1 style="margin:0">Lựa chọn tốt nhất <span style="color:var(--brand-teal)">cho bé cưng</span></h1>
+    <h2>Tiêu đề mục — Sản phẩm nổi bật</h2><h3>Tiêu đề thẻ — Hạt cho mèo con</h3><p>Chữ thường 16px · <span class="price">289.000₫</span> <span class="old-price">340.000₫</span></p>
+    <div class="row"><button class="btn btn-primary">Mua ngay</button><button class="btn btn-outline">Nhờ tư vấn</button><button class="btn btn-pink">Mua ngay</button><button class="btn btn-yellow">Đăng ký</button><button class="btn btn-orange">Khám phá</button><button class="btn btn-purple">Mua ngay</button></div>
+    <p class="muted" style="margin-top:12px">Bo góc: 8px (input) · 12px (thẻ SP) · 16px (thẻ khuyến mãi, banner) · pill (nút, badge). Nút cao ≥ 44px.</p>
+  </div>
+</div>
+</body>
+</html>

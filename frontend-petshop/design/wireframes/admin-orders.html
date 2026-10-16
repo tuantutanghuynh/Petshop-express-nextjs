@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Đơn hàng · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .ocard { display: grid; gap: 6px; }
+  .detail { display: grid; gap: 16px; margin-top: 24px; }
+  @media (min-width: 1024px) { .detail { grid-template-columns: 1fr 320px; align-items: start; } }
+</style>
+</head>
+<body data-layout="admin" data-nav="orders">
+<main>
+  <h1 style="font-size:1.4rem">Đơn hàng</h1>
+  <div class="tabs"><a class="on" href="#">Tất cả</a><a href="#">Chờ thanh toán (3)</a><a href="#">Đã xác nhận</a><a href="#">Đang xử lý</a><a href="#">Hoàn tất</a><a href="#">Đã huỷ</a></div>
+  <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/orders/admin/list?orderStatus=&amp;paymentStatus=&amp;page=&amp;pageSize=</code> + <code>X-Brand-Slug</code>. Mỗi đơn kèm <code>items</code> và <code>user {id, email, fullName}</code>. <span style="color:#7A1030">⚠ Chưa có tìm theo mã đơn / SĐT</span> — thêm tham số khi cần.</div>
+
+  <div class="only-mobile stack">
+    <div class="card card-pad ocard"><div class="row between"><b style="color:var(--ink)">NP-261016-K3F9A2</b><span class="badge b-yellow">Chờ thanh toán</span></div><small>Nguyễn Thị Ánh · 0901 234 567 · CK</small><div class="row between"><span class="price">271.000₫</span><small>còn 23 giờ</small></div></div>
+    <div class="card card-pad ocard"><div class="row between"><b style="color:var(--ink)">NP-261015-7QX2LM</b><span class="badge b-teal">Đã xác nhận</span></div><small>Trần Hà · COD</small><div class="row between"><span class="price">215.000₫</span><small>15/10</small></div></div>
+  </div>
+  <div class="card hide-mobile table-wrap" style="padding:0"><table>
+    <thead><tr><th>Mã đơn</th><th>Khách</th><th>Thanh toán</th><th>Trạng thái</th><th class="num">Tổng</th><th>Ngày</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><b>NP-261016-K3F9A2</b></td><td>Nguyễn Thị Ánh<br><small>0901 234 567</small></td><td>Chuyển khoản</td><td><span class="badge b-yellow">Chờ thanh toán · 23h</span></td><td class="num">271.000₫</td><td>16/10 14:30</td><td><button class="btn btn-primary" style="min-height:36px">Đã nhận tiền</button></td></tr>
+      <tr><td><b>NP-261015-7QX2LM</b></td><td>Trần Hà</td><td>COD</td><td><span class="badge b-teal">Đã xác nhận</span></td><td class="num">215.000₫</td><td>15/10 09:12</td><td><button class="btn btn-ghost" style="min-height:36px">Xem</button></td></tr>
+      <tr><td><b>NP-261010-AB12CD</b></td><td>Lê Minh</td><td>Chuyển khoản</td><td><span class="badge">Đã huỷ · quá hạn</span></td><td class="num">540.000₫</td><td>10/10 20:01</td><td><button class="btn btn-ghost" style="min-height:36px">Xem</button></td></tr>
+    </tbody></table></div>
+  <nav class="pager"><a class="on" href="#">1</a><a href="#">2</a></nav>
+
+  <section class="detail">
+    <div class="card card-pad">
+      <div class="row between"><h2 style="font-size:1.15rem;margin:0">NP-261016-K3F9A2</h2><span class="badge b-yellow">Chờ thanh toán · giữ hàng tới 14:30 17/10</span></div>
+      <table style="margin-top:12px"><thead><tr><th>Sản phẩm</th><th>SKU</th><th class="num">SL</th><th class="num">Thành tiền</th></tr></thead><tbody><tr><td>Pate mèo cá ngừ</td><td>PATE-CN-170</td><td class="num">2</td><td class="num">56.000₫</td></tr><tr><td>Hạt mèo con 1.5kg</td><td>HAT-MC-15</td><td class="num">1</td><td class="num">215.000₫</td></tr></tbody></table>
+      <p style="margin-top:12px"><b style="color:var(--ink)">Giao tới:</b> Nguyễn Thị Ánh · 0901 234 567 · 12 Lê Lợi, Phường Bến Nghé, TP. HCM<br><b style="color:var(--ink)">Ghi chú:</b> Giao giờ hành chính</p>
+    </div>
+    <aside class="card card-pad stack">
+      <h3>Thao tác</h3>
+      <button class="btn btn-primary btn-block">✓ Xác nhận đã nhận tiền</button>
+      <button class="btn btn-danger btn-block">Huỷ đơn &amp; hoàn kho</button>
+      <div class="note"><code>PATCH /orders/admin/:id/confirm-payment</code> → <code>CONFIRMED/PAID</code>, trừ kho thật. <code>PATCH /orders/admin/:id/cancel</code> → hoàn hàng (đang giữ → nhả giữ; đã trừ → cộng lại kho). Huỷ cần hộp xác nhận (bottom sheet trên phone). Lỗi <code>409 ORDER_STATE_CHANGED</code> / <code>ALREADY_PAID</code> / <code>INVALID_STATE_TRANSITION</code> → "Đơn vừa thay đổi, tải lại" + tự tải lại đơn.</div>
+      <div class="note gap"><b>⚠ Chưa chuyển được sang "Đang xử lý / Hoàn tất".</b> State machine có <code>PROCESSING</code>, <code>COMPLETED</code> nhưng chưa có endpoint. Cần thêm <code>PATCH /orders/admin/:id/status</code> (dùng <code>assertTransition</code> + UPDATE có điều kiện) trước khi làm nút này.</div>
+    </aside>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

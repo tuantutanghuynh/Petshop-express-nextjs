@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Tổng quan · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .stats { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 1024px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .todo { display: grid; gap: 16px; } @media (min-width: 1024px) { .todo { grid-template-columns: 1fr 1fr; } }
+  .li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body data-layout="admin" data-nav="dashboard">
+<main>
+  <div class="row between"><h1 style="font-size:1.4rem;margin:0">Tổng quan</h1><select style="width:auto" aria-label="Khoảng thời gian"><option>30 ngày qua</option><option>Tháng này</option></select></div>
+  <div class="stats" style="margin-top:16px">
+    <div class="stat"><small>Chờ xác nhận chuyển khoản</small><div class="v">3</div><a href="admin-orders.html">Xử lý ›</a></div>
+    <div class="stat"><small>Yêu cầu tư vấn mới</small><div class="v">5</div><a href="admin-quotes.html">Gọi lại ›</a></div>
+    <div class="stat"><small>Doanh thu chốt qua tư vấn</small><div class="v">12.450.000₫</div><small>Tỉ lệ chốt 42%</small></div>
+    <div class="stat"><small>Tin nhắn chưa đọc</small><div class="v">2</div><a href="admin-contacts.html">Đọc ›</a></div>
+  </div>
+  <div class="note"><b>Dữ liệu:</b> ô 1 = <code>GET /orders/admin/list?orderStatus=PENDING_PAYMENT</code> (<code>meta.total</code>) · ô 2 = <code>GET /quote-requests/admin/list?status=NEW</code> · ô 3 = <code>GET /quote-requests/admin/stats?from=&amp;to=</code> (<code>revenue</code>, <code>conversionRate</code>) · ô 4 = <code>GET /contact/admin/list?isRead=false</code>. <span style="color:#7A1030">⚠ Chưa có thống kê doanh thu đơn online</span> — cần endpoint aggregate trên <code>Order</code>.</div>
+
+  <div class="todo" style="margin-top:16px">
+    <section class="card card-pad"><h2 style="font-size:1.05rem">Đơn chuyển khoản sắp hết hạn giữ hàng</h2>
+      <div class="li"><div><b style="color:var(--ink)">NP-261016-K3F9A2</b><br><small>271.000₫ · còn 2 giờ</small></div><a class="btn btn-primary" style="min-height:40px" href="admin-orders.html">Xác nhận</a></div>
+      <div class="li"><div><b style="color:var(--ink)">NP-261016-ZZ81QA</b><br><small>540.000₫ · còn 9 giờ</small></div><a class="btn btn-primary" style="min-height:40px" href="admin-orders.html">Xác nhận</a></div>
+    </section>
+    <section class="card card-pad"><h2 style="font-size:1.05rem">Khách chờ gọi lại</h2>
+      <div class="li"><div><b style="color:var(--ink)">Lê Minh</b><br><small>0912 345 678 · 2 sản phẩm · 10 phút trước</small></div><a class="btn btn-outline" style="min-height:40px" href="tel:">☎ Gọi</a></div>
+      <div class="li"><div><b style="color:var(--ink)">Trần Hà</b><br><small>0987 654 321 · 1 sản phẩm · 1 giờ trước</small></div><a class="btn btn-outline" style="min-height:40px" href="tel:">☎ Gọi</a></div>
+    </section>
+  </div>
+  <div class="note">Admin dùng trên điện thoại nhiều → mỗi việc là 1 hàng thẻ có nút lớn. Sidebar ẩn trên phone (☰ mở drawer).</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

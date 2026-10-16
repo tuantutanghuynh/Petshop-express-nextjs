@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Yêu cầu báo giá · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .stats { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); } @media (min-width: 1024px) { .stats { grid-template-columns: repeat(4, 1fr); } }
+  .q { display: grid; gap: 8px; }
+  .items { font-size: .85rem; background: var(--surface-alt); border-radius: 8px; padding: 8px 12px; }
+</style>
+</head>
+<body data-layout="admin" data-nav="quotes">
+<main>
+  <div class="row between"><h1 style="font-size:1.4rem;margin:0">Yêu cầu tư vấn báo giá</h1><div class="row"><input type="date" style="width:auto" aria-label="Từ ngày"><input type="date" style="width:auto" aria-label="Đến ngày"></div></div>
+  <div class="stats" style="margin:16px 0">
+    <div class="stat"><small>Tổng yêu cầu</small><div class="v">24</div></div><div class="stat"><small>Đã chốt</small><div class="v">10</div></div>
+    <div class="stat"><small>Doanh thu chốt</small><div class="v">12.450.000₫</div></div><div class="stat"><small>Giá trị TB / tỉ lệ chốt</small><div class="v">1.245.000₫ · 42%</div></div>
+  </div>
+  <div class="note"><code>GET /api/v1/quote-requests/admin/stats?from=&amp;to=</code> → <code>{totalRequests, closedCount, revenue, averageOrderValue, conversionRate}</code>. Ngày dạng ISO; ngày sai giờ trả 4xx thay vì 500.</div>
+  <div class="tabs"><a class="on" href="#">Mới (5)</a><a href="#">Đã liên hệ</a><a href="#">Đã chốt</a></div>
+
+  <div class="grid g2">
+    <div class="card card-pad q">
+      <div class="row between"><b style="color:var(--ink)">Lê Minh</b><span class="badge b-yellow">Mới · 10 phút</span></div>
+      <div class="row"><a class="btn btn-primary" style="min-height:40px" href="tel:0912345678">☎ 0912 345 678</a><small>lem@… · Q.3, TP.HCM</small></div>
+      <div class="items">Pate mèo cá ngừ · Lon 170g × 6 — 28.000₫<br>Hạt mèo con 1.5kg × 1 — 215.000₫<br><b>Giá web: 383.000₫</b></div>
+      <p style="font-size:.9rem;margin:0">"Mèo 4 tháng, hay bị tiêu chảy…"</p>
+      <div class="row"><button class="btn btn-outline" style="min-height:40px">Đã gọi</button><button class="btn btn-primary" style="min-height:40px">Chốt đơn…</button><button class="btn btn-ghost" style="min-height:40px;color:var(--pink-ink)">Xoá (spam)</button></div>
+    </div>
+    <div class="sheet stack">
+      <h3>Chốt đơn — Lê Minh</h3>
+      <div class="field"><label for="fa">Số tiền chốt thật (VND) *</label><input id="fa" inputmode="numeric" value="350000"><div class="hint">Giá sau khi thương lượng, phí ship, giảm cho khách quen…</div></div>
+      <button class="btn btn-primary btn-block">Lưu — Đã chốt</button>
+    </div>
+  </div>
+  <div class="note"><b>Dữ liệu:</b> <code>GET /quote-requests/admin/list?status=NEW|CONTACTED|CLOSED&amp;page=</code>. Đổi trạng thái: <code>PATCH /quote-requests/admin/:id/status {status, finalAmount?}</code> — <code>CLOSED</code> bắt buộc <code>finalAmount</code> nguyên ≥ 0 (giá thật, có thể khác giá web). Xoá: <code>DELETE /quote-requests/admin/:id</code> <b>chỉ khi còn NEW</b> (đã gọi / đã chốt → 409, là dữ liệu bán hàng). <code>items</code> là bản chụp JSON lúc khách gửi.</div>
+  <div class="note gap"><b>⚠ Chưa chuyển yêu cầu đã chốt thành Order.</b> Đơn chốt qua điện thoại không trừ kho tự động — admin tự sửa tồn kho ở trang Sản phẩm. Ghi chú để quyết định sau.</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

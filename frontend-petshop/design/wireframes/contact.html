@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Liên hệ · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .ct { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .ct { grid-template-columns: 1fr 1.2fr; align-items: start; } }
+  .info a { display: flex; gap: 12px; align-items: center; min-height: 56px; color: var(--ink); font-weight: 600; border-bottom: 1px solid var(--border); }
+  .info .ic { width: 40px; height: 40px; border-radius: 50%; background: var(--mint); display: grid; place-items: center; flex-shrink: 0; }
+  .hp { position: absolute; left: -10000px; }
+</style>
+</head>
+<body data-layout="store" data-nav="contact">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Liên hệ</span></nav>
+  <h1 style="font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem)">Liên hệ Siêu thị của chó mèo</h1>
+  <section class="ct" style="padding-top:8px">
+    <div class="stack">
+      <div class="card card-pad info">
+        <a href="tel:"><span class="ic">☎</span>Hotline: 0900 000 000</a>
+        <a href="#"><span class="ic">💬</span>Zalo: 0900 000 000</a>
+        <a href="mailto:"><span class="ic">✉</span>hello@…</a>
+        <a href="#"><span class="ic">📍</span>Địa chỉ cửa hàng</a>
+        <p class="muted" style="margin:12px 0 0">Giờ mở cửa: 8:00 – 20:00, thứ 2 – chủ nhật</p>
+      </div>
+      <div class="img r43"><span>Bản đồ (ảnh tĩnh + link Google Maps, không nhúng iframe nặng)</span></div>
+      <div class="note"><b>Dữ liệu:</b> SĐT / Zalo / địa chỉ / giờ mở cửa từ <code>GET /api/v1/settings</code> (thêm các key này). Có cửa hàng thật → JSON-LD <code>PetStore</code> với NAP khớp đúng chữ hiển thị.</div>
+    </div>
+    <form class="card card-pad" novalidate>
+      <h2 style="font-size:1.2rem">Gửi tin nhắn cho shop</h2>
+      <div class="field"><label for="cn">Họ và tên *</label><input id="cn" autocomplete="name"></div>
+      <div class="field"><label for="ce">Email *</label><input id="ce" type="email" autocomplete="email"></div>
+      <div class="field"><label for="cp">Số điện thoại</label><input id="cp" type="tel" autocomplete="tel"></div>
+      <div class="field"><label for="cs">Chủ đề</label><input id="cs"></div>
+      <div class="field"><label for="cm">Nội dung *</label><textarea id="cm"></textarea></div>
+      <div class="hp" aria-hidden="true"><input name="website_url" tabindex="-1" autocomplete="off"></div>
+      <button class="btn btn-primary btn-block-mobile">Gửi tin nhắn</button>
+      <div class="note"><code>POST /api/v1/contact {name, email, message, phone?, subject?}</code> — bắt buộc tên, email, nội dung (400 <code>MISSING_FIELDS</code>). Honeypot <code>website_url</code>. Rate limit <b>5 lần/15 phút/IP</b> → 429. Thành công 201 → "Shop đã nhận tin nhắn". Mock-up không có trang này; style theo cùng hệ form.</div>
+    </form>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

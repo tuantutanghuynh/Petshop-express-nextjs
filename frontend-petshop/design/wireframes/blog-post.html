@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Bài viết · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .art { display: grid; gap: 32px; }
+  @media (min-width: 1024px) { .art { grid-template-columns: 1fr 300px; align-items: start; } .toc { position: sticky; top: 140px; } }
+  .prose { max-width: 68ch; font-size: 1.05rem; line-height: 1.7; }
+  .prose h2 { margin-top: 28px; }
+  .answer { background: var(--mint); border-left: 4px solid var(--brand-teal); border-radius: 8px; padding: 14px 16px; }
+  .disclaimer { background: var(--yellow-bg); color: var(--yellow-ink); border-radius: 8px; padding: 12px 16px; font-size: .9rem; }
+  .author { display: flex; gap: 12px; align-items: center; }
+  .author .img { width: 56px; min-height: 0; border-radius: 50%; }
+  table.sched td, table.sched th { border: 1px solid var(--border); }
+</style>
+</head>
+<body data-layout="store" data-nav="blog">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <a href="blog.html">Kiến thức</a> › <a href="blog.html">Sức khoẻ &amp; thú y</a> › <span aria-current="page">Tẩy giun cho mèo</span></nav>
+  <section class="art" style="padding-top:0">
+    <article class="prose">
+      <span class="badge b-teal">Sức khoẻ &amp; thú y</span>
+      <h1 style="font-size:clamp(1.6rem,1.2rem + 1.8vw,2.4rem);margin-top:8px">Bao lâu tẩy giun cho mèo một lần? Lịch theo từng độ tuổi</h1>
+      <div class="author"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Nguyễn Văn A</b><br><small>Đăng 12/10/2026 · Cập nhật 15/10/2026 · 5 phút đọc</small></div></div>
+      <div class="img r169" style="margin:16px 0"><span>Ảnh bìa (LCP)</span></div>
+      <p class="answer"><b>Trả lời ngắn:</b> 40–60 từ trả lời thẳng câu hỏi trong tiêu đề, có số liệu cụ thể…</p>
+      <h2>Mèo con dưới 6 tháng tuổi tẩy giun thế nào?</h2>
+      <p>…</p>
+      <table class="sched"><thead><tr><th>Độ tuổi</th><th>Tần suất</th></tr></thead><tbody><tr><td>2–6 tháng</td><td>…</td></tr><tr><td>Trên 6 tháng</td><td>…</td></tr></tbody></table>
+      <h2>Dấu hiệu mèo bị giun?</h2><p>…</p>
+      <p class="disclaimer">⚕ Thông tin tham khảo, không thay thế chẩn đoán của bác sĩ thú y.</p>
+      <h2>Nguồn tham khảo</h2><ol style="font-size:.9rem"><li>…</li></ol>
+      <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/blog/:slug</code> (bản nháp / hẹn giờ → 404 thật). <code>content</code> là Markdown → <code>renderMarkdown()</code> (marked + DOMPurify). H1 = <code>title</code>; heading trong bài là H2/H3 dạng câu hỏi (AEO). Ngày "cập nhật" = <code>updatedAt</code>.</div>
+      <div class="note gap"><b>⚠ YMYL (rule SEO):</b> bài thú y cần tác giả thật + trang tác giả, nguồn tham khảo, ngày cập nhật, dòng miễn trừ. <code>User</code> chỉ có <code>fullName</code> — chưa có ảnh / tiểu sử / trang tác giả → cần thêm (migration) hoặc trang tĩnh "Giới thiệu tác giả". JSON-LD <code>BlogPosting</code> + <code>Person</code> + <code>BreadcrumbList</code> — <b>phải escape <code>&lt;</code></b> (lỗi XSS đang có ở trang hiện tại).</div>
+    </article>
+    <aside class="stack">
+      <nav class="card card-pad toc" aria-label="Mục lục"><b style="color:var(--ink)">Mục lục</b><ol style="padding-left:18px;margin:8px 0 0;font-size:.9rem"><li><a href="#">Mèo con dưới 6 tháng</a></li><li><a href="#">Dấu hiệu mèo bị giun</a></li><li><a href="#">Nguồn tham khảo</a></li></ol></nav>
+      <div class="card card-pad stack"><b style="color:var(--ink)">Sản phẩm liên quan</b><div class="row" style="flex-wrap:nowrap"><div class="img sq" style="width:56px;min-height:0"><span></span></div><div style="min-width:0"><small>Thuốc tẩy giun cho mèo</small><br><span class="price">95.000₫</span></div></div><a class="btn btn-outline btn-block" href="category.html">Xem danh mục</a></div>
+      <div class="note">Mục lục tự tạo từ H2 (phone: khối thu gọn đầu bài). Sản phẩm liên quan: cùng <code>category</code> với bài (nối cụm nội dung ↔ danh mục, CTA khớp intent informational).</div>
+    </aside>
+  </section>
+  <section>
+    <h2>Bài viết liên quan</h2>
+    <div class="grid g3"><a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh</span></div><h3 style="margin-top:10px">Dấu hiệu chó bị ve rận</h3></a><a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh</span></div><h3 style="margin-top:10px">Lịch tiêm phòng cho mèo</h3></a><a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh</span></div><h3 style="margin-top:10px">Mèo bị tiêu chảy: khi nào cần đi khám?</h3></a></div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

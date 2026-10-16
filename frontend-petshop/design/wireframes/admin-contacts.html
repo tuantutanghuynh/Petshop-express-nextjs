@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Tin nhắn liên hệ · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>.msg { display: grid; gap: 4px; } .msg.unread { border-left: 4px solid var(--brand-teal); }</style>
+</head>
+<body data-layout="admin" data-nav="contacts">
+<main>
+  <h1 style="font-size:1.4rem">Tin nhắn liên hệ</h1>
+  <div class="tabs"><a class="on" href="#">Chưa đọc (2)</a><a href="#">Đã đọc</a><a href="#">Tất cả</a></div>
+  <div class="stack">
+    <div class="card card-pad msg unread"><div class="row between"><b style="color:var(--ink)">Hà · ha@example.com</b><small>2 giờ trước</small></div><small>0987 654 321 · Hỏi về pate</small><p style="margin:4px 0">"Shop có pate cho mèo bị bệnh thận không?"</p><div class="row"><a class="btn btn-primary" style="min-height:40px" href="mailto:">Trả lời qua email</a><button class="btn btn-outline" style="min-height:40px">Đánh dấu đã đọc</button><button class="btn btn-ghost" style="min-height:40px;color:var(--pink-ink)">Xoá</button></div></div>
+    <div class="card card-pad msg"><div class="row between"><b style="color:var(--ink)">Minh · m@example.com</b><small>Hôm qua</small></div><p style="margin:4px 0">"Giờ mở cửa cuối tuần?"</p></div>
+  </div>
+  <div class="note"><code>GET /contact/admin/list?isRead=true|false&amp;page=</code> · <code>PATCH /contact/admin/:id/read</code> · <code>DELETE /contact/admin/:id</code>. Trả lời bằng app email ngoài (chưa có gửi mail từ hệ thống). Nội dung khách gửi hiển thị dạng text thuần (chống XSS).</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

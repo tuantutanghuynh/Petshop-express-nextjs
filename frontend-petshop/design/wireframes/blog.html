@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kiến thức · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .feat { display: grid; gap: 16px; background: var(--mint); border-radius: var(--radius-lg); padding: 16px; }
+  @media (min-width: 768px) { .feat { grid-template-columns: 1.2fr 1fr; align-items: center; padding: 24px; } }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .chip { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--border); display: inline-flex; align-items: center; color: var(--ink); font-weight: 600; font-size: .85rem; background: #fff; }
+  .chip.on { background: var(--brand-teal-ink); color: #fff; border-color: var(--brand-teal-ink); }
+  .post h3 { margin-top: 10px; }
+</style>
+</head>
+<body data-layout="store" data-nav="blog">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Kiến thức</span></nav>
+  <h1 style="font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem)">Kiến thức chăm sóc chó mèo</h1>
+  <p>Dinh dưỡng, sức khoẻ, thú y và mẹo chăm sóc hằng ngày — viết bởi người nuôi, có nguồn tham khảo.</p>
+
+  <div class="chips" style="margin:16px 0"><a class="chip on" href="#">Tất cả</a><a class="chip" href="#">Dinh dưỡng</a><a class="chip" href="#">Sức khoẻ &amp; thú y</a><a class="chip" href="#">Chăm sóc</a><a class="chip" href="#">Phụ kiện</a></div>
+  <div class="note"><b>Cụm chủ đề (rule SEO):</b> mỗi chip = 1 trang trụ cột. Lọc bằng <code>GET /api/v1/blog?categorySlug=…&amp;page=</code> (bài phải <code>published</code> và <code>publishedAt ≤ now</code>). Blog dùng chung bảng <code>Category</code> với sản phẩm.</div>
+
+  <a class="feat" href="blog-post.html">
+    <div class="img r169" style="background:#ffffff88"><span>Ảnh bìa bài mới nhất (LCP)</span></div>
+    <div><span class="badge b-teal">Sức khoẻ &amp; thú y</span><h2 style="margin-top:8px">Bao lâu tẩy giun cho mèo một lần? Lịch theo từng độ tuổi</h2><p>Đoạn tóm tắt (<code>excerpt</code>) 1–2 câu…</p><small>12/10/2026 · Nguyễn Văn A · 5 phút đọc</small></div>
+  </a>
+
+  <section>
+    <div class="grid g3">
+      <a class="card post" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><span class="badge b-yellow" style="margin-top:10px">Dinh dưỡng</span><h3>Chọn pate cho chó con theo độ tuổi</h3><p class="muted" style="font-size:.9rem">Tóm tắt…</p><small>08/10/2026 · 4 phút đọc</small></a>
+      <a class="card post" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><span class="badge b-teal" style="margin-top:10px">Sức khoẻ</span><h3>Dấu hiệu chó bị ve rận và cách xử lý</h3><p class="muted" style="font-size:.9rem">Tóm tắt…</p><small>02/10/2026 · 6 phút đọc</small></a>
+      <a class="card post" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><span class="badge b-purple" style="margin-top:10px">Chăm sóc</span><h3>Tắm cho mèo lần đầu: chuẩn bị gì?</h3><p class="muted" style="font-size:.9rem">Tóm tắt…</p><small>28/09/2026 · 3 phút đọc</small></a>
+    </div>
+    <nav class="pager" aria-label="Phân trang"><a class="on" href="?page=1">1</a><a href="?page=2">2</a><a href="?page=2" aria-label="Trang sau">›</a></nav>
+    <div class="note"><b>Dữ liệu:</b> <code>title</code>, <code>slug</code>, <code>excerpt</code>, <code>coverImageUrl</code>, <code>publishedAt</code>, <code>category</code>, <code>author.fullName</code>. "x phút đọc" tính từ độ dài <code>content</code>. <span style="color:#7A1030">⚠ Trang hiện tại dùng <code>cache: 'no-store'</code></span> → đổi sang ISR + revalidate theo tag khi admin đăng bài. <code>coverImageUrl</code> giờ là URL Cloudinary đầy đủ — bỏ việc ghép <code>NEXT_PUBLIC_BACKEND_ORIGIN</code> và thêm host Cloudinary vào <code>images.remotePatterns</code>.</div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

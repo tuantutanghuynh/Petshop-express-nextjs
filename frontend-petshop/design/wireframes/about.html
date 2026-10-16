@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Giới thiệu · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .intro { display: grid; gap: 24px; background: var(--mint); border-radius: var(--radius-lg); padding: 20px; }
+  @media (min-width: 768px) { .intro { grid-template-columns: 1fr 1fr; align-items: center; padding: 32px; } }
+  .vals { display: grid; gap: 12px; grid-template-columns: 1fr; }
+  @media (min-width: 768px) { .vals { grid-template-columns: repeat(3, 1fr); } }
+  .vals div { border-radius: var(--radius-lg); padding: 20px; }
+</style>
+</head>
+<body data-layout="store" data-nav="about">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Giới thiệu</span></nav>
+  <section class="intro">
+    <div><h1 style="font-size:clamp(1.6rem,1.2rem + 1.6vw,2.3rem)">Về Siêu thị của chó mèo</h1><p>Câu chuyện cửa hàng: ai đứng sau, nuôi bao nhiêu bé, vì sao mở shop…</p></div>
+    <div class="img r43"><span>Ảnh chủ shop với các bé</span></div>
+  </section>
+  <section>
+    <div class="vals">
+      <div style="background:var(--pink-bg)"><h3 style="color:var(--pink-ink)">Chọn hàng như chọn cho bé nhà mình</h3><p>…</p></div>
+      <div style="background:var(--yellow-bg)"><h3 style="color:var(--yellow-ink)">Kiến thức có nguồn</h3><p>…</p></div>
+      <div style="background:var(--lavender-bg)"><h3 style="color:var(--purple-ink)">Tư vấn tận tâm</h3><p>…</p></div>
+    </div>
+  </section>
+  <section>
+    <h2>Người viết bài</h2>
+    <div class="card card-pad row" style="flex-wrap:nowrap;align-items:flex-start"><div class="img sq" style="width:88px;min-height:0;border-radius:50%"><span></span></div><div><b style="color:var(--ink)">Nguyễn Văn A</b><p class="muted">Kinh nghiệm, chuyên môn (nếu có chứng chỉ thú y thì ghi rõ)…</p></div></div>
+    <div class="note"><b>Trang tĩnh</b> (không cần API) — quan trọng cho E-E-A-T với nội dung thú y (YMYL). JSON-LD <code>Organization</code> (logo, <code>sameAs</code> mạng xã hội thật) + <code>Person</code> cho tác giả; bài viết trỏ <code>author.url</code> về đây. Nội dung do bạn viết.</div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

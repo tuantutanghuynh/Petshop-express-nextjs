@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Trang chủ · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .hero { background: var(--mint); position: relative; overflow: hidden; }
+  .hero-grid { display: grid; gap: 16px; padding-block: 24px 0; }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: 1fr 1fr; align-items: center; padding-block: 0; min-height: 420px; } }
+  .hero-copy { padding: 8px 0 16px; }
+  .hero-copy h1 .accent { color: var(--brand-teal); display: block; }
+  .hero-art { position: relative; min-height: 240px; display: grid; grid-template-columns: 1fr 1fr; }
+  @media (min-width: 1024px) { .hero-art { min-height: 420px; margin-right: calc((100vw - min(100vw, 1200px)) / -2 - 24px); } }
+  .hero-art .y { background: var(--yellow-hero); } .hero-art .p { background: var(--coral); }
+  .hero-art .img { position: absolute; inset: 16px 8%; border-radius: 0; background: transparent; }
+  .features { display: grid; gap: 12px; grid-template-columns: 1fr; padding: 16px 0; }
+  @media (min-width: 768px) { .features { grid-template-columns: repeat(3, max-content); gap: 32px; } }
+  .feature { display: flex; gap: 10px; align-items: center; font-size: 0.85rem; }
+  .feature .ic { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; color: #fff; flex-shrink: 0; }
+  .pets { display: flex; gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; padding-bottom: 8px; }
+  .pets a { flex: 0 0 104px; scroll-snap-align: start; text-align: center; color: var(--ink); font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: .02em; }
+  @media (min-width: 1024px) { .pets { justify-content: center; gap: 40px; } .pets a { flex-basis: 140px; } }
+  .pets a.sel { color: var(--pink-ink); }
+  .pets a.sel .img { outline: 3px solid var(--pink); outline-offset: 3px; }
+  .promo { border-radius: var(--radius-lg); padding: 20px; display: grid; grid-template-columns: 1.1fr 1fr; gap: 8px; min-height: 180px; align-items: center; }
+  .promo .big { font-size: clamp(2rem, 1.4rem + 2vw, 2.6rem); font-weight: 800; line-height: 1.05; }
+  .promo .img { height: 100%; min-height: 140px; background: #ffffff66; }
+  .banner { border-radius: var(--radius-lg); padding: 20px 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; min-height: 160px; align-items: center; }
+  .banner h3 { font-size: clamp(1.3rem, 1rem + 1.2vw, 1.8rem); line-height: 1.2; }
+  .trust { display: grid; gap: 12px; grid-template-columns: repeat(2, 1fr); }
+  @media (min-width: 1024px) { .trust { grid-template-columns: repeat(5, 1fr); } }
+  .trust div { background: var(--surface-alt); border-radius: var(--radius-md); padding: 14px; display: flex; gap: 10px; align-items: center; font-size: 0.8rem; }
+  .trust b { color: var(--ink); display: block; font-size: 0.85rem; }
+  .trust .ic { font-size: 22px; color: var(--pink); }
+</style>
+</head>
+<body data-layout="store" data-nav="home">
+<main>
+
+  <!-- 1. HERO — mint background, copy left, photo on yellow + coral panels right -->
+  <section class="hero" style="padding:0">
+    <div class="container hero-grid">
+      <div class="hero-copy stack">
+        <span class="badge b-pink">♥ Yêu thương &amp; chăm sóc</span>
+        <h1>Lựa chọn tốt nhất<span class="accent">cho bé cưng nhà bạn</span></h1>
+        <p>Thức ăn dinh dưỡng, pate, phụ kiện chất lượng và kiến thức chăm sóc chó mèo từ người nuôi thật.</p>
+        <div class="row"><a class="btn btn-primary" href="category.html">Mua ngay</a><a class="btn btn-outline" href="quote.html">Nhờ tư vấn</a></div>
+      </div>
+      <div class="hero-art"><div class="y"></div><div class="p"></div><div class="img"><span>Ảnh người ôm cún (LCP — preload)</span></div></div>
+    </div>
+    <div class="container"><div class="note"><b>Dữ liệu:</b> ảnh và câu chữ hero lấy từ <code>GET /api/v1/settings?keys=homepage_hero_image,homepage_hero_title,…</code> (bảng <code>SiteSetting</code>, admin sửa ở <a href="admin-settings.html">Cấu hình trang chủ</a>). Ảnh này là LCP → <code>next/image</code> + <code>preload</code>. Đúng 1 <code>&lt;h1&gt;</code> của trang.</div></div>
+  </section>
+
+  <!-- 2. FEATURE STRIP — 3 promises -->
+  <div class="container">
+    <div class="features">
+      <div class="feature"><span class="ic" style="background:var(--brand-teal-ink)">🚚</span><div><b style="color:var(--ink)">Giao toàn quốc</b><br><small>Thanh toán khi nhận hàng</small></div></div>
+      <div class="feature"><span class="ic" style="background:var(--orange-ink)">🛡</span><div><b style="color:var(--ink)">Chuyển khoản an toàn</b><br><small>Giữ hàng cho bạn 24 giờ</small></div></div>
+      <div class="feature"><span class="ic" style="background:var(--purple)">💬</span><div><b style="color:var(--ink)">Tư vấn miễn phí</b><br><small>Gọi lại trong giờ làm việc</small></div></div>
+    </div>
+    <div class="note gap"><b>⚠ Khác mock-up:</b> mock-up hứa "Free shipping trên $49" và "Đổi trả 30 ngày" — backend <b>chưa tính phí ship</b> (<code>SHIPPING_FEE_NOT_CALCULATED = 0</code>) và chưa có chính sách đổi trả. Chỉ hứa điều đang làm thật; sửa câu chữ khi có chính sách.</div>
+  </div>
+
+  <!-- 3. SHOP BY PET TYPE — circular category carousel -->
+  <section>
+    <div class="container">
+      <h2 style="text-align:center">🐾 Mua theo bé cưng 🐾</h2>
+      <div class="row" style="flex-wrap:nowrap">
+        <button class="icon-btn hide-mobile" style="border:1px solid var(--border)" aria-label="Trước">‹</button>
+        <div class="pets" style="flex:1">
+          <a href="category.html" class="sel"><div class="img circle"><span>Mèo</span></div><p style="margin-top:8px">Mèo</p></a>
+          <a href="category.html"><div class="img circle"><span>Chó</span></div><p style="margin-top:8px">Chó</p></a>
+          <a href="category.html"><div class="img circle"><span>Thức ăn</span></div><p style="margin-top:8px">Thức ăn</p></a>
+          <a href="category.html"><div class="img circle"><span>Pate</span></div><p style="margin-top:8px">Pate</p></a>
+          <a href="category.html"><div class="img circle"><span>Phụ kiện</span></div><p style="margin-top:8px">Phụ kiện</p></a>
+          <a href="category.html"><div class="img circle"><span>Thú y</span></div><p style="margin-top:8px">Sức khoẻ</p></a>
+        </div>
+        <button class="icon-btn hide-mobile" style="border:1px solid var(--border)" aria-label="Sau">›</button>
+      </div>
+      <div class="note"><b>Dữ liệu:</b> các category con của brand root — <code>GET /api/v1/categories</code>, lọc <code>parentId = id của root "X-Brand-Slug"</code>. Mock-up dùng chó/mèo/thỏ/cá/chim; dự án tập trung chó mèo nên dùng danh mục thật. Ảnh tròn: <span class="gap">⚠ Category chưa có cột ảnh</span> → tạm dùng ảnh tĩnh theo slug, hoặc thêm cột <code>imageUrl</code> (migration).</div>
+    </div>
+  </section>
+
+  <!-- 4. THREE PROMO CARDS — pink / yellow / mint -->
+  <section style="padding-top:0">
+    <div class="container grid g3">
+      <a class="promo" style="background:var(--pink-bg)" href="category.html">
+        <div><div class="big" style="color:var(--pink)">-50%</div><h3>Đồ chơi</h3><p style="color:var(--pink-ink);font-size:.85rem">Vui chơi mỗi ngày</p><span class="btn btn-pink" style="min-height:40px">Mua ngay</span></div>
+        <div class="img"><span>Ảnh cún + đồ chơi</span></div></a>
+      <a class="promo" style="background:var(--yellow-bg)" href="category.html">
+        <div><div class="big" style="color:var(--orange-ink)">MUA 1<br><span style="font-size:.55em">TẶNG 1</span></div><h3>Quần áo</h3><p style="color:var(--yellow-ink);font-size:.85rem">Xinh xắn, thoải mái</p><span class="btn btn-yellow" style="min-height:40px">Mua ngay</span></div>
+        <div class="img"><span>Ảnh cún mặc áo</span></div></a>
+      <a class="promo" style="background:var(--mint-card)" href="category.html">
+        <div><div class="big" style="color:var(--brand-teal)">-30%</div><h3>Hạt khô</h3><p style="color:var(--brand-teal-deep);font-size:.85rem">Dinh dưỡng mỗi ngày</p><span class="btn btn-primary" style="min-height:40px">Mua ngay</span></div>
+        <div class="img"><span>Ảnh pug + bát hạt</span></div></a>
+    </div>
+    <div class="container"><div class="note gap"><b>⚠ Chưa có module khuyến mãi.</b> Backend chỉ có <code>compareAtPrice</code> theo từng biến thể (hiện giá gạch + nhãn "-x%"). Không có "mua 1 tặng 1". Ba thẻ này nên là <b>banner do admin cấu hình</b> (ảnh, tiêu đề, link tới danh mục) lưu trong <code>SiteSetting</code>, và % chỉ ghi khi giá thật đang giảm — không ghi khuyến mãi không có thật.</div></div>
+  </section>
+
+  <!-- 5. TWO WIDE BANNERS — peach / lavender -->
+  <section style="padding-top:0">
+    <div class="container grid g2">
+      <a class="banner" style="background:var(--peach-bg)" href="category.html">
+        <div><small style="color:var(--ink);font-weight:700">Bộ sưu tập mới</small><h3 style="color:var(--brand-teal-deep)">Đồ chơi<br>cho cún!</h3><p style="font-size:.85rem">Giờ chơi bắt đầu rồi</p><span class="btn btn-orange" style="min-height:40px">Khám phá</span></div>
+        <div class="img" style="height:100%;background:#ffffff66"><span>Ảnh cún + bóng</span></div></a>
+      <a class="banner" style="background:var(--lavender-bg)" href="category.html">
+        <div><small style="color:var(--ink);font-weight:700">Bán chạy</small><h3 style="color:var(--orange-text)">Bánh thưởng<br>thơm ngon</h3><p style="font-size:.85rem">Cho mọi tâm trạng</p><span class="btn btn-purple" style="min-height:40px">Mua ngay</span></div>
+        <div class="img" style="height:100%;background:#ffffff66"><span>Ảnh 4 bé cún</span></div></a>
+    </div>
+    <div class="container"><div class="note"><b>Màu chữ:</b> mock-up dùng cam <code>#E47C26</code> và teal sáng trên nền peach — chỉ đạt 2.3–2.6:1. Wireframe dùng <code>--orange-text</code> / <code>--brand-teal-deep</code> (cùng tông, đậm hơn, ≥4.5:1). Nút cam dùng <code>--orange-ink</code> để chữ trắng đọc được.</div></div>
+  </section>
+
+  <!-- 6. TOP PICKS — 5 product cards (2 / 3 / 5 per row) -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="row between"><h2>🐾 Sản phẩm nổi bật</h2><a href="category.html">Xem tất cả ›</a></div>
+      <div class="grid cards">
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Hạt cho chó vị gà &amp; gạo 2kg</div><div class="bottom"><span class="price">289.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><span class="sale-tag">-15%</span><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Cát vệ sinh cho mèo vón cục 10L</div><div class="bottom"><span><span class="price">164.000₫</span> <span class="old-price">193.000₫</span></span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Bóng đồ chơi tương tác cho chó</div><div class="bottom"><span class="price">89.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Đệm ngủ êm cho chó mèo</div><div class="bottom"><span class="price"><small>từ</small> 249.000₫</span><button class="add-btn" aria-label="Chọn phân loại">›</button></div></div>
+        <div class="card product-card"><div style="position:relative"><span class="out-tag">Hết hàng</span><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Bộ dụng cụ chải lông 5 món</div><div class="bottom"><span class="price">224.000₫</span><a class="badge b-teal" href="quote.html">Hỏi giá</a></div></div>
+      </div>
+      <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/products?page=1&amp;pageSize=5</code> (active, mới nhất trước). Giá = biến thể rẻ nhất (<code>variants</code> đã sắp theo <code>price asc</code>) → hiển thị "từ …" khi có nhiều biến thể; nút 🛒 chỉ thêm thẳng khi có <b>1 biến thể</b>, nhiều biến thể thì mở trang sản phẩm. "Hết hàng" khi <code>stockQuantity - reservedQuantity ≤ 0</code>. Tiền: <code>Intl.NumberFormat('vi-VN', {style:'currency', currency:'VND'})</code>.</div>
+      <div class="note gap"><b>⚠ Mock-up có sao đánh giá (★ 128).</b> Backend <b>không có bảng review</b> → không hiển thị sao, và không đưa <code>aggregateRating</code> vào schema (rule SEO cấm rating giả). Cũng <b>không có wishlist</b> → bỏ icon ♡ ở header.</div>
+    </div>
+  </section>
+
+  <!-- 7. TRUST STRIP — 5 items -->
+  <section style="padding-top:0">
+    <div class="container trust">
+      <div><span class="ic">🩺</span><span><b>Kiến thức thú y</b>Bài viết có nguồn tham khảo</span></div>
+      <div><span class="ic">✔</span><span><b>Hàng chính hãng</b>Chọn lọc kỹ</span></div>
+      <div><span class="ic">☺</span><span><b>Bé cưng là trên hết</b>Tư vấn tận tâm</span></div>
+      <div><span class="ic">🧾</span><span><b>Theo dõi đơn</b>Xem lại trong tài khoản</span></div>
+      <div><span class="ic">☎</span><span><b>Hỗ trợ</b>Gọi / Zalo giờ hành chính</span></div>
+    </div>
+    <div class="container"><div class="note gap"><b>⚠ Mock-up có "Loyalty Rewards" và "24/7 Support".</b> Chưa có tích điểm và không có hỗ trợ 24/7 → đổi thành các cam kết đang làm thật (như trên).</div></div>
+  </section>
+
+  <!-- 8. (thêm cho SEO/AEO) Bài viết mới — không có trong mock-up -->
+  <section style="padding-top:0">
+    <div class="container">
+      <div class="row between"><h2>📖 Kiến thức chăm sóc</h2><a href="blog.html">Xem tất cả ›</a></div>
+      <div class="grid g3">
+        <a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><h3 style="margin-top:10px">Bao lâu tẩy giun cho mèo một lần?</h3><small>12/10/2026 · 5 phút đọc</small></a>
+        <a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><h3 style="margin-top:10px">Chọn pate cho chó con theo độ tuổi</h3><small>08/10/2026 · 4 phút đọc</small></a>
+        <a class="card" href="blog-post.html"><div class="img r169"><span>Ảnh bìa</span></div><h3 style="margin-top:10px">Dấu hiệu chó bị ve rận và cách xử lý</h3><small>02/10/2026 · 6 phút đọc</small></a>
+      </div>
+      <div class="note"><b>Thêm so với mock-up</b> để trang chủ liên kết tới các bài trụ cột (topical authority, rule <code>seo.md</code>). Dữ liệu: <code>GET /api/v1/blog?pageSize=3</code>.</div>
+      <div class="note"><b>SEO trang chủ:</b> title "Siêu thị của chó mèo – Thức ăn, pate, phụ kiện chó mèo", canonical "/", JSON-LD <code>Organization</code> + <code>WebSite</code> (escape <code>&lt;</code>), prerender (ISR). Search intent: navigational.</div>
+    </div>
+  </section>
+
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

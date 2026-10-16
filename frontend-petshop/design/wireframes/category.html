@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Danh mục sản phẩm · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .layout { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .layout { grid-template-columns: 240px 1fr; } }
+  .filters { display: none; }
+  @media (min-width: 1024px) { .filters { display: block; } }
+  .filters h3 { font-size: .95rem; margin-top: 16px; }
+  .filters a { display: block; padding: 8px 0; color: var(--text); }
+  .filters a.on { color: var(--brand-teal-ink); font-weight: 700; }
+  .chips { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; }
+  .chip { flex-shrink: 0; min-height: 40px; padding: 0 14px; border-radius: var(--radius-pill); border: 1px solid var(--border); display: inline-flex; align-items: center; color: var(--ink); font-size: .85rem; font-weight: 600; background: #fff; }
+  .chip.on { background: var(--brand-teal-ink); color: #fff; border-color: var(--brand-teal-ink); }
+  .cat-hero { background: var(--mint); border-radius: var(--radius-lg); padding: 20px; display: grid; gap: 12px; }
+  @media (min-width: 768px) { .cat-hero { grid-template-columns: 1fr 220px; align-items: center; } }
+</style>
+</head>
+<body data-layout="store" data-nav="category">
+<main class="container">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="home.html">Trang chủ</a> › <a href="category.html">Sản phẩm</a> › <span aria-current="page">Thức ăn cho mèo</span></nav>
+
+  <div class="cat-hero">
+    <div><h1 style="font-size:clamp(1.5rem,1.1rem + 1.6vw,2.1rem)">Thức ăn cho mèo</h1><p>Hạt, pate và bánh thưởng cho mèo con, mèo trưởng thành và mèo lớn tuổi.</p></div>
+    <div class="img r43 hide-mobile"><span>Ảnh danh mục</span></div>
+  </div>
+  <div class="note"><b>Dữ liệu:</b> tên + mô tả từ <code>Category</code> (<code>name</code>, <code>description</code>) — URL dự kiến <code>/danh-muc/[slug]</code>. Category chưa có endpoint "theo slug" → lấy từ <code>GET /api/v1/categories</code> rồi lọc theo slug (hoặc thêm <code>GET /categories/:slug</code>). Không tồn tại → <code>notFound()</code> (404 thật).</div>
+
+  <section class="layout" style="padding-top:16px">
+    <aside class="filters" aria-label="Bộ lọc">
+      <h3>Danh mục</h3>
+      <a href="#">Tất cả sản phẩm</a><a href="#" class="on">Thức ăn cho mèo</a><a href="#">Thức ăn cho chó</a><a href="#">Pate</a><a href="#">Phụ kiện</a><a href="#">Sức khoẻ &amp; thú y</a>
+      <div class="note"><b>Dữ liệu:</b> các category con của brand root. Lọc bằng <code>?categorySlug=</code> — backend tự gồm cả category con.</div>
+      <h3>Thông số</h3>
+      <label class="check"><input type="checkbox"> Mèo con</label>
+      <label class="check"><input type="checkbox"> Mèo trưởng thành</label>
+      <div class="note gap"><b>⚠ Chưa lọc được theo thông số / giá.</b> <code>CategoryAttribute.isFilterable</code> có sẵn nhưng <code>GET /products</code> chỉ nhận <code>page</code>, <code>pageSize</code>, <code>categorySlug</code>. Cần thêm filter (whitelist) + index trước khi hiện khối này.</div>
+    </aside>
+
+    <div>
+      <!-- Mobile: category chips + filter button that opens a bottom sheet -->
+      <div class="chips only-mobile" style="margin-bottom:12px"><a class="chip" href="#">Tất cả</a><a class="chip on" href="#">Cho mèo</a><a class="chip" href="#">Cho chó</a><a class="chip" href="#">Pate</a><a class="chip" href="#">Phụ kiện</a></div>
+      <div class="row between" style="margin-bottom:12px">
+        <small>48 sản phẩm</small>
+        <div class="row"><button class="btn btn-outline only-mobile" style="min-height:40px">⚙ Lọc</button>
+          <select style="width:auto;min-height:40px" aria-label="Sắp xếp"><option>Mới nhất</option><option>Giá thấp → cao</option><option>Giá cao → thấp</option></select></div>
+      </div>
+      <div class="note gap"><b>⚠ Sắp xếp:</b> backend luôn trả <code>createdAt desc, id desc</code>, chưa nhận <code>sort</code>. Chỉ hiện "Mới nhất" cho tới khi thêm <code>sort</code> (whitelist <code>price</code>/<code>createdAt</code>) — sort theo giá cần join biến thể rẻ nhất.</div>
+
+      <div class="grid cards-4">
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Hạt cho mèo con vị cá hồi 1.5kg</div><div class="bottom"><span class="price">215.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><span class="sale-tag">-20%</span><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Pate mèo vị cá ngừ lon 170g</div><div class="bottom"><span><span class="price">28.000₫</span> <span class="old-price">35.000₫</span></span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Súp thưởng cho mèo (hộp 20 thanh)</div><div class="bottom"><span class="price"><small>từ</small> 75.000₫</span><button class="add-btn" aria-label="Chọn phân loại">›</button></div></div>
+        <div class="card product-card"><div style="position:relative"><span class="out-tag">Hết hàng</span><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Hạt mèo trưởng thành vị gà 3kg</div><div class="bottom"><span class="price">390.000₫</span><a class="badge b-teal" href="quote.html">Hỏi giá</a></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Pate mèo lớn tuổi hỗ trợ thận</div><div class="bottom"><span class="price">45.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Hạt cho mèo triệt sản 2kg</div><div class="bottom"><span class="price">320.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Sữa bột cho mèo sơ sinh 200g</div><div class="bottom"><span class="price">185.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+        <div class="card product-card"><div style="position:relative"><div class="img sq"><span>Ảnh SP</span></div></div><div class="title">Gel dinh dưỡng cho mèo 120g</div><div class="bottom"><span class="price">135.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+      </div>
+
+      <nav class="pager" aria-label="Phân trang"><a href="?page=1" class="on" aria-current="page">1</a><a href="?page=2">2</a><a href="?page=3">3</a><a href="?page=2" aria-label="Trang sau">›</a></nav>
+      <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/products?categorySlug=…&amp;page=…&amp;pageSize=24</code> → <code>meta { page, pageSize, total }</code>. Phân trang bằng URL thật <code>?page=2</code> (không infinite scroll — rule SEO). Trang <code>?page≥2</code>: canonical về trang 1 hoặc self-canonical, không đưa vào sitemap. Server Component đọc <code>searchParams</code> (Next 16: Promise).</div>
+      <div class="note"><b>Trạng thái:</b> loading = 8 thẻ skeleton · rỗng = "Danh mục chưa có sản phẩm" + link về Tất cả sản phẩm · lỗi API = khối báo lỗi + nút Thử lại.</div>
+      <div class="note gap"><b>⚠ Tìm kiếm ở header:</b> <code>GET /products</code> công khai <b>chưa có tham số <code>q</code></b> (chỉ admin list có <code>search</code>). Cần thêm <code>q</code> (+ index trigram cho <code>ILIKE</code>) trước khi bật ô tìm kiếm; trang kết quả <code>/tim-kiem?q=</code> phải <code>noindex</code>.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Câu hỏi thường gặp</h2>
+    <details class="card" open><summary style="font-weight:700;color:var(--ink);min-height:44px;display:flex;align-items:center">Mèo con nên ăn hạt từ mấy tháng tuổi?</summary><p>Câu trả lời ngắn 40–60 từ, hiển thị sẵn trong HTML…</p></details>
+    <div class="note"><b>AEO:</b> FAQ hiển thị thật + <code>FAQPage</code> JSON-LD khớp từng câu (tuỳ chọn, nội dung do bạn viết). JSON-LD trang: <code>BreadcrumbList</code> + <code>ItemList</code>. Search intent: commercial.</div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

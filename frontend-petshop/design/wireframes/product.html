@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Chi tiết sản phẩm · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .pdp { display: grid; gap: 24px; }
+  @media (min-width: 768px) { .pdp { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .thumbs { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+  .thumbs .img { min-height: 0; }
+  .thumbs .on { outline: 3px solid var(--brand-teal); outline-offset: 2px; }
+  .variant { min-height: 44px; padding: 0 16px; border-radius: var(--radius-sm); border: 2px solid var(--border); background: #fff; font: 600 .9rem var(--font-sans); color: var(--ink); }
+  .variant.on { border-color: var(--brand-teal-ink); background: #F1F9F9; }
+  .variant.off { color: var(--text-muted); text-decoration: line-through; }
+  .qty { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
+  .qty button { width: 44px; height: 44px; border: 0; background: #fff; font-size: 20px; }
+  .qty input { width: 52px; border: 0; text-align: center; min-height: 44px; border-radius: 0; }
+  .specs td:first-child { color: var(--text-muted); width: 45%; }
+</style>
+</head>
+<body data-layout="store" data-nav="category">
+<main class="container">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="home.html">Trang chủ</a> › <a href="category.html">Thức ăn cho mèo</a> › <span aria-current="page">Pate mèo vị cá ngừ</span></nav>
+
+  <section class="pdp" style="padding-top:0">
+    <div>
+      <div style="position:relative"><span class="sale-tag">-20%</span><div class="img sq"><span>Ảnh chính (LCP)</span></div></div>
+      <div class="thumbs"><div class="img sq on"><span>1</span></div><div class="img sq"><span>2</span></div><div class="img sq"><span>3</span></div><div class="img sq"><span>4</span></div></div>
+      <div class="note"><b>Dữ liệu:</b> <code>images</code> (đã sắp theo <code>position</code>); ảnh riêng của biến thể <code>variant.imageUrl</code> thay ảnh chính khi chọn. <code>alt</code> = <code>altText</code> hoặc tên sản phẩm. Phone: vuốt ngang (scroll-snap), không cần thư viện.</div>
+    </div>
+
+    <div class="stack">
+      <small style="font-weight:700;color:var(--brand-teal-ink)">Thương hiệu: Whiskas</small>
+      <h1 style="font-size:clamp(1.4rem,1.1rem + 1.2vw,2rem)">Pate mèo vị cá ngừ lon 170g</h1>
+      <div class="row"><span class="price" style="font-size:1.6rem">28.000₫</span><span class="old-price">35.000₫</span><span class="badge b-pink">Tiết kiệm 7.000₫</span></div>
+      <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/products/:slug</code> (chỉ <code>status = active</code>, khác → 404). Giá theo biến thể đang chọn: <code>price</code>, giá gạch <code>compareAtPrice</code> (chỉ hiện khi &gt; price). <code>brand</code> là chuỗi tự do.</div>
+
+      <div><label>Phân loại</label>
+        <div class="row"><button class="variant on" aria-pressed="true">Lon 170g</button><button class="variant">Thùng 24 lon</button><button class="variant off" disabled>Lon 400g · hết</button></div></div>
+      <div class="note"><b>Biến thể:</b> nhãn từ <code>variantAttributes.label</code> (fallback SKU). Còn hàng = <code>stockQuantity - reservedQuantity</code>. Hết hàng → nút disable + gạch, không ẩn. 1 biến thể duy nhất → ẩn khối chọn.</div>
+
+      <div class="row"><div class="qty"><button aria-label="Giảm">−</button><input value="1" inputmode="numeric" aria-label="Số lượng"><button aria-label="Tăng">+</button></div><small class="b-teal badge">Còn 12 sản phẩm</small></div>
+      <div class="hide-mobile row"><button class="btn btn-primary" style="flex:1">🛒 Thêm vào giỏ</button><a class="btn btn-outline" href="quote.html">Nhờ tư vấn</a></div>
+      <div class="note"><b>Thêm vào giỏ:</b> cần đăng nhập — <code>POST /api/v1/cart/items {variantId, quantity}</code> + header <code>X-Brand-Slug</code>. Chưa đăng nhập → chuyển <code>/dang-nhap?next=…</code>. Số lượng 1–99/dòng (server cộng dồn tối đa 99). Vượt tồn kho: server vẫn nhận và trả <code>warning: INSUFFICIENT_STOCK</code> → hiện toast cảnh báo. Khoá nút trong lúc gửi.</div>
+      <div class="note"><b>Nhờ tư vấn</b> = luồng không cần tài khoản: mở <a href="quote.html">form báo giá</a> với sẵn biến thể đang chọn (<code>POST /api/v1/quote-requests</code>).</div>
+
+      <div class="card" style="background:var(--surface-alt);border:0"><div class="row" style="font-size:.85rem">🚚 Giao toàn quốc · 💵 COD · 🏦 Chuyển khoản giữ hàng 24 giờ</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="tabs" role="tablist"><a class="on" href="#mo-ta">Mô tả</a><a href="#thong-so">Thông số</a><a href="#faq">Hỏi đáp</a></div>
+    <div class="grid g2">
+      <div id="mo-ta"><h2>Mô tả sản phẩm</h2><p>Đoạn mở đầu trả lời thẳng: sản phẩm dành cho ai, dùng thế nào…</p><p>…</p>
+        <div class="note"><b>Dữ liệu:</b> <code>description</code> (render Markdown qua DOMPurify như blog). Tab chỉ để nhảy tới — mọi nội dung vẫn có sẵn trong HTML (GEO: không giấu sau JS).</div></div>
+      <div id="thong-so"><h2>Thông số</h2>
+        <table class="specs"><tbody><tr><td>Độ tuổi</td><td>Mèo trưởng thành</td></tr><tr><td>Trọng lượng</td><td>170 g</td></tr><tr><td>Thành phần chính</td><td>Cá ngừ</td></tr><tr><td>SKU</td><td>PATE-CN-170</td></tr></tbody></table>
+        <div class="note"><b>Dữ liệu:</b> nhãn từ <code>category.attributes</code> (<code>attributeLabel</code>, sắp A→Z) ghép với giá trị trong <code>product.attributes[attributeKey]</code>. Bỏ dòng không có giá trị.</div></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="row between"><h2>Sản phẩm cùng danh mục</h2><a href="category.html">Xem thêm ›</a></div>
+    <div class="grid cards-4">
+      <div class="card product-card"><div class="img sq"><span>Ảnh SP</span></div><div class="title">Hạt cho mèo con vị cá hồi 1.5kg</div><div class="bottom"><span class="price">215.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+      <div class="card product-card"><div class="img sq"><span>Ảnh SP</span></div><div class="title">Súp thưởng cho mèo</div><div class="bottom"><span class="price"><small>từ</small> 75.000₫</span><button class="add-btn" aria-label="Chọn">›</button></div></div>
+      <div class="card product-card"><div class="img sq"><span>Ảnh SP</span></div><div class="title">Pate mèo lớn tuổi</div><div class="bottom"><span class="price">45.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+      <div class="card product-card"><div class="img sq"><span>Ảnh SP</span></div><div class="title">Gel dinh dưỡng cho mèo</div><div class="bottom"><span class="price">135.000₫</span><button class="add-btn" aria-label="Thêm vào giỏ">🛒</button></div></div>
+    </div>
+    <div class="note"><b>Dữ liệu:</b> <code>GET /products?categorySlug=&lt;category của SP&gt;&amp;pageSize=5</code>, bỏ chính nó. Thêm 2–3 bài blog liên quan (liên kết cụm nội dung).</div>
+    <div class="note"><b>SEO:</b> title = tên SP (<span style="color:#7A1030">⚠ Product chưa có <code>metaTitle/metaDescription/ogImage</code> — thêm là migration</span>), canonical <code>/san-pham/[slug]</code>, JSON-LD <code>Product</code> + <code>Offer</code> (price VND số thật, <code>availability</code> theo tồn kho thật) + <code>BreadcrumbList</code>. Không <code>aggregateRating</code>. Intent: transactional.</div>
+  </section>
+
+  <!-- Phone: sticky CTA above the bottom tab bar -->
+  <div class="sticky-cta"><div><div class="price">28.000₫</div><small>Lon 170g</small></div><button class="btn btn-primary" style="flex:1">🛒 Thêm vào giỏ</button></div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

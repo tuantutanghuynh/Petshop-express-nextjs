@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Danh mục &amp; thông số · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .cat { display: grid; gap: 16px; } @media (min-width: 1024px) { .cat { grid-template-columns: 1fr 1fr; align-items: start; } }
+  .tree a { display: flex; justify-content: space-between; padding: 10px 12px; border-radius: 8px; color: var(--ink); min-height: 44px; align-items: center; }
+  .tree a.on { background: var(--mint); font-weight: 700; } .tree .child { padding-left: 32px; }
+  .attr { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+</style>
+</head>
+<body data-layout="admin" data-nav="categories">
+<main>
+  <h1 style="font-size:1.4rem">Danh mục &amp; thông số</h1>
+  <section class="cat" style="padding:0">
+    <div class="card card-pad">
+      <div class="row between"><h2 style="font-size:1.1rem;margin:0">Cây danh mục</h2><button class="btn btn-outline" style="min-height:40px">+ Thêm</button></div>
+      <div class="tree" style="margin-top:8px"><a href="#">🏬 petshop <small class="badge">brand root</small></a><a class="child on" href="#">Thức ăn cho mèo <small>12 SP</small></a><a class="child" href="#">Thức ăn cho chó <small>9 SP</small></a><a class="child" href="#">Phụ kiện <small>20 SP</small></a></div>
+      <div class="sheet stack" style="margin-top:16px"><h3>Thêm danh mục</h3><label for="cn">Tên *</label><input id="cn"><label for="cs">Slug *</label><input id="cs"><label for="cp">Danh mục cha</label><select id="cp"><option>petshop (root)</option></select><label for="cd">Mô tả</label><textarea id="cd"></textarea><button class="btn btn-primary btn-block">Tạo</button></div>
+      <div class="note"><code>GET /api/v1/categories</code> (kèm <code>attributes</code>) · tạo <code>POST /categories {name, slug, description?, parentId?}</code> (trùng slug → 409). Brand root = category <code>parentId = null</code>, khớp header <code>X-Brand-Slug</code> — không cho xoá. <span style="color:#7A1030">⚠ Chưa có API sửa / xoá category</span>.</div>
+    </div>
+    <div class="card card-pad">
+      <h2 style="font-size:1.1rem">Thông số của "Thức ăn cho mèo"</h2>
+      <div class="attr"><div><b style="color:var(--ink)">Độ tuổi</b><br><small>do_tuoi · chữ</small></div><button class="icon-btn" aria-label="Xoá">🗑</button></div>
+      <div class="attr"><div><b style="color:var(--ink)">Trọng lượng</b><br><small>trong_luong · số</small></div><button class="icon-btn" aria-label="Xoá">🗑</button></div>
+      <form class="row" style="margin-top:12px;flex-wrap:nowrap"><input placeholder="Tên thông số, vd: Thành phần" aria-label="Tên thông số"><select style="width:110px" aria-label="Kiểu"><option>Chữ</option><option>Số</option></select><button class="btn btn-primary">Thêm</button></form>
+      <div class="note"><code>GET /categories/:id/attributes</code> · thêm <code>POST /categories/:id/attributes {attributeLabel, attributeType: text|number}</code> — key tự sinh không dấu (<code>"Trọng lượng" → trong_luong</code>), trùng key → 409. Xoá <code>DELETE /categories/:id/attributes/:attributeId</code>. Các thông số này thành ô nhập ở trang sửa sản phẩm và bảng thông số ở trang sản phẩm.</div>
+    </div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

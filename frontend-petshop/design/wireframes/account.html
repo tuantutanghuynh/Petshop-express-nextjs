@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Tài khoản của tôi · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .acc { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .acc { grid-template-columns: 260px 1fr; align-items: start; } }
+  .who { display: flex; gap: 12px; align-items: center; }
+  .avatar { width: 52px; height: 52px; border-radius: 50%; background: var(--mint); color: var(--brand-teal-deep); display: grid; place-items: center; font-weight: 800; font-size: 1.2rem; flex-shrink: 0; }
+  .order { display: grid; gap: 8px; }
+  .s-pending { background: var(--yellow-bg); color: var(--yellow-ink); }
+  .s-confirmed { background: var(--mint); color: var(--brand-teal-deep); }
+  .s-cancelled { background: var(--surface-alt); color: var(--text-muted); }
+  .s-done { background: var(--lavender-bg); color: var(--purple-ink); }
+</style>
+</head>
+<body data-layout="store" data-nav="account">
+<main class="container">
+  <section class="acc">
+    <aside class="card card-pad stack">
+      <div class="who"><span class="avatar">Á</span><div style="min-width:0"><b style="color:var(--ink)">Nguyễn Thị Ánh</b><br><small style="overflow-wrap:anywhere">anh@example.com</small></div></div>
+      <button class="btn btn-ghost" style="justify-content:flex-start;padding:0">↪ Đăng xuất</button>
+      <div class="note"><code>GET /api/v1/auth/me</code> → <code>{id, email, fullName, role}</code>. Đăng xuất: <code>POST /auth/logout {refreshToken}</code> rồi xoá token phía client. <span style="color:#7A1030">⚠ Chưa có API sửa hồ sơ / đổi mật khẩu khi đang đăng nhập</span> (chỉ có "quên mật khẩu").</div>
+    </aside>
+
+    <div>
+      <h1 style="font-size:1.5rem">Tài khoản của tôi</h1>
+      <nav class="tabs" aria-label="Mục tài khoản"><a class="on" href="#don-hang" aria-current="page">Đơn hàng</a><a href="#tu-van">Yêu cầu tư vấn</a></nav>
+
+      <div id="don-hang" class="stack">
+        <a class="card card-pad order" href="order-detail.html">
+          <div class="row between"><b style="color:var(--ink)">NP-261016-K3F9A2</b><span class="badge s-pending">Chờ thanh toán · còn 23 giờ</span></div>
+          <small>16/10/2026 · 3 sản phẩm · Chuyển khoản</small>
+          <div class="row between"><div class="row" style="gap:6px"><div class="img sq" style="width:44px;min-height:0"><span></span></div><div class="img sq" style="width:44px;min-height:0"><span></span></div></div><span class="price">271.000₫</span></div>
+        </a>
+        <a class="card card-pad order" href="order-detail.html">
+          <div class="row between"><b style="color:var(--ink)">NP-261002-7QX2LM</b><span class="badge s-confirmed">Đã xác nhận</span></div>
+          <small>02/10/2026 · 1 sản phẩm · COD</small>
+          <div class="row between"><div class="img sq" style="width:44px;min-height:0"><span></span></div><span class="price">215.000₫</span></div>
+        </a>
+        <a class="card card-pad order" href="order-detail.html">
+          <div class="row between"><b style="color:var(--ink)">NP-260920-AB12CD</b><span class="badge s-cancelled">Đã huỷ · quá hạn thanh toán</span></div>
+          <small>20/09/2026 · 2 sản phẩm · Chuyển khoản</small>
+          <div class="row between"><span></span><span class="price">540.000₫</span></div>
+        </a>
+        <nav class="pager" aria-label="Phân trang"><a class="on" href="#">1</a><a href="#">2</a></nav>
+        <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/orders?page=&amp;pageSize=10</code> (chỉ đơn của chính user, theo brand). Nhãn trạng thái map từ <code>orderStatus</code> + <code>paymentStatus</code>: <code>PENDING_PAYMENT</code> → "Chờ thanh toán" (đếm ngược từ <code>expiresAt</code>) · <code>CONFIRMED</code> → "Đã xác nhận" · <code>PROCESSING</code> → "Đang giao" · <code>COMPLETED</code> → "Hoàn tất" · <code>CANCELLED</code> + <code>EXPIRED</code> → "Đã huỷ · quá hạn". Rỗng: "Bạn chưa có đơn hàng" + nút mua sắm.</div>
+      </div>
+
+      <div id="tu-van" class="stack" style="margin-top:32px">
+        <h2 style="font-size:1.2rem">Yêu cầu tư vấn</h2>
+        <div class="card card-pad order"><div class="row between"><b style="color:var(--ink)">Gửi 12/10/2026</b><span class="badge s-pending">Đang chờ gọi lại</span></div><small>Pate mèo cá ngừ ×6, Hạt mèo con ×1</small></div>
+        <div class="card card-pad order"><div class="row between"><b style="color:var(--ink)">Gửi 01/10/2026</b><span class="badge s-confirmed">Đã liên hệ</span></div><small>Đệm ngủ êm ×1</small></div>
+        <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/quote-requests/mine</code> (50 mới nhất, <b>không</b> có <code>finalAmount</code>). Trạng thái: <code>NEW</code> → "Đang chờ gọi lại" · <code>CONTACTED</code> → "Đã liên hệ" · <code>CLOSED</code> → "Đã chốt". Chỉ hiện yêu cầu gửi lúc đang đăng nhập.</div>
+      </div>
+    </div>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

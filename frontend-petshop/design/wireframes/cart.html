@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Giỏ hàng · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .cart { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .cart { grid-template-columns: 1fr 360px; align-items: start; } .summary { position: sticky; top: 140px; } }
+  .line { display: grid; grid-template-columns: 88px 1fr; gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--border); }
+  .line .img { min-height: 0; }
+  .qty { display: inline-flex; border: 1px solid var(--border); border-radius: var(--radius-pill); overflow: hidden; }
+  .qty button { width: 44px; height: 44px; border: 0; background: #fff; font-size: 20px; }
+  .qty input { width: 44px; border: 0; text-align: center; min-height: 44px; border-radius: 0; }
+  .warn { background: var(--peach-bg); color: var(--orange-text); border-radius: 8px; padding: 6px 10px; font-size: .8rem; font-weight: 600; }
+</style>
+</head>
+<body data-layout="store" data-nav="cart">
+<main class="container">
+  <div class="steps" style="margin:16px 0"><span class="on">1. Giỏ hàng</span><span>2. Thông tin giao hàng</span><span>3. Hoàn tất</span></div>
+  <h1 style="font-size:1.6rem">Giỏ hàng (3)</h1>
+
+  <section class="cart" style="padding-top:8px">
+    <div>
+      <div class="line">
+        <div class="img sq"><span>Ảnh</span></div>
+        <div class="stack" style="--g:8px">
+          <div class="row between" style="align-items:flex-start;flex-wrap:nowrap"><div><a href="product.html" style="color:var(--ink);font-weight:700">Pate mèo vị cá ngừ</a><br><small>Lon 170g · SKU PATE-CN-170</small></div><button class="icon-btn" aria-label="Xoá khỏi giỏ">🗑</button></div>
+          <div class="row between"><div class="qty"><button aria-label="Giảm">−</button><input value="2" inputmode="numeric" aria-label="Số lượng"><button aria-label="Tăng">+</button></div><span class="price">56.000₫</span></div>
+        </div>
+      </div>
+      <div class="line">
+        <div class="img sq"><span>Ảnh</span></div>
+        <div class="stack">
+          <div class="row between" style="align-items:flex-start;flex-wrap:nowrap"><div><a href="product.html" style="color:var(--ink);font-weight:700">Hạt cho mèo con vị cá hồi 1.5kg</a><br><small>SKU HAT-MC-15</small></div><button class="icon-btn" aria-label="Xoá khỏi giỏ">🗑</button></div>
+          <div class="warn">⚠ Chỉ còn 1 sản phẩm — giảm số lượng để đặt hàng</div>
+          <div class="row between"><div class="qty"><button aria-label="Giảm">−</button><input value="3" inputmode="numeric" aria-label="Số lượng"><button aria-label="Tăng">+</button></div><span class="price">645.000₫</span></div>
+        </div>
+      </div>
+      <div class="line" style="opacity:.6">
+        <div class="img sq"><span>Ảnh</span></div>
+        <div class="stack">
+          <div class="row between" style="align-items:flex-start;flex-wrap:nowrap"><div><span style="color:var(--ink);font-weight:700">Hạt mèo trưởng thành 3kg</span></div><button class="icon-btn" aria-label="Xoá khỏi giỏ">🗑</button></div>
+          <div class="warn" style="background:var(--pink-bg);color:var(--pink-ink)">Sản phẩm đã ngừng bán — vui lòng xoá khỏi giỏ</div>
+        </div>
+      </div>
+      <div class="note"><b>Dữ liệu:</b> <code>GET /api/v1/cart</code> (cần đăng nhập + <code>X-Brand-Slug</code>) → mỗi dòng có <code>unitPrice</code>, <code>lineTotal</code> (giá <b>hôm nay</b>), <code>available</code>, <code>warnings[]</code>: <code>INSUFFICIENT_STOCK</code> / <code>OUT_OF_STOCK</code> / <code>UNAVAILABLE</code>. Stepper → <code>PATCH /cart/items/:id {quantity}</code> (1–99, debounce ~400ms, giữ giá trị cũ khi lỗi). Xoá → <code>DELETE /cart/items/:id</code> + "Hoàn tác" 5 giây.</div>
+      <div class="note"><b>Trạng thái rỗng:</b> minh hoạ + "Giỏ hàng đang trống" + nút "Tiếp tục mua sắm". <b>Chưa đăng nhập:</b> giỏ nằm ở server theo user → hiện lời mời đăng nhập (chưa có giỏ cho khách vãng lai — khách vãng lai dùng <a href="quote.html">Tư vấn báo giá</a>).</div>
+    </div>
+
+    <aside class="card card-pad summary stack" aria-label="Tóm tắt đơn hàng">
+      <h2 style="font-size:1.15rem">Tóm tắt</h2>
+      <div class="row between"><span>Tạm tính</span><span class="price">701.000₫</span></div>
+      <div class="row between"><span>Phí giao hàng</span><span class="muted">Báo sau khi xác nhận</span></div>
+      <hr style="border:0;border-top:1px solid var(--border);width:100%">
+      <div class="row between"><b style="color:var(--ink)">Tổng</b><span class="price" style="font-size:1.3rem">701.000₫</span></div>
+      <a class="btn btn-primary btn-block" href="checkout.html" aria-disabled="true">Tiến hành đặt hàng</a>
+      <small>Nút bị khoá vì giỏ có sản phẩm cần xử lý.</small>
+      <div class="note"><code>subtotal</code> và <code>hasIssues</code> có sẵn trong response. <code>hasIssues = true</code> → khoá nút + chỉ ra dòng lỗi. Phí ship = 0 trong backend (<code>SHIPPING_FEE_NOT_CALCULATED</code>) → <b>không</b> ghi "Miễn phí", ghi "báo sau".</div>
+    </aside>
+  </section>
+  <div class="sticky-cta"><div><small>Tổng</small><div class="price">701.000₫</div></div><a class="btn btn-primary" style="flex:1" href="checkout.html">Đặt hàng</a></div>
+  <div class="note">Trang riêng tư → <code>robots: noindex</code>, không vào sitemap, disallow trong robots.</div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

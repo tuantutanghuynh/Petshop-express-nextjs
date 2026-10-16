@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Sản phẩm · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>.pcard { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; } .pcard .img { min-height: 0; }</style>
+</head>
+<body data-layout="admin" data-nav="products">
+<main>
+  <div class="row between"><h1 style="font-size:1.4rem;margin:0">Sản phẩm</h1><a class="btn btn-primary" href="admin-product-edit.html">+ Thêm sản phẩm</a></div>
+  <div class="row" style="margin:16px 0"><input type="search" placeholder="Tìm theo tên…" style="flex:1;min-width:200px" enterkeyhint="search"><select style="width:auto" aria-label="Trạng thái"><option>Mọi trạng thái</option><option>Đang bán</option><option>Nháp</option><option>Lưu trữ</option></select><select style="width:auto" aria-label="Danh mục"><option>Mọi danh mục</option></select></div>
+  <div class="note"><code>GET /api/v1/products/admin/list?search=&amp;status=active|draft|archived&amp;categorySlug=&amp;page=&amp;pageSize=</code> (tối đa 100). Ô tìm debounce 300ms, giữ trạng thái lọc trên URL.</div>
+
+  <div class="only-mobile stack">
+    <a class="card pcard" href="admin-product-edit.html"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Pate mèo vị cá ngừ</b><br><small>3 biến thể · tồn 34 (giữ 2)</small><br><span class="badge b-teal">Đang bán</span></div></a>
+    <a class="card pcard" href="admin-product-edit.html"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Đệm ngủ êm</b><br><small>2 biến thể · tồn 0</small><br><span class="badge">Nháp</span> <span class="badge b-pink">Hết hàng</span></div></a>
+  </div>
+  <div class="card hide-mobile table-wrap" style="padding:0"><table>
+    <thead><tr><th></th><th>Sản phẩm</th><th>Danh mục</th><th>Trạng thái</th><th class="num">Giá</th><th class="num">Tồn / Đang giữ</th><th></th></tr></thead>
+    <tbody>
+      <tr><td><div class="img sq" style="width:48px;min-height:0"><span></span></div></td><td><b>Pate mèo vị cá ngừ</b><br><small>pate-meo-ca-ngu · 3 biến thể</small></td><td>Thức ăn cho mèo</td><td><span class="badge b-teal">Đang bán</span></td><td class="num">28.000₫ – 590.000₫</td><td class="num">34 / 2</td><td><a href="admin-product-edit.html">Sửa</a></td></tr>
+      <tr><td><div class="img sq" style="width:48px;min-height:0"><span></span></div></td><td><b>Đệm ngủ êm</b><br><small>dem-ngu-em · 2 biến thể</small></td><td>Phụ kiện</td><td><span class="badge">Nháp</span></td><td class="num">249.000₫</td><td class="num"><span style="color:var(--pink-ink)">0 / 0</span></td><td><a href="admin-product-edit.html">Sửa</a></td></tr>
+    </tbody></table></div>
+  <nav class="pager"><a class="on" href="#">1</a><a href="#">2</a></nav>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

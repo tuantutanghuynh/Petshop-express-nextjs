@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Sửa sản phẩm · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .ed { display: grid; gap: 16px; } @media (min-width: 1024px) { .ed { grid-template-columns: 1fr 320px; align-items: start; } }
+  .two { display: grid; gap: 0 16px; } @media (min-width: 768px) { .two { grid-template-columns: 1fr 1fr; } }
+  .imgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 8px; }
+  .imgs .img { min-height: 0; }
+  .vrow { display: grid; gap: 8px; grid-template-columns: 1fr 1fr; padding: 12px 0; border-bottom: 1px solid var(--border); align-items: end; }
+  @media (min-width: 1024px) { .vrow { grid-template-columns: 1.4fr 1fr 1fr 1fr 1fr auto; } }
+  .vrow .field { margin: 0; }
+</style>
+</head>
+<body data-layout="admin" data-nav="products">
+<main>
+  <nav class="crumbs"><a href="admin-products.html">Sản phẩm</a> › <span>Pate mèo vị cá ngừ</span></nav>
+  <h1 style="font-size:1.4rem">Sửa sản phẩm</h1>
+  <section class="ed" style="padding:0">
+    <div class="stack">
+      <div class="card card-pad">
+        <h2 style="font-size:1.1rem">Thông tin chung</h2>
+        <div class="field"><label for="pn">Tên sản phẩm *</label><input id="pn" value="Pate mèo vị cá ngừ"></div>
+        <div class="two"><div class="field"><label for="ps">Slug (URL) *</label><input id="ps" value="pate-meo-ca-ngu"><div class="hint">Đổi slug của SP đang bán sẽ làm hỏng link cũ — cần redirect.</div></div><div class="field"><label for="pb">Thương hiệu</label><input id="pb" value="Whiskas"></div></div>
+        <div class="field"><label for="pd">Mô tả (Markdown)</label><textarea id="pd"></textarea></div>
+        <div class="note">Tạo: <code>POST /products {categoryId, name, slug, description?, brand?, status?, attributes?, variants[≥1], images[]}</code> — mặc định <code>draft</code>. Sửa: <code>PATCH /products/:id</code> (chỉ field gửi lên; <b>không</b> sửa giá / kho ở đây). Trùng slug → <code>409 SLUG_TAKEN</code> hiện dưới ô Slug. <span style="color:#7A1030">⚠ Slug đổi không lưu slug cũ → chưa có redirect (rule SEO).</span></div>
+      </div>
+
+      <div class="card card-pad">
+        <div class="row between"><h2 style="font-size:1.1rem;margin:0">Biến thể, giá &amp; tồn kho</h2><button class="btn btn-outline" style="min-height:40px">+ Thêm biến thể</button></div>
+        <div class="vrow"><div class="field"><label>Nhãn</label><input value="Lon 170g"></div><div class="field"><label>SKU</label><input value="PATE-CN-170"></div><div class="field"><label>Giá (₫)</label><input inputmode="numeric" value="28000"></div><div class="field"><label>Giá gạch</label><input inputmode="numeric" value="35000"></div><div class="field"><label>Tồn kho</label><input inputmode="numeric" value="12"><div class="hint">Đang giữ: 2</div></div><button class="icon-btn" aria-label="Xoá biến thể">🗑</button></div>
+        <div class="vrow"><div class="field"><label>Nhãn</label><input value="Thùng 24 lon"></div><div class="field"><label>SKU</label><input value="PATE-CN-T24"></div><div class="field"><label>Giá (₫)</label><input inputmode="numeric" value="590000"></div><div class="field"><label>Giá gạch</label><input inputmode="numeric"></div><div class="field"><label>Tồn kho</label><input inputmode="numeric" value="22"><div class="error">Không thể thấp hơn 2 đang giữ cho đơn chờ thanh toán</div></div><button class="icon-btn" aria-label="Xoá biến thể">🗑</button></div>
+        <div class="note">Mỗi dòng lưu riêng: <code>PATCH /products/variants/:variantId {price, compareAtPrice, stockQuantity, label}</code> · thêm <code>POST /products/:id/variants</code> · xoá <code>DELETE /products/variants/:variantId</code> (không xoá được biến thể cuối cùng → 400). Giá nguyên ≥ 0, tối đa 2.147.483.647. Tồn kho &lt; số đang giữ → <code>409 STOCK_BELOW_RESERVED</code> (kể cả khi có đơn đặt cùng lúc). Hiện "Đang giữ" = <code>reservedQuantity</code>. <span style="color:#7A1030">⚠ Chưa có API sửa SKU</span>.</div>
+      </div>
+
+      <div class="card card-pad">
+        <h2 style="font-size:1.1rem">Hình ảnh</h2>
+        <div class="imgs"><div class="img sq"><span>1 · bìa</span></div><div class="img sq"><span>2</span></div><div class="img sq"><span>3</span></div><label class="img sq" style="cursor:pointer;border:2px dashed var(--border);background:#fff"><span>+ Tải ảnh</span></label></div>
+        <div class="note">Tải file: <code>POST /uploads/image</code> (multipart <code>image</code>, jpeg/png/webp ≤ 15MB → URL Cloudinary) rồi gắn: <code>POST /products/:id/images {url, altText}</code>. Đổi thứ tự / alt: <code>PATCH /products/images/:imageId {position, altText}</code>. Xoá: <code>DELETE /products/images/:imageId</code>. Ảnh đầu (position nhỏ nhất) là ảnh bìa.</div>
+      </div>
+    </div>
+
+    <aside class="stack">
+      <div class="card card-pad stack"><label for="st">Trạng thái</label><select id="st"><option>Đang bán (active)</option><option>Nháp (draft)</option><option>Lưu trữ (archived)</option></select><label for="ca">Danh mục *</label><select id="ca"><option>Thức ăn cho mèo</option></select><button class="btn btn-primary btn-block">Lưu thay đổi</button><button class="btn btn-danger btn-block">Xoá sản phẩm</button>
+        <div class="note">Xoá = xoá hẳn (<code>DELETE /products/:id</code>), đơn cũ vẫn giữ bản chụp. Khuyên dùng "Lưu trữ" thay vì xoá với SP đã bán. Cần hộp xác nhận.</div></div>
+      <div class="card card-pad stack"><h3>Thông số (theo danh mục)</h3><label>Độ tuổi</label><input value="Mèo trưởng thành"><label>Trọng lượng</label><input inputmode="decimal" value="170"><div class="note">Các ô sinh ra từ <code>GET /categories/:id/attributes</code> (<code>text</code> / <code>number</code>); lưu vào <code>product.attributes</code> theo <code>attributeKey</code>.</div></div>
+    </aside>
+  </section>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

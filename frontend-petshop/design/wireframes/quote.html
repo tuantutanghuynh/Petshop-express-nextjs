@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tư vấn báo giá · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .q { display: grid; gap: 24px; }
+  @media (min-width: 1024px) { .q { grid-template-columns: 1fr 380px; align-items: start; } }
+  .two { display: grid; gap: 0 16px; } @media (min-width: 768px) { .two { grid-template-columns: 1fr 1fr; } }
+  .it { display: grid; grid-template-columns: 56px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .it .img { min-height: 0; }
+  .hp { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+</style>
+</head>
+<body data-layout="store" data-nav="quote">
+<main class="container">
+  <nav class="crumbs"><a href="home.html">Trang chủ</a> › <span aria-current="page">Tư vấn báo giá</span></nav>
+  <h1 style="font-size:1.6rem">Nhờ shop tư vấn &amp; báo giá</h1>
+  <p>Không cần tài khoản. Để lại số điện thoại, shop gọi lại để tư vấn và chốt đơn (có thể có giá tốt hơn trên web).</p>
+
+  <form class="q" novalidate>
+    <section class="card card-pad">
+      <div class="two">
+        <div class="field"><label for="qn">Họ và tên *</label><input id="qn" autocomplete="name"></div>
+        <div class="field"><label for="qp">Số điện thoại *</label><input id="qp" type="tel" autocomplete="tel"></div>
+      </div>
+      <div class="field"><label for="qe">Email (không bắt buộc)</label><input id="qe" type="email" autocomplete="email"></div>
+      <div class="field"><label for="qa">Địa chỉ *</label><input id="qa" autocomplete="street-address"></div>
+      <div class="field"><label for="qno">Bé nhà bạn là ai? Cần tư vấn gì?</label><textarea id="qno" placeholder="VD: mèo 4 tháng tuổi, đang ăn hạt X, hay bị tiêu chảy…"></textarea></div>
+      <div class="hp" aria-hidden="true"><label for="website_url">Website</label><input id="website_url" name="website_url" tabindex="-1" autocomplete="off"></div>
+      <button class="btn btn-primary btn-block hide-mobile" type="submit">Gửi yêu cầu</button>
+      <div class="note"><code>POST /api/v1/quote-requests</code> + <code>X-Brand-Slug</code>: <code>{customerName, phone, address, email?, note?, items:[{variantId, quantity}]}</code>. Bắt buộc tên + SĐT + địa chỉ + ≥1 sản phẩm (tối đa 50, số lượng tự kẹp 1–99). Đang đăng nhập → tự gắn vào tài khoản. <b>Honeypot</b> <code>website_url</code> phải ẩn khỏi người thật (không <code>display:none</code> để bot vẫn thấy). Giới hạn 10 lần/15 phút/IP → 429: "Bạn gửi hơi nhiều, thử lại sau 15 phút".</div>
+    </section>
+    <aside class="card card-pad">
+      <h2 style="font-size:1.1rem">Sản phẩm cần tư vấn</h2>
+      <div class="it"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Pate mèo cá ngừ</b><br><small>Lon 170g · 28.000₫</small></div><span class="badge">×6</span></div>
+      <div class="it"><div class="img sq"><span></span></div><div><b style="color:var(--ink)">Hạt mèo con 1.5kg</b><br><small>215.000₫</small></div><span class="badge">×1</span></div>
+      <a href="category.html" class="btn btn-outline btn-block" style="margin-top:12px">+ Thêm sản phẩm</a>
+      <div class="note">Danh sách này giữ phía client (sessionStorage) khi bấm "Nhờ tư vấn" ở trang sản phẩm. Server tự chụp lại giá / tên lúc gửi. <b>Rỗng</b> → nút gửi bị khoá + gợi ý chọn sản phẩm.</div>
+    </aside>
+  </form>
+  <div class="card card-pad" style="margin-top:16px;background:var(--mint);border:0">✓ <b style="color:var(--ink)">Đã nhận yêu cầu!</b> Shop sẽ gọi lại trong giờ làm việc. <small>(trạng thái sau khi gửi thành công — 201)</small></div>
+  <div class="sticky-cta"><button class="btn btn-primary btn-block">Gửi yêu cầu tư vấn</button></div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>

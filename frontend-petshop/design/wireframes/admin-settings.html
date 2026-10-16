@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>Cấu hình trang chủ · Admin · Wireframe</title>
+<link rel="stylesheet" href="wf.css">
+<style>
+  .two { display: grid; gap: 0 16px; } @media (min-width: 768px) { .two { grid-template-columns: 1fr 1fr; } }
+  .banner-ed { display: grid; gap: 12px; } @media (min-width: 768px) { .banner-ed { grid-template-columns: 160px 1fr; } }
+  .banner-ed .img { min-height: 0; }
+  code.k { font-size: .75rem; color: var(--text-muted); }
+</style>
+</head>
+<body data-layout="admin" data-nav="settings">
+<main>
+  <h1 style="font-size:1.4rem">Cấu hình trang chủ &amp; thông tin shop</h1>
+  <div class="note"><b>Tất cả lưu bằng 1 lệnh</b> <code>PATCH /api/v1/settings {settings: {key: value, …}}</code> (upsert theo key, giá trị là chuỗi). Trang public đọc <code>GET /settings?keys=…</code>. Mỗi ô ghi key bên dưới để code frontend dùng đúng tên. Lưu xong → revalidate trang chủ.</div>
+
+  <section class="card card-pad" style="margin-top:16px">
+    <h2 style="font-size:1.1rem">Hero</h2>
+    <div class="banner-ed"><label class="img r43" style="cursor:pointer"><span>Ảnh hero</span></label><div>
+      <div class="field"><label>Dòng tiêu đề 1</label><input value="Lựa chọn tốt nhất"><code class="k">homepage_hero_title</code></div>
+      <div class="field"><label>Dòng tiêu đề 2 (màu teal)</label><input value="cho bé cưng nhà bạn"><code class="k">homepage_hero_accent</code></div>
+      <div class="field"><label>Mô tả</label><input><code class="k">homepage_hero_subtitle</code></div>
+      <div class="two"><div class="field"><label>Chữ trên nút</label><input value="Mua ngay"><code class="k">homepage_hero_cta_label</code></div><div class="field"><label>Link nút</label><input value="/san-pham"><code class="k">homepage_hero_cta_href</code></div></div>
+      <code class="k">ảnh: homepage_hero_image</code></div></div>
+  </section>
+
+  <section class="card card-pad" style="margin-top:16px">
+    <h2 style="font-size:1.1rem">5 banner khuyến mãi (3 thẻ + 2 banner rộng)</h2>
+    <div class="banner-ed" style="padding:12px 0;border-bottom:1px solid var(--border)"><div class="img r43" style="background:var(--pink-bg)"><span>Thẻ 1 · hồng</span></div><div class="two"><div class="field"><label>Chữ lớn</label><input value="-50%"></div><div class="field"><label>Tiêu đề</label><input value="Đồ chơi"></div><div class="field"><label>Mô tả</label><input value="Vui chơi mỗi ngày"></div><div class="field"><label>Link</label><input value="/danh-muc/do-choi"></div></div></div>
+    <p class="muted" style="margin-top:8px">… thẻ 2 (vàng), thẻ 3 (mint), banner 4 (peach), banner 5 (lavender) giống hệt.</p>
+    <div class="note">Đề xuất key: <code>homepage_promo_1</code> … <code>homepage_promo_5</code>, mỗi key lưu <b>chuỗi JSON</b> <code>{image, big, title, subtitle, href, cta}</code> (SiteSetting chỉ có cột <code>value</code> kiểu text). Màu cố định theo vị trí (hồng / vàng / mint / peach / lavender) — admin không chọn màu để giữ đúng palette. Chữ lớn "-50%" chỉ nên ghi khi giá đang giảm thật.</div>
+  </section>
+
+  <section class="card card-pad" style="margin-top:16px">
+    <h2 style="font-size:1.1rem">Thông tin cửa hàng</h2>
+    <div class="two">
+      <div class="field"><label>Hotline</label><input type="tel"><code class="k">shop_phone</code></div><div class="field"><label>Zalo</label><input type="tel"><code class="k">shop_zalo</code></div>
+      <div class="field"><label>Email</label><input type="email"><code class="k">shop_email</code></div><div class="field"><label>Địa chỉ</label><input><code class="k">shop_address</code></div>
+      <div class="field"><label>Giờ mở cửa</label><input><code class="k">shop_hours</code></div><div class="field"><label>Facebook / Instagram (sameAs)</label><input type="url"><code class="k">shop_social_links</code></div>
+    </div>
+  </section>
+
+  <section class="card card-pad" style="margin-top:16px">
+    <h2 style="font-size:1.1rem">Tài khoản nhận chuyển khoản</h2>
+    <div class="two"><div class="field"><label>Ngân hàng</label><input><code class="k">bank_name</code></div><div class="field"><label>Số tài khoản</label><input inputmode="numeric"><code class="k">bank_account</code></div><div class="field"><label>Chủ tài khoản</label><input><code class="k">bank_holder</code></div></div>
+    <div class="note gap"><b>⚠ Key ngân hàng chưa tồn tại</b> — bắt buộc phải có trước khi mở thanh toán chuyển khoản (trang Hoàn tất cần hiện). <code>GET /settings</code> là public, nên chỉ lưu thông tin được phép công khai.</div>
+  </section>
+  <div class="row" style="margin-top:16px"><button class="btn btn-primary btn-block-mobile">Lưu tất cả</button></div>
+</main>
+<script src="layout.js"></script>
+</body>
+</html>
