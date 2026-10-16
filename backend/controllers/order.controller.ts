@@ -75,8 +75,9 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const brandSlug = req.brand.slug;
   const isCod = paymentMethod === PAYMENT_METHOD.COD;
+  const idempotencyKey = req.get('Idempotency-Key') || null;
 
-  const order = await prisma.$transaction(
+  const { order, replayed } = await prisma.$transaction(
     async (tx) => {
       // Lock the caller's cart row before reading its lines. A double click (or a client retrying
       // after a timeout) sends two checkouts for the same cart; reading the cart outside the
@@ -84,6 +85,20 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       // second request waits here until the first commits, then reads an empty cart and stops.
       const locked = await tx.$queryRaw<{ id: string }[]>`
         SELECT "id" FROM "Cart" WHERE "userId" = ${userId} AND "brandSlug" = ${brandSlug} FOR UPDATE`;
+
+      // Same checkout attempt seen again (same Idempotency-Key): hand back the order it already
+      // created. Checked after the lock, so a concurrent duplicate waits for the first request to
+      // commit and then finds its order here, instead of hitting the emptied cart and answering
+      // CART_EMPTY for a checkout that actually succeeded. Scoped to the caller, so a key cannot be
+      // used to read somebody else's order. The key identifies the attempt, not the cart contents:
+      // whatever the repeat carries, the answer is the order that attempt produced.
+      if (idempotencyKey) {
+        const existing = await tx.order.findUnique({
+          where: { userId_idempotencyKey: { userId, idempotencyKey } },
+          include: { items: true },
+        });
+        if (existing) return { order: existing, replayed: true };
+      }
 
       const cartItems = locked.length
         ? await tx.cartItem.findMany({
@@ -153,6 +168,7 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
           // A COD order is already final, so it never expires. A bank transfer holds stock, so it
           // must have a deadline or the reservation would sit there forever.
           expiresAt: isCod ? null : new Date(Date.now() + PAYMENT_WINDOW_HOURS * 3600 * 1000),
+          idempotencyKey,
           items: {
             create: items.map((i) => ({
               variantId: i.variantId,
@@ -171,12 +187,14 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
 
       await tx.cartItem.deleteMany({ where: { cartId: locked[0].id } });
 
-      return created;
+      return { order: created, replayed: false };
     },
     { timeout: 15000 }
   );
 
-  sendSuccess(res, order, null, 201);
+  // 201 when this request created the order, 200 when it replayed an earlier attempt — the body
+  // is the same order either way, so a client can treat both as success.
+  sendSuccess(res, order, null, replayed ? 200 : 201);
 });
 
 // Lists the caller's own orders, newest first. The `userId` filter is not a convenience — it is the

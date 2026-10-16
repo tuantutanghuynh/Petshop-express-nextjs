@@ -202,8 +202,14 @@ model Order {
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
+  // Client-chosen key for one checkout attempt (Idempotency-Key header). A retried or double
+  // submitted checkout with the same key returns this order instead of failing on the now empty
+  // cart. Unique per user only; NULL for orders placed without a key (PostgreSQL allows many NULLs).
+  idempotencyKey String?
+
   @@index([userId, createdAt])
   @@index([brandSlug, orderStatus])
+  @@unique([userId, idempotencyKey])
 }
 
 model OrderItem {
