@@ -152,3 +152,13 @@ export async function proxy(jar: CookieJar, call: Omit<BackendCall, 'accessToken
   }
   return res;
 }
+
+// For reads every page makes (the cart badge): a visitor with no session at all is a normal case,
+// answered 200 with data: null instead of a 401 the browser logs as an error. ACCESS_EXPIRED stays
+// 401 — the client needs it to refresh.
+export function optionalSession(result: BffResult): BffResult {
+  if (result.status === 401 && result.body.error?.code === 'UNAUTHENTICATED') {
+    return { status: 200, body: { data: null, meta: { signedIn: false }, error: null } };
+  }
+  return result;
+}

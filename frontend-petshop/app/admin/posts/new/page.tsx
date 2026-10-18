@@ -3,6 +3,8 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../../../lib/adminAuth';
+import { imageSrc } from '../../../../lib/storefront';
+import { revalidateStorefront } from '../../../../lib/adminRevalidate';
 import type { BlogPost, UploadResult } from '../../../../lib/types';
 
 async function uploadImage(file: File): Promise<string> {
@@ -39,6 +41,7 @@ export default function NewPostPage() {
     setErrorMsg(null);
     try {
       await authFetch<BlogPost>('/blog', { method: 'POST', body: JSON.stringify(form) });
+      await revalidateStorefront(['blog']); // show it on /blog now, not after the 5-minute cache
       router.push('/admin/posts');
     } catch {
       setErrorMsg('Lỗi khi lưu bài viết. Vui lòng kiểm tra lại (có thể trùng slug).');
@@ -71,7 +74,7 @@ export default function NewPostPage() {
         {form.coverImageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={`${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}${form.coverImageUrl}`}
+            src={imageSrc(form.coverImageUrl) ?? ''}
             alt="preview"
             className="max-w-[200px] rounded"
           />

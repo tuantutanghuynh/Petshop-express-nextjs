@@ -1,6 +1,7 @@
 import { excerptFromContent } from '../markdown';
 import { imageSrc, priceSummary } from '../storefront';
-import type { Product } from '../types';
+import { SITE_NAME } from '../site';
+import type { BlogPost, Product } from '../types';
 
 // JSON-LD builders. Each describes only what the page shows (.claude/rules/seo.md): prices are
 // the real VND integers, availability comes from stock minus reservations, and there is never an
@@ -11,6 +12,10 @@ const OUT_OF_STOCK = 'https://schema.org/OutOfStock';
 
 export function productPath(slug: string): string {
   return `/san-pham/${encodeURIComponent(slug)}`;
+}
+
+export function blogPath(slug: string): string {
+  return `/blog/${encodeURIComponent(slug)}`;
 }
 
 export function categoryPath(slug: string): string {
@@ -63,5 +68,28 @@ export function breadcrumbJsonLd(base: string, crumbs: Crumb[]): Record<string, 
       name: c.name,
       ...(c.path && { item: `${base}${c.path}` }),
     })),
+  };
+}
+
+// BlogPosting for an article page. The author is the real person when the post has one; otherwise
+// the shop itself, as an Organization — a made-up person would be worse than none for health
+// (YMYL) content. Description: seoDescription, then excerpt, then the start of the text.
+export function blogPostingJsonLd(base: string, post: BlogPost): Record<string, unknown> {
+  const url = `${base}${blogPath(post.slug)}`;
+  const shop = { '@type': 'Organization', name: SITE_NAME, url: base };
+  const image = imageSrc(post.coverImageUrl);
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'BlogPosting',
+    headline: post.title,
+    description: post.seoDescription || post.excerpt || excerptFromContent(post.content, 155),
+    url,
+    mainEntityOfPage: url,
+    datePublished: post.publishedAt ?? post.createdAt,
+    dateModified: post.updatedAt,
+    ...(image && { image: [image] }),
+    inLanguage: 'vi',
+    author: post.author?.fullName ? { '@type': 'Person', name: post.author.fullName } : shop,
+    publisher: shop,
   };
 }

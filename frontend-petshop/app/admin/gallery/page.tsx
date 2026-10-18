@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { authFetch, getToken } from '../../../lib/adminAuth';
+import { imageSrc } from '../../../lib/storefront';
 import type { GalleryItem } from '../../../lib/types';
 
 export default function AdminGalleryPage() {
@@ -24,7 +25,7 @@ export default function AdminGalleryPage() {
           <li key={item.id} className="text-sm text-gray-600">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}${item.imageUrl}`}
+              src={imageSrc(item.imageUrl) ?? ''}
               alt={item.altText}
               className="rounded w-full h-24 object-cover"
             />

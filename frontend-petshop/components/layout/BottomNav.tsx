@@ -25,12 +25,12 @@ export function BottomNav() {
               <Link
                 href={link.href}
                 aria-current={active ? 'page' : undefined}
-                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-[0.7rem] ${active ? 'font-bold text-brand-ink' : 'text-muted'}`}
+                className={`flex min-h-14 flex-col items-center justify-center gap-0.5 text-xs ${active ? 'font-bold text-brand-ink' : 'text-muted'}`}
               >
                 <span aria-hidden="true" className="relative text-xl leading-none">
                   {link.icon}
                   {link === CART_TAB && count > 0 && (
-                    <span className="absolute -top-1 -right-3 grid min-w-4 place-items-center rounded-full bg-orange-ink px-1 text-[0.6rem] font-bold text-white">
+                    <span className="absolute -top-1 -right-3 grid min-w-4 place-items-center rounded-full bg-orange-ink px-1 text-xs font-bold text-white">
                       {count > 99 ? '99+' : count}
                     </span>
                   )}

@@ -3,6 +3,8 @@ import { useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { authFetch } from '../../../../lib/adminAuth';
+import { imageSrc } from '../../../../lib/storefront';
+import { revalidateStorefront } from '../../../../lib/adminRevalidate';
 import type { GalleryItem, UploadResult } from '../../../../lib/types';
 
 export default function NewGalleryItemPage() {
@@ -40,6 +42,7 @@ export default function NewGalleryItemPage() {
     setErrorMsg(null);
     try {
       await authFetch<GalleryItem>('/gallery', { method: 'POST', body: JSON.stringify({ title, altText, imageUrl }) });
+      await revalidateStorefront(['gallery']);
       // Chuyển về trang quản lý gallery của admin
       router.push('/admin/gallery');
     } catch {
@@ -58,7 +61,7 @@ export default function NewGalleryItemPage() {
         {uploading && <p className="text-sm text-gray-500">Đang tải ảnh lên...</p>}
         {imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={`${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}${imageUrl}`} alt="preview" className="rounded max-h-40 object-cover" />
+          <img src={imageSrc(imageUrl) ?? ''} alt="preview" className="rounded max-h-40 object-cover" />
         )}
         <input
           placeholder="Tiêu đề (tuỳ chọn)" value={title}

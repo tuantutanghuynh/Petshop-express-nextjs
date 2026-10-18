@@ -21,7 +21,7 @@ function PromoCard({ promo, slot }: Slot) {
   return (
     <Link href={promo.href} className={`grid min-h-44 grid-cols-[1.1fr_1fr] items-center gap-2 rounded-panel p-5 ${style.bg}`}>
       <div className="flex flex-col items-start gap-1">
-        {promo.big && <span className={`text-[clamp(1.6rem,1.2rem+1.6vw,2.4rem)] leading-none font-extrabold ${style.big}`}>{promo.big}</span>}
+        {promo.big && <span className={`text-[clamp(1.6rem,1.2rem+1.6vw,2.4rem)] leading-[1.3] font-extrabold ${style.big}`}>{promo.big}</span>}
         <h3 className="text-lg font-extrabold">{promo.title}</h3>
         {promo.subtitle && <p className={`text-sm ${style.sub}`}>{promo.subtitle}</p>}
         <span className={`mt-2 inline-flex min-h-10 items-center rounded-full px-4 text-sm font-bold ${style.btn}`}>{promo.cta ?? 'Xem ngay'}</span>

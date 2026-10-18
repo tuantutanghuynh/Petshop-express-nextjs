@@ -13,7 +13,7 @@ export function CartLink() {
     <Link href="/gio-hang" aria-label={`Giỏ hàng, ${count} sản phẩm`} className="relative grid size-11 place-items-center rounded-full text-xl hover:bg-mint">
       <span aria-hidden="true">🛒</span>
       {count > 0 && (
-        <span aria-hidden="true" className="absolute top-0.5 right-0.5 grid min-w-5 place-items-center rounded-full bg-orange-ink px-1 text-[0.7rem] font-bold text-white">
+        <span aria-hidden="true" className="absolute top-0.5 right-0.5 grid min-w-5 place-items-center rounded-full bg-orange-ink px-1 text-xs font-bold text-white">
           {count > 99 ? '99+' : count}
         </span>
       )}

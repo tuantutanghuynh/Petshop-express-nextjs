@@ -26,8 +26,9 @@ const CartContext = createContext<CartContextValue | null>(null);
 
 const isSignedOut = (code: string) => code === 'UNAUTHENTICATED' || code === 'ACCESS_EXPIRED';
 
-function stateFrom(res: BffResponse<Cart>): { status: CartStatus; cart: Cart | null } {
-  if (res.ok) return { status: 'ready', cart: res.data };
+// GET /api/cart answers a visitor without a session with 200 and data: null (not a 401).
+function stateFrom(res: BffResponse<Cart | null>): { status: CartStatus; cart: Cart | null } {
+  if (res.ok) return res.data ? { status: 'ready', cart: res.data } : { status: 'signedOut', cart: null };
   return { status: isSignedOut(res.error.code) ? 'signedOut' : 'error', cart: null };
 }
 
@@ -36,7 +37,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [cart, setCart] = useState<Cart | null>(null);
 
   const reload = useCallback(async () => {
-    const next = stateFrom(await bffFetch<Cart>('/api/cart'));
+    const next = stateFrom(await bffFetch<Cart | null>('/api/cart'));
     setCart(next.cart);
     setStatus(next.status);
   }, []);
@@ -45,7 +46,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   // cart. State is set only when the response arrives, and ignored if the provider unmounted.
   useEffect(() => {
     let active = true;
-    bffFetch<Cart>('/api/cart').then((res) => {
+    bffFetch<Cart | null>('/api/cart').then((res) => {
       if (!active) return;
       const next = stateFrom(res);
       setCart(next.cart);

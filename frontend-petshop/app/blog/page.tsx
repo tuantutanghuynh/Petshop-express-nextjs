@@ -1,42 +1,54 @@
-import Link from 'next/link';
 import Image from 'next/image';
+import Link from 'next/link';
 import type { Metadata } from 'next';
-import { apiFetch } from '../../lib/apiClient';
-import type { BlogPost } from '../../lib/types';
+import { EmptyState } from '../../components/ui/EmptyState';
+import { blogPath } from '../../lib/seo/structuredData';
+import { SITE_NAME } from '../../lib/site';
+import { imageSrc } from '../../lib/storefront';
+import { getPostList } from '../../services/content';
 
-export const metadata: Metadata = { title: 'Blog' };
+// Search intent: informational. Cached for 5 minutes and refreshed at once when the admin publishes
+// (POST /api/revalidate with the "blog" tag).
+export const metadata: Metadata = {
+  title: 'Kiến thức chăm sóc chó mèo',
+  description: `Bài viết về dinh dưỡng, sức khoẻ, tẩy giun, ve rận và chăm sóc chó mèo từ ${SITE_NAME}.`,
+  alternates: { canonical: '/blog' },
+};
 
 export default async function BlogListPage() {
-  // cache: 'no-store' vì chưa có cơ chế revalidate on-demand khi admin publish bài —
-  // dùng next.revalidate sẽ khiến bài mới publish "biến mất tạm thời" tới 60s (đã tự
-  // gặp bug này với /gallery, xem log buổi 11). Đổi lại thành ISR đúng khi xây revalidate
-  // on-demand (gọi revalidatePath từ 1 Route Handler ngay sau khi admin publish).
-  const { data: posts } = await apiFetch<BlogPost[]>('/blog', { cache: 'no-store' });
+  const posts = await getPostList();
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-4">Blog</h1>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {posts.map((post) => (
-          <article key={post.id} className="border border-gray-200 rounded-lg overflow-hidden">
-            {post.coverImageUrl && (
-              <Image
-                src={`${process.env.NEXT_PUBLIC_BACKEND_ORIGIN}${post.coverImageUrl}`}
-                alt={post.title}
-                width={400}
-                height={250}
-                className="w-full h-auto"
-              />
-            )}
-            <div className="p-4">
-              <h2 className="text-lg font-semibold">
-                <Link href={`/blog/${post.slug}`} className="hover:underline">{post.title}</Link>
-              </h2>
-              <p className="text-gray-600 mt-1">{post.excerpt}</p>
-            </div>
-          </article>
-        ))}
-      </div>
+      <h1 className="mb-4 text-2xl font-bold">Kiến thức chăm sóc chó mèo</h1>
+      {posts.length === 0 ? (
+        <EmptyState message="Bài viết đầu tiên sắp ra mắt." />
+      ) : (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {posts.map((post, index) => {
+            // Uploads are full Cloudinary URLs; the old code prefixed the backend origin and broke them.
+            const src = imageSrc(post.coverImageUrl);
+            return (
+              <article key={post.id} className="overflow-hidden rounded-lg border border-gray-200">
+                {/* Fixed 8:5 box: with width/height + h-auto the box took the photo's own ratio once it
+                    loaded and pushed the text down (CLS 0.18 on /blog). */}
+                {src && (
+                  <div className="relative aspect-[8/5] bg-mint">
+                    {/* The first cover is the page's LCP element: fetch it first instead of lazily. */}
+                    <Image src={src} alt="" fill sizes="(min-width: 1024px) 250px, (min-width: 640px) 50vw, 100vw" className="object-cover" {...(index === 0 ? { fetchPriority: 'high' as const } : {})} />
+                  </div>
+                )}
+                <div className="p-4">
+                  <h2 className="text-lg font-semibold">
+                    <Link href={blogPath(post.slug)} className="hover:underline">{post.title}</Link>
+                  </h2>
+                  {post.excerpt && <p className="mt-1 text-gray-600">{post.excerpt}</p>}
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

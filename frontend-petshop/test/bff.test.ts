@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cookieNames, cookieOptions, type CookieOptions } from '../lib/bff/cookies';
 import { clientIpFrom } from '../lib/bff/clientIp';
 import { isSameOrigin } from '../lib/bff/origin';
-import { login, logout, proxy, refresh, type CookieJar } from '../lib/bff/session';
+import { login, logout, optionalSession, proxy, refresh, type CookieJar } from '../lib/bff/session';
 
 // The Next.js BFF keeps the customer's tokens in httpOnly cookies and relays calls to Express.
 // Rules under test:
@@ -216,5 +216,26 @@ describe('logout', () => {
     expect(res.status).toBe(200);
     expect(JSON.parse(String(calls[0].init.body))).toEqual({ refreshToken: 'RT' });
     expect(jar.store.size).toBe(0);
+  });
+});
+
+// GET /api/cart runs on every storefront page for every visitor. Answering a visitor who has no
+// session with 401 printed a red "Failed to load resource" in every console (Lighthouse
+// errors-in-console) for a perfectly normal situation. A visitor gets 200 with data: null; an
+// expired access token still answers 401 ACCESS_EXPIRED, which the client needs to refresh.
+describe('optionalSession', () => {
+  it('turns "no session at all" into an empty 200', async () => {
+    backend();
+    const res = optionalSession(await proxy(new MemoryJar(), { path: '/cart', method: 'GET' }, ctx));
+    expect(res).toEqual({ status: 200, body: { data: null, meta: { signedIn: false }, error: null } });
+  });
+
+  it('keeps ACCESS_EXPIRED as 401 so the client refreshes', async () => {
+    backend();
+    const jar = new MemoryJar();
+    jar.store.set(names.refresh, 'RT');
+    const res = optionalSession(await proxy(jar, { path: '/cart', method: 'GET' }, ctx));
+    expect(res.status).toBe(401);
+    expect(res.body.error).toMatchObject({ code: 'ACCESS_EXPIRED' });
   });
 });
