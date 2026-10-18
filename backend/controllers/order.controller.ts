@@ -6,7 +6,7 @@ import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
 import { parsePagination } from '../utils/pagination';
-import { PRODUCT_STATUS } from '../constants/product';
+import { PRODUCT_STATUS, MAX_DB_INT } from '../constants/product';
 import {
   ORDER_STATUS,
   PAYMENT_METHOD,
@@ -122,6 +122,14 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
       // killing one of them.
       const items = [...cartItems].sort((a, b) => (a.variantId < b.variantId ? -1 : 1));
 
+      // Checked before any stock is claimed. Each price fits the INTEGER column and each line is
+      // capped at 99 units, but their product does not have to fit: 30.000.000₫ × 99 overflows
+      // "subtotal", the INSERT failed after stock had been claimed, and the customer got a 500.
+      const subtotal = items.reduce((sum, i) => sum + i.variant.price * i.quantity, 0);
+      if (subtotal + SHIPPING_FEE_NOT_CALCULATED > MAX_DB_INT) {
+        throw new ApiError(422, 'ORDER_TOO_LARGE', 'Giá trị đơn hàng vượt giới hạn, vui lòng tách thành nhiều đơn hoặc liên hệ shop');
+      }
+
       for (const item of items) {
         // The availability check lives inside the UPDATE rather than in a separate SELECT. Reading
         // the stock first and deciding afterwards leaves a gap in which another request can do the
@@ -149,7 +157,6 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
         }
       }
 
-      const subtotal = items.reduce((sum, i) => sum + i.variant.price * i.quantity, 0);
       const shippingFee = SHIPPING_FEE_NOT_CALCULATED;
 
       const created = await tx.order.create({

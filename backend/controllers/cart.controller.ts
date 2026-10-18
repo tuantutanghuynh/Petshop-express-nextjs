@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import type { Request, Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
@@ -139,18 +140,34 @@ export const addItem = asyncHandler(async (req: Request, res: Response) => {
 // than letting one customer edit another's basket. Quantity is replaced, not incremented, because
 // the client sends the value it wants to end up with; incrementing here would double up whenever a
 // request is retried after a flaky connection.
+// Locks the caller's cart row for the rest of the transaction — the lock createOrder takes before
+// reading the cart. Every write to an existing cart line goes through it, so line edits and a
+// checkout of the same cart are serialised instead of interleaved.
+async function lockCart(tx: Prisma.TransactionClient, userId: string, brandSlug: string): Promise<void> {
+  await tx.$queryRaw`SELECT "id" FROM "Cart" WHERE "userId" = ${userId} AND "brandSlug" = ${brandSlug} FOR UPDATE`;
+}
+
 export const updateItem = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user || !req.brand) throw new ApiError(401, 'UNAUTHENTICATED', 'Chưa xác thực');
   const { quantity } = req.body;
-
   const id = req.params.id as string;
-  const item = await prisma.cartItem.findFirst({
-    where: { id, cart: { userId: req.user.id, brandSlug: req.brand.slug } },
-    include: { variant: true },
-  });
-  if (!item) throw new ApiError(404, 'CART_ITEM_NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ');
+  const { userId, brandSlug } = { userId: req.user.id, brandSlug: req.brand.slug };
 
-  const updated = await prisma.cartItem.update({ where: { id: item.id }, data: { quantity } });
+  const { item, updated } = await prisma.$transaction(async (tx) => {
+    // Take the same cart row lock checkout takes. Without it, a quantity change landing while a
+    // checkout runs was applied to a line the checkout had already read: the order kept the old
+    // quantity, the line was then deleted with the cart, and the customer's "3" simply vanished.
+    // With the lock this waits for the checkout; if the line became part of the order it is gone,
+    // and the honest answer is 404 rather than a 200 nobody will ever see the effect of.
+    await lockCart(tx, userId, brandSlug);
+    const item = await tx.cartItem.findFirst({
+      where: { id, cart: { userId, brandSlug } },
+      include: { variant: true },
+    });
+    if (!item) throw new ApiError(404, 'CART_ITEM_NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ');
+    const updated = await tx.cartItem.update({ where: { id: item.id }, data: { quantity } });
+    return { item, updated };
+  });
 
   const available = item.variant.stockQuantity - item.variant.reservedQuantity;
   const warning = updated.quantity > available ? 'INSUFFICIENT_STOCK' : null;
@@ -165,12 +182,17 @@ export const updateItem = asyncHandler(async (req: Request, res: Response) => {
 export const removeItem = asyncHandler(async (req: Request, res: Response) => {
   if (!req.user || !req.brand) throw new ApiError(401, 'UNAUTHENTICATED', 'Chưa xác thực');
   const id = req.params.id as string;
-  const item = await prisma.cartItem.findFirst({
-    where: { id, cart: { userId: req.user.id, brandSlug: req.brand.slug } },
-  });
-  if (!item) throw new ApiError(404, 'CART_ITEM_NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ');
+  const { userId, brandSlug } = { userId: req.user.id, brandSlug: req.brand.slug };
 
-  await prisma.cartItem.delete({ where: { id: item.id } });
+  await prisma.$transaction(async (tx) => {
+    // Same lock as updateItem: a removal racing a checkout either happens before the checkout reads
+    // the cart (the item is not ordered) or after it (the line is gone → 404). Previously it could
+    // answer "removed" while the item still went into the order.
+    await lockCart(tx, userId, brandSlug);
+    const { count } = await tx.cartItem.deleteMany({ where: { id, cart: { userId, brandSlug } } });
+    if (count === 0) throw new ApiError(404, 'CART_ITEM_NOT_FOUND', 'Không tìm thấy sản phẩm trong giỏ');
+  });
+
   sendSuccess(res, { message: 'Đã xoá khỏi giỏ hàng' });
 });
 
