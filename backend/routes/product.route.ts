@@ -5,6 +5,7 @@ import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
 import * as ctrl from '../controllers/product.controller';
 import { PRODUCT_STATUS_VALUES, MAX_DB_INT } from '../constants/product';
+import { ADJUST_REASONS, STOCK_MOVEMENT_TYPE } from '../constants/inventory';
 
 const router = Router();
 
@@ -66,8 +67,10 @@ router.patch(
   ctrl.update
 );
 
-// Price and stock are edited through their own endpoint rather than through PATCH /:id, so that a
-// partial product form can never wipe inventory as a side effect of saving a description.
+// Price and label of one variant. Stock is NOT accepted here: overwriting it with an absolute value
+// erased sales made between the admin reading the number and saving it (ADR-007). Use the
+// stock-movements endpoint below; sending stockQuantity here is a 422 so old clients fail loudly
+// instead of silently doing nothing.
 router.patch(
   '/variants/:variantId',
   authenticate,
@@ -75,11 +78,40 @@ router.patch(
   [
     body('price').optional().isInt({ min: 0, max: MAX_DB_INT }),
     body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
-    body('stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
+    body('stockQuantity')
+      .not()
+      .exists()
+      .withMessage('Không sửa tồn kho ở đây — dùng POST /products/variants/:id/stock-movements'),
     validate,
   ],
   ctrl.updateVariant
 );
+
+// Stock changes, recorded in the inventory ledger: { type: 'ADJUST', delta, reason, note? } for a
+// delivery / damage / return, or { type: 'STOCKTAKE', countedQuantity, note? } after a physical
+// count. SALE, CANCEL_RESTOCK and OPENING are written by the system only and refused here.
+const isAdjust = body('type').equals(STOCK_MOVEMENT_TYPE.ADJUST);
+const isStocktake = body('type').equals(STOCK_MOVEMENT_TYPE.STOCKTAKE);
+router.post(
+  '/variants/:variantId/stock-movements',
+  authenticate,
+  requireRole('admin'),
+  [
+    body('type').isIn(Object.values(STOCK_MOVEMENT_TYPE)),
+    body('delta')
+      .if(isAdjust)
+      .isInt({ min: -MAX_DB_INT, max: MAX_DB_INT })
+      .custom((v) => Number(v) !== 0)
+      .withMessage('Số lượng thay đổi phải là số nguyên khác 0'),
+    body('reason').if(isAdjust).isIn(ADJUST_REASONS).withMessage('Lý do không hợp lệ'),
+    body('countedQuantity').if(isStocktake).isInt({ min: 0, max: MAX_DB_INT }).withMessage('Số đếm được không hợp lệ'),
+    body('note').optional({ nullable: true }).isString().isLength({ max: 500 }),
+    validate,
+  ],
+  ctrl.createStockMovement
+);
+
+router.get('/variants/:variantId/stock-movements', authenticate, requireRole('admin'), ctrl.listStockMovements);
 
 // Images are managed one at a time rather than by replacing the whole set. Sending the full array
 // on every change would mean a dropped request could wipe every photo of a product; this way the

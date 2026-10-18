@@ -6,6 +6,8 @@ import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
 import { parsePagination } from '../utils/pagination';
 import { PRODUCT_STATUS } from '../constants/product';
+import { STOCK_MOVEMENT_TYPE } from '../constants/inventory';
+import { adjustStockByAdmin, recordOpening } from '../services/inventory.service';
 
 // Every read and write path for products, serving both the storefront and the admin dashboard.
 // A product is a catalogue entry; the sellable things with a price and a stock count are its
@@ -169,6 +171,9 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
           imageUrl: v.imageUrl ?? null,
         })),
       });
+      // Opening balance for each variant: the ledger starts at the stock it was created with.
+      const createdVariants = await tx.productVariant.findMany({ where: { productId: created.id }, select: { id: true } });
+      for (const v of createdVariants) await recordOpening(tx, v.id, req.user?.id ?? null);
     }
 
     if (images.length) {
@@ -246,51 +251,59 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 // endpoint means a partial form submission can never blank out inventory as a side effect.
 export const updateVariant = asyncHandler(async (req: Request, res: Response) => {
   const variantId = req.params.variantId as string;
-  const { price, compareAtPrice, stockQuantity, label } = req.body;
+  const { price, compareAtPrice, label } = req.body;
 
   const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
   if (!variant) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
 
-  if (stockQuantity !== undefined && stockQuantity < variant.reservedQuantity) {
-    throw new ApiError(
-      409,
-      'STOCK_BELOW_RESERVED',
-      `Không thể đặt tồn kho thấp hơn ${variant.reservedQuantity} đang giữ cho đơn chờ thanh toán`
-    );
-  }
-
+  // Stock is NOT editable here any more (the route rejects stockQuantity): an absolute overwrite
+  // erased every sale made between the admin reading the number and saving it. Stock changes go
+  // through POST /products/variants/:id/stock-movements, by delta or by physical count (ADR-007).
   const data: Prisma.ProductVariantUpdateInput = {};
   if (price !== undefined) data.price = price;
   if (compareAtPrice !== undefined) data.compareAtPrice = compareAtPrice;
-  if (stockQuantity !== undefined) data.stockQuantity = stockQuantity;
   if (label !== undefined) {
-    const existingAttrs = (variant.variantAttributes as Record<string, any>) || {};
+    const existingAttrs = (variant.variantAttributes as Record<string, unknown>) || {};
     data.variantAttributes = { ...existingAttrs, label };
   }
 
-  // The check above compared against a snapshot. A checkout that is mid-transaction holds the row
-  // lock with more units reserved than that snapshot shows; an unconditional write would wait for
-  // it and then set stock below what is now promised to customers. Putting the condition in the
-  // WHERE makes PostgreSQL re-check it against the committed row once the lock is released.
-  const { count } = await prisma.productVariant.updateMany({
-    where: {
-      id: variant.id,
-      ...(stockQuantity !== undefined && { reservedQuantity: { lte: stockQuantity } }),
-    },
-    data,
-  });
-  if (count !== 1) {
-    const current = await prisma.productVariant.findUnique({ where: { id: variant.id } });
-    if (!current) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
-    throw new ApiError(
-      409,
-      'STOCK_BELOW_RESERVED',
-      `Không thể đặt tồn kho thấp hơn ${current.reservedQuantity} đang giữ cho đơn chờ thanh toán`
-    );
-  }
-
-  const updated = await prisma.productVariant.findUniqueOrThrow({ where: { id: variant.id } });
+  const updated = await prisma.productVariant.update({ where: { id: variant.id }, data });
   sendSuccess(res, updated);
+});
+
+// Changes a variant's physical stock by a delta (purchase, damaged goods, return, other) or by a
+// physical count (stocktake), and records the change in the inventory ledger. See
+// services/inventory.service.ts for the locking and the "never below reserved" rule.
+export const createStockMovement = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.user) throw new ApiError(401, 'UNAUTHENTICATED', 'Chưa đăng nhập');
+  const variantId = req.params.variantId as string;
+  const { type, delta, reason, countedQuantity, note } = req.body;
+  const input =
+    type === STOCK_MOVEMENT_TYPE.STOCKTAKE
+      ? { type: STOCK_MOVEMENT_TYPE.STOCKTAKE, countedQuantity: Number(countedQuantity), note: note ?? null }
+      : { type: STOCK_MOVEMENT_TYPE.ADJUST, delta: Number(delta), reason, note: note ?? null };
+
+  const userId = req.user.id;
+  const variant = await prisma.$transaction((tx) => adjustStockByAdmin(tx, variantId, input, userId));
+  sendSuccess(res, variant, null, 201);
+});
+
+// The ledger of one variant, newest first, for the admin's stock history panel.
+export const listStockMovements = asyncHandler(async (req: Request, res: Response) => {
+  const variantId = req.params.variantId as string;
+  const { page, take, skip } = parsePagination(req.query, 20, 100);
+  const where = { variantId };
+  const [items, total] = await Promise.all([
+    prisma.inventoryMovement.findMany({
+      where,
+      orderBy: { seq: 'desc' },
+      skip,
+      take,
+      select: { id: true, delta: true, quantityAfter: true, reason: true, note: true, orderId: true, createdAt: true, user: { select: { id: true, fullName: true, email: true } } },
+    }),
+    prisma.inventoryMovement.count({ where }),
+  ]);
+  sendSuccess(res, items, { page, pageSize: take, total });
 });
 
 // Attaches an already-uploaded image to a product. The file itself goes to Cloudinary through
@@ -376,16 +389,20 @@ export const addVariant = asyncHandler(async (req: Request, res: Response) => {
 
   const variantAttributes = label ? { label } : {};
 
-  const variant = await prisma.productVariant.create({
-    data: {
-      productId: product.id,
-      sku,
-      price: price || 0,
-      compareAtPrice: compareAtPrice || null,
-      stockQuantity: stockQuantity || 0,
-      variantAttributes,
-      variantKey: sku, // Use SKU as variantKey to satisfy constraints
-    }
+  const variant = await prisma.$transaction(async (tx) => {
+    const created = await tx.productVariant.create({
+      data: {
+        productId: product.id,
+        sku,
+        price: price || 0,
+        compareAtPrice: compareAtPrice || null,
+        stockQuantity: stockQuantity || 0,
+        variantAttributes,
+        variantKey: sku, // Use SKU as variantKey to satisfy constraints
+      },
+    });
+    await recordOpening(tx, created.id, req.user?.id ?? null);
+    return created;
   });
 
   sendSuccess(res, variant, null, 201);
@@ -409,6 +426,8 @@ export const removeVariant = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export default {
+  createStockMovement,
+  listStockMovements,
   addVariant,
   removeVariant,
   list,

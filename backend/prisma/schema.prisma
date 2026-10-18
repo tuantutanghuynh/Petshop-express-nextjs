@@ -7,17 +7,18 @@ datasource db {
 }
 
 model User {
-  id                   String                  @id @default(uuid())
-  email                String                  @unique
-  passwordHash         String
-  fullName             String?
-  role                 String                  @default("customer")
-  createdAt            DateTime                @default(now())
-  blogPosts            BlogPost[]
-  carts                Cart[]
-  orders               Order[]
-  passwordResetTokens  PasswordResetToken[]
-  quoteRequests        QuoteRequest[]
+  id                  String               @id @default(uuid())
+  email               String               @unique
+  passwordHash        String
+  fullName            String?
+  role                String               @default("customer")
+  createdAt           DateTime             @default(now())
+  blogPosts           BlogPost[]
+  carts               Cart[]
+  orders              Order[]
+  passwordResetTokens PasswordResetToken[]
+  quoteRequests       QuoteRequest[]
+  inventoryMovements  InventoryMovement[]
 }
 
 model Category {
@@ -44,6 +45,7 @@ model CategoryAttribute {
   isFilterable    Boolean  @default(true)
   options         Json?
   validationRules Json?
+
   @@index([categoryId])
 }
 
@@ -61,25 +63,27 @@ model Product {
   updatedAt   DateTime         @updatedAt
   variants    ProductVariant[]
   images      ProductImage[]
+
   @@index([categoryId])
   // Storefront list: WHERE status = 'active' ORDER BY createdAt DESC, id DESC (id = tie-breaker).
   @@index([status, createdAt, id])
 }
 
 model ProductVariant {
-  id                String      @id @default(uuid())
-  productId         String
-  product           Product     @relation(fields: [productId], references: [id])
-  sku               String      @unique
-  price             Int
-  compareAtPrice    Int?
-  stockQuantity     Int         @default(0)
-  reservedQuantity  Int         @default(0)
-  variantAttributes Json        @default("{}")
-  variantKey        String
-  imageUrl          String?
-  cartItems         CartItem[]
-  orderItems        OrderItem[]
+  id                 String              @id @default(uuid())
+  productId          String
+  product            Product             @relation(fields: [productId], references: [id])
+  sku                String              @unique
+  price              Int
+  compareAtPrice     Int?
+  stockQuantity      Int                 @default(0)
+  reservedQuantity   Int                 @default(0)
+  variantAttributes  Json                @default("{}")
+  variantKey         String
+  imageUrl           String?
+  cartItems          CartItem[]
+  orderItems         OrderItem[]
+  inventoryMovements InventoryMovement[]
 
   @@unique([productId, variantKey])
 }
@@ -91,6 +95,7 @@ model ProductImage {
   url       String
   altText   String?
   position  Int     @default(0)
+
   @@index([productId])
 }
 
@@ -123,6 +128,7 @@ model BlogPost {
   publishedAt    DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+
   @@index([authorId])
   @@index([categoryId])
   // Public blog list: WHERE status = 'published' AND publishedAt <= now ORDER BY publishedAt DESC, id DESC.
@@ -138,6 +144,7 @@ model GalleryItem {
   category   Category? @relation(fields: [categoryId], references: [id])
   position   Int       @default(0)
   createdAt  DateTime  @default(now())
+
   @@index([categoryId])
 }
 
@@ -195,7 +202,8 @@ model Order {
   shippingAddress Json
   note            String?
 
-  items OrderItem[]
+  items              OrderItem[]
+  inventoryMovements InventoryMovement[]
 
   expiresAt DateTime?
   paidAt    DateTime?
@@ -207,9 +215,9 @@ model Order {
   // cart. Unique per user only; NULL for orders placed without a key (PostgreSQL allows many NULLs).
   idempotencyKey String?
 
+  @@unique([userId, idempotencyKey])
   @@index([userId, createdAt])
   @@index([brandSlug, orderStatus])
-  @@unique([userId, idempotencyKey])
 }
 
 model OrderItem {
@@ -224,6 +232,7 @@ model OrderItem {
   unitPrice   Int
   quantity    Int
   lineTotal   Int
+
   @@index([orderId])
   @@index([variantId])
 }
@@ -238,8 +247,8 @@ model OrderItem {
 // `email` cho phép rỗng: khách Việt thường chỉ để số điện thoại, bắt buộc email sẽ làm mất
 // khách thật. Số điện thoại mới là kênh liên lạc chính nên nó bắt buộc.
 model QuoteRequest {
-  id           String   @id @default(uuid())
-  brandSlug    String
+  id        String @id @default(uuid())
+  brandSlug String
 
   // Gắn vào tài khoản KHI khách tình cờ đang đăng nhập, và chỉ khi đó. Luồng này cố ý không
   // bắt đăng nhập — bắt buộc tài khoản là dựng một bức tường ngay trước lúc khách sắp để lại
@@ -247,25 +256,25 @@ model QuoteRequest {
   // trong form. Có userId thì khách xem lại được đơn trong trang cá nhân; không có thì nhân
   // viên vẫn gọi bình thường.
   userId       String?
-  user         User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user         User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
   customerName String
   phone        String
   email        String?
   address      String
   note         String?
   items        Json
-  status       String   @default("NEW")
+  status       String  @default("NEW")
 
   // Số tiền chốt thật và thời điểm chốt, nhân viên nhập khi bấm "Đã chốt".
   //
   // Phải là trường riêng chứ không tính lại từ `items`: giá trong `items` là giá khách xem
   // trên web, còn nhân viên gọi điện thì mặc cả, cộng phí ship, giảm cho khách quen — con số
   // cuối cùng gần như luôn khác. Thống kê doanh thu dựng trên `items` sẽ sai ngay từ ngày đầu.
-  finalAmount  Int?
-  closedAt     DateTime?
+  finalAmount Int?
+  closedAt    DateTime?
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([brandSlug, status, createdAt])
   // Phục vụ thống kê doanh thu theo khoảng thời gian.
@@ -294,5 +303,37 @@ model PasswordResetToken {
   expiresAt DateTime // 1 hour từ lúc tạo
   createdAt DateTime @default(now())
 
+  @@index([userId])
+}
+
+// Ledger of every change to a variant's PHYSICAL stock (ADR-007). stockQuantity is changed only by
+// adding a delta, and each change writes one row here in the same transaction, so
+// sum(delta) per variant always equals its stockQuantity and every unit can be traced.
+// Holds for bank transfers (reservedQuantity) are not stock movements and are not recorded.
+//
+// reason: OPENING (creation) · PURCHASE · DAMAGED · RETURN · OTHER (admin deltas) · STOCKTAKE
+// (counted − system) · SALE (COD checkout / confirmed transfer) · CANCEL_RESTOCK (cancelled after
+// the stock left). Rows survive deletion of the variant / user / order (SET NULL) with the SKU
+// snapshotted, because an audit trail that disappears with the product is not an audit trail.
+model InventoryMovement {
+  id            String          @id @default(uuid())
+  // Insertion order. Rows are written while the variant row is locked, so seq is the true order
+  // of stock changes; createdAt is not (now() is the transaction START, at millisecond precision).
+  seq           Int             @unique @default(autoincrement())
+  variantId     String?
+  variant       ProductVariant? @relation(fields: [variantId], references: [id], onDelete: SetNull)
+  sku           String
+  delta         Int
+  quantityAfter Int
+  reason        String
+  note          String?
+  userId        String?
+  user          User?           @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderId       String?
+  order         Order?          @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt     DateTime        @default(now())
+
+  @@index([variantId, seq])
+  @@index([orderId])
   @@index([userId])
 }

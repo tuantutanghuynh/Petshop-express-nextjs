@@ -5,6 +5,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { claimForSale, recordSale, restockCancelled, sellReserved } from '../services/inventory.service';
 import { parsePagination } from '../utils/pagination';
 import { PRODUCT_STATUS, MAX_DB_INT } from '../constants/product';
 import {
@@ -136,19 +137,17 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
         // same thing, and both then write — which is exactly how a shop sells one vase twice. Here
         // the database evaluates the condition while holding the row lock, so of two concurrent
         // requests for the last unit, one updates a row and the other updates none.
+        // COD takes the units off the shelf (a stock movement, recorded below once the order exists);
+        // a bank transfer only holds them, which is not a movement of physical stock.
         const claimed = isCod
-          ? await tx.$executeRaw`
-              UPDATE "ProductVariant"
-              SET "stockQuantity" = "stockQuantity" - ${item.quantity}
-              WHERE "id" = ${item.variantId}
-                AND "stockQuantity" - "reservedQuantity" >= ${item.quantity}`
-          : await tx.$executeRaw`
+          ? await claimForSale(tx, item.variantId, item.quantity)
+          : (await tx.$executeRaw`
               UPDATE "ProductVariant"
               SET "reservedQuantity" = "reservedQuantity" + ${item.quantity}
               WHERE "id" = ${item.variantId}
-                AND "stockQuantity" - "reservedQuantity" >= ${item.quantity}`;
+                AND "stockQuantity" - "reservedQuantity" >= ${item.quantity}`) === 1;
 
-        if (claimed !== 1) {
+        if (!claimed) {
           throw new ApiError(
             409,
             'OUT_OF_STOCK',
@@ -191,6 +190,10 @@ export const createOrder = asyncHandler(async (req: Request, res: Response) => {
         },
         include: { items: true },
       });
+
+      if (isCod) {
+        for (const item of items) await recordSale(tx, item.variantId, item.quantity, created.id);
+      }
 
       await tx.cartItem.deleteMany({ where: { cartId: locked[0].id } });
 
@@ -298,11 +301,7 @@ export const confirmPayment = asyncHandler(async (req: Request, res: Response) =
 
     for (const item of order.items) {
       if (!item.variantId) continue; // variant đã bị xoá; snapshot vẫn giữ nguyên thông tin đơn
-      await tx.$executeRaw`
-        UPDATE "ProductVariant"
-        SET "stockQuantity" = "stockQuantity" - ${item.quantity},
-            "reservedQuantity" = "reservedQuantity" - ${item.quantity}
-        WHERE "id" = ${item.variantId}`;
+      await sellReserved(tx, item.variantId, item.quantity, order.id, req.user?.id ?? null);
     }
 
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
@@ -340,15 +339,15 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
 
     for (const item of order.items) {
       if (!item.variantId) continue;
-      await (wasHoldingReservation
-        ? tx.$executeRaw`
-            UPDATE "ProductVariant"
-            SET "reservedQuantity" = "reservedQuantity" - ${item.quantity}
-            WHERE "id" = ${item.variantId}`
-        : tx.$executeRaw`
-            UPDATE "ProductVariant"
-            SET "stockQuantity" = "stockQuantity" + ${item.quantity}
-            WHERE "id" = ${item.variantId}`);
+      if (wasHoldingReservation) {
+        // releasing a hold is not a stock movement
+        await tx.$executeRaw`
+          UPDATE "ProductVariant"
+          SET "reservedQuantity" = "reservedQuantity" - ${item.quantity}
+          WHERE "id" = ${item.variantId}`;
+      } else {
+        await restockCancelled(tx, item.variantId, item.quantity, order.id, req.user?.id ?? null);
+      }
     }
 
     return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
