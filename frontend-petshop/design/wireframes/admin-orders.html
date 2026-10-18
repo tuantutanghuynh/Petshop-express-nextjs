@@ -41,7 +41,7 @@
       <button class="btn btn-primary btn-block">✓ Xác nhận đã nhận tiền</button>
       <button class="btn btn-danger btn-block">Huỷ đơn &amp; hoàn kho</button>
       <div class="note"><code>PATCH /orders/admin/:id/confirm-payment</code> → <code>CONFIRMED/PAID</code>, trừ kho thật. <code>PATCH /orders/admin/:id/cancel</code> → hoàn hàng (đang giữ → nhả giữ; đã trừ → cộng lại kho). Huỷ cần hộp xác nhận (bottom sheet trên phone). Lỗi <code>409 ORDER_STATE_CHANGED</code> / <code>ALREADY_PAID</code> / <code>INVALID_STATE_TRANSITION</code> → "Đơn vừa thay đổi, tải lại" + tự tải lại đơn.</div>
-      <div class="note gap"><b>⚠ Chưa chuyển được sang "Đang xử lý / Hoàn tất".</b> State machine có <code>PROCESSING</code>, <code>COMPLETED</code> nhưng chưa có endpoint. Cần thêm <code>PATCH /orders/admin/:id/status</code> (dùng <code>assertTransition</code> + UPDATE có điều kiện) trước khi làm nút này.</div>
+      <button class="btn btn-outline btn-block">Đang giao</button><button class="btn btn-outline btn-block">Hoàn tất</button><div class="note"><code>PATCH /orders/admin/:id/status {status: PROCESSING | COMPLETED}</code> — chỉ theo thứ tự CONFIRMED → PROCESSING → COMPLETED (409 nếu nhảy cóc). COD hoàn tất → tự "Đã thanh toán". Không đổi kho.</div>
     </aside>
   </section>
 </main>

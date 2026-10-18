@@ -93,7 +93,7 @@ Xếp theo mức chặn tính năng. Mỗi mục là một task riêng; mục c�
 | # | Thiếu | Trang bị ảnh hưởng | Gợi ý |
 |---|---|---|---|
 | 1 | Thông tin ngân hàng để khách chuyển khoản | Đặt hàng thành công | Key `bank_*` trong `SiteSetting` |
-| 2 | Admin chuyển đơn sang PROCESSING / COMPLETED | Admin đơn hàng | `PATCH /orders/admin/:id/status` + `assertTransition` + UPDATE có điều kiện |
+| 2 | ~~Admin chuyển đơn sang PROCESSING / COMPLETED~~ ✅ đã có (2026-10-18) | Admin đơn hàng | `PATCH /orders/admin/:id/status` |
 | 3 | Gửi email (reset mật khẩu) | Quên mật khẩu | Dịch vụ email — dependency mới |
 | 4 | Tìm kiếm công khai `q` | Header, kết quả tìm | Thêm `q` + index trigram |
 | 5 | Sắp xếp `sort`, lọc theo thông số / giá | Danh mục | Whitelist + index |
