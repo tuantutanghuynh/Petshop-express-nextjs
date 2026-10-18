@@ -56,7 +56,8 @@ describe('robots', () => {
 
   it('hides private areas but never /_next/ (pages need it to render)', () => {
     const disallow = ([] as string[]).concat(rules[0].disallow ?? []);
-    for (const path of ['/admin', '/gio-hang', '/dat-hang', '/tai-khoan']) expect(disallow).toContain(path);
+    // /tim-kiem: internal search results are thin, endless pages (seo.md: noindex + not crawled).
+    for (const path of ['/admin', '/gio-hang', '/dat-hang', '/tai-khoan', '/tim-kiem']) expect(disallow).toContain(path);
     expect(disallow.some((p) => p.startsWith('/_next'))).toBe(false);
   });
 

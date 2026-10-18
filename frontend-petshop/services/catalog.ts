@@ -1,4 +1,5 @@
 import { ApiRequestError, apiFetch } from '../lib/apiClient';
+import { DEFAULT_SORT, type ProductSort } from '../lib/catalogParams';
 import { BRAND_SLUG } from '../lib/site';
 import type { Category, PageMeta, Product } from '../lib/types';
 
@@ -16,12 +17,17 @@ export type ProductPage = { products: Product[]; total: number };
 
 // One page of active products in a category (the backend includes its direct children).
 // A category that does not exist yields an empty page; callers decide whether that is a 404.
-async function listProducts(categorySlug: string, page: number, pageSize: number): Promise<ProductPage> {
+async function listProducts(
+  categorySlug: string,
+  page: number,
+  pageSize: number,
+  options: { sort?: ProductSort; q?: string } = {},
+): Promise<ProductPage> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), categorySlug });
+  if (options.sort && options.sort !== DEFAULT_SORT) params.set('sort', options.sort);
+  if (options.q) params.set('q', options.q);
   try {
-    const { data, meta } = await apiFetch<Product[], PageMeta>(
-      `/products?page=${page}&pageSize=${pageSize}&categorySlug=${encodeURIComponent(categorySlug)}`,
-      cached(['products']),
-    );
+    const { data, meta } = await apiFetch<Product[], PageMeta>(`/products?${params}`, cached(['products']));
     return { products: data, total: meta.total };
   } catch (err) {
     if (err instanceof ApiRequestError && err.code === 'CATEGORY_NOT_FOUND') return { products: [], total: 0 };
@@ -33,8 +39,13 @@ export async function getNewestProducts(limit: number): Promise<Product[]> {
   return (await listProducts(BRAND_SLUG, 1, limit)).products;
 }
 
-export function getCategoryProducts(categorySlug: string, page: number): Promise<ProductPage> {
-  return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE);
+export function getCategoryProducts(categorySlug: string, page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
+  return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE, { sort });
+}
+
+// Accent-insensitive search over this shop's products only (the brand root includes its children).
+export function searchProducts(q: string, page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
+  return listProducts(BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { q, sort });
 }
 
 async function getAllCategories(): Promise<Category[]> {
