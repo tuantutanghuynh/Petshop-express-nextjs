@@ -1,10 +1,30 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
+import { ipBucket } from '../middlewares/rateLimitKeys';
+import ApiError from '../utils/ApiError';
 import { body } from 'express-validator';
 import validate from '../middlewares/validate';
 import authenticate from '../middlewares/authenticate';
 import * as ctrl from '../controllers/auth.controller';
 
 const router = Router();
+
+// Password guessing brake: 10 attempts per 15 minutes per visitor IP on every endpoint that takes
+// a password or triggers an email. The global limiter (100 / 15 min) is far too loose for this and
+// gives a logged-out attacker no user bucket to exhaust. The key is the visitor's real IP even
+// when the request is relayed by our Next.js BFF (clientIp); the internal secret on its own buys
+// no exemption here. Answers in the standard { data, meta, error } envelope via ApiError.
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  limit: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: ipBucket,
+  handler: (_req, _res, next) => {
+    next(new ApiError(429, 'RATE_LIMITED', 'Bạn thử quá nhiều lần. Vui lòng thử lại sau 15 phút.'));
+  },
+});
+
 
 // express-validator applies standard validators to EACH element when the value is an array, so
 // `{ "email": ["a@b.com"] }` passed isEmail and reached Prisma as an array → 500. Rejecting arrays
@@ -13,6 +33,7 @@ const emailRule = () => body('email').not().isArray().withMessage('Email không 
 
 router.post(
   '/register',
+  authLimiter,
   [
     emailRule(),
     body('password')
@@ -30,6 +51,7 @@ router.post(
 
 router.post(
   '/login',
+  authLimiter,
   [emailRule(), body('password').notEmpty(), validate],
   ctrl.login
 );
@@ -49,6 +71,7 @@ router.get('/me', authenticate, ctrl.me);
 
 router.post(
   '/request-password-reset',
+  authLimiter,
   [emailRule(), validate],
   ctrl.requestPasswordReset
 );

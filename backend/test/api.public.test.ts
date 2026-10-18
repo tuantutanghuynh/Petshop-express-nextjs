@@ -3,7 +3,7 @@ import fc from 'fast-check';
 import jwt from 'jsonwebtoken';
 import { describe, expect, it } from 'vitest';
 import app from '../app';
-import { bearer, tokenFor, unsignedToken } from './helpers';
+import { bearer, tokenFor, unsignedToken, freshIp } from './helpers';
 
 // Everything here is stopped by a middleware before any controller or Prisma query runs, so
 // it is safe to execute without a database.
@@ -131,7 +131,7 @@ describe('levels 1, 2, 8, 9 - input validation and hostile input', () => {
     ['accented local part', { email: 'Nguyễn Thị Ánh@example.com', password: 'x' }],
     ['whitespace only', { email: '   ', password: '   ' }],
   ])('login rejects %s before reaching the database', async (_name, body) => {
-    const res = await request(app).post('/api/v1/auth/login').send(body);
+    const res = await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', freshIp()).send(body);
     expect(res.status).toBe(422);
     expect(res.body.error.code).toBe('VALIDATION_ERROR');
     expect(JSON.stringify(res.body)).not.toMatch(LEAK);
@@ -145,14 +145,14 @@ describe('levels 1, 2, 8, 9 - input validation and hostile input', () => {
     ['no special character', 'Abcdefg1'],
   ])('register rejects a password that is %s', async (_name, password) => {
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/register').set('X-Forwarded-For', freshIp())
       .send({ email: 'a@example.com', password, confirmPassword: password });
     expect(res.status).toBe(422);
   });
 
   it('register rejects a mismatched confirmPassword', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/register').set('X-Forwarded-For', freshIp())
       .send({ email: 'a@example.com', password: strong, confirmPassword: 'Different1!' });
     expect(res.status).toBe(422);
   });
@@ -173,7 +173,7 @@ describe('levels 1, 2, 8, 9 - input validation and hostile input', () => {
 
   it('answers 400, not 500, for malformed JSON', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/login')
+      .post('/api/v1/auth/login').set('X-Forwarded-For', freshIp())
       .set('Content-Type', 'application/json')
       .send('{"email": ');
     expect(res.status).toBe(400);
@@ -182,7 +182,7 @@ describe('levels 1, 2, 8, 9 - input validation and hostile input', () => {
 
   it('answers 413, not 500, for a body over the 10mb limit', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/login')
+      .post('/api/v1/auth/login').set('X-Forwarded-For', freshIp())
       .set('Content-Type', 'application/json')
       .send(JSON.stringify({ email: 'a@example.com', password: 'x'.repeat(11 * 1024 * 1024) }));
     expect(res.status).toBe(413);

@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import net from 'net';
 import type { Request } from 'express';
 import { ipKeyGenerator } from 'express-rate-limit';
 import { internalApiSecret } from '../config/env';
@@ -27,7 +28,31 @@ export function apiRateLimitKey(req: Request): string {
       // not a valid token: counted against the IP below, exactly like an anonymous request
     }
   }
-  return `ip:${ipKeyGenerator(req.ip ?? '')}`;
+  return ipBucket(req);
+}
+
+// The visitor's IP. Usually req.ip (the proxy hop is trusted in app.ts). When our Next.js server
+// forwards a visitor's own request (BFF: login, cart, checkout), req.ip is the Next.js server, so it
+// passes the visitor's address in X-Client-IP. That header is honoured ONLY alongside the correct
+// X-Internal-Secret, and only if it parses as an IP: from anyone else it would let an attacker
+// claim a fresh address on every request and never be limited.
+export function clientIp(req: Request): string {
+  const forwarded = req.get('X-Client-IP');
+  if (forwarded && net.isIP(forwarded) && isTrustedServerRequest(req)) return forwarded;
+  return req.ip ?? '';
+}
+
+// Per-IP bucket key; IPv6 grouped by /56 (see above).
+export function ipBucket(req: Request): string {
+  return `ip:${ipKeyGenerator(clientIp(req))}`;
+}
+
+// Exempt from the global limiter: page renders by our Next.js server (secret, no X-Client-IP). A
+// render serves many visitors from one IP, so limiting it would throttle the whole storefront. A
+// request that carries X-Client-IP is a visitor's own action relayed by the BFF and is counted
+// like any other visitor request.
+export function isServerRenderRequest(req: Request): boolean {
+  return !req.get('X-Client-IP') && isTrustedServerRequest(req);
 }
 
 // True only for server-to-server calls from our own Next.js server, which sends

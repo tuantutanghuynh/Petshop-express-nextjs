@@ -1,6 +1,7 @@
 import request from 'supertest';
 import { describe, expect, it } from 'vitest';
 import app from '../app';
+import { freshIp } from './helpers';
 
 const STRONG = 'Abcdef1!';
 const hostile: Array<[string, unknown]> = [
@@ -29,7 +30,7 @@ const expectValidationError = (res: request.Response) => {
 describe('POST /api/v1/auth/register validation', () => {
   it.each(hostile)('rejects %s as the email', async (_name, email) => {
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/register').set('X-Forwarded-For', freshIp())
       .send({ email, password: STRONG, confirmPassword: STRONG });
     expectValidationError(res);
   });
@@ -43,30 +44,30 @@ describe('POST /api/v1/auth/register validation', () => {
     ['empty', ''],
   ])('rejects a password that is %s', async (_name, password) => {
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/register').set('X-Forwarded-For', freshIp())
       .send({ email: 'user@example.com', password, confirmPassword: password });
     expectValidationError(res);
   });
 
   it('rejects a mismatching confirmPassword', async () => {
     const res = await request(app)
-      .post('/api/v1/auth/register')
+      .post('/api/v1/auth/register').set('X-Forwarded-For', freshIp())
       .send({ email: 'user@example.com', password: STRONG, confirmPassword: 'Different1!' });
     expectValidationError(res);
   });
 
   it('rejects an empty body', async () => {
-    expectValidationError(await request(app).post('/api/v1/auth/register').send({}));
+    expectValidationError(await request(app).post('/api/v1/auth/register').set('X-Forwarded-For', freshIp()).send({}));
   });
 });
 
 describe('POST /api/v1/auth/login validation', () => {
   it.each(hostile)('rejects %s as the email', async (_name, email) => {
-    expectValidationError(await request(app).post('/api/v1/auth/login').send({ email, password: 'x' }));
+    expectValidationError(await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', freshIp()).send({ email, password: 'x' }));
   });
 
   it('rejects a missing password', async () => {
-    expectValidationError(await request(app).post('/api/v1/auth/login').send({ email: 'user@example.com' }));
+    expectValidationError(await request(app).post('/api/v1/auth/login').set('X-Forwarded-For', freshIp()).send({ email: 'user@example.com' }));
   });
 });
 
@@ -90,6 +91,6 @@ describe('POST /api/v1/auth/refresh and password reset validation', () => {
   });
 
   it.each(hostile)('rejects %s as the request-password-reset email', async (_name, email) => {
-    expectValidationError(await request(app).post('/api/v1/auth/request-password-reset').send({ email }));
+    expectValidationError(await request(app).post('/api/v1/auth/request-password-reset').set('X-Forwarded-For', freshIp()).send({ email }));
   });
 });

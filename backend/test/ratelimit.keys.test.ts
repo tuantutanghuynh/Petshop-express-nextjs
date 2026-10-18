@@ -104,3 +104,38 @@ describe('global API limiter — whose bucket a request falls into', () => {
     expect(statuses[100]).toBe(429);
   });
 });
+
+// The Next.js server also forwards visitors' own requests (BFF: login, cart, checkout). Those are
+// not page renders and must be limited like any visitor — by user, or by the visitor's real IP,
+// which the Next.js server passes in X-Client-IP. That header is trusted ONLY together with the
+// correct X-Internal-Secret; from anyone else it would let an attacker pick a fresh IP per request.
+describe('global API limiter — requests forwarded by the Next.js BFF', () => {
+  it('a forwarded visitor request (secret + X-Client-IP) is limited by that visitor IP', async () => {
+    const app = await freshApp();
+    const statuses = await burst(app, 101, { 'X-Forwarded-For': '10.0.0.8', 'X-Internal-Secret': SECRET, 'X-Client-IP': '203.0.113.50' });
+    expect(statuses[100]).toBe(429);
+
+    // another visitor forwarded by the same Next.js server keeps a full bucket
+    const other = await burst(app, 5, { 'X-Forwarded-For': '10.0.0.8', 'X-Internal-Secret': SECRET, 'X-Client-IP': '203.0.113.51' });
+    expect(other.every((s) => s === 404)).toBe(true);
+  });
+
+  it('X-Client-IP without the secret is ignored (cannot dodge the limit by rotating it)', async () => {
+    const app = await freshApp();
+    const statuses: number[] = [];
+    for (let i = 0; i < 101; i += 1) {
+      statuses.push((await request(app).get(URL).set({ 'X-Forwarded-For': '203.0.113.60', 'X-Client-IP': `198.51.100.${i % 250}` })).status);
+    }
+    expect(statuses[100]).toBe(429);
+  });
+
+  it('a malformed X-Client-IP falls back to the connection IP', async () => {
+    vi.resetModules();
+    vi.stubEnv('INTERNAL_API_SECRET', SECRET); // config/env.ts reads it at import time
+    const { clientIp } = await import('../middlewares/rateLimitKeys');
+    const req = (h: Record<string, string>) => ({ ip: '10.0.0.9', get: (n: string) => h[n] }) as never;
+    expect(clientIp(req({ 'X-Internal-Secret': SECRET, 'X-Client-IP': '203.0.113.70' }))).toBe('203.0.113.70');
+    expect(clientIp(req({ 'X-Internal-Secret': SECRET, 'X-Client-IP': 'not-an-ip' }))).toBe('10.0.0.9');
+    expect(clientIp(req({ 'X-Client-IP': '203.0.113.70' }))).toBe('10.0.0.9');
+  });
+});
