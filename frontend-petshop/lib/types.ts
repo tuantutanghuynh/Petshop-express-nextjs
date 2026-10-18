@@ -76,12 +76,20 @@ export interface ProductVariant {
   imageUrl: string | null;
 }
 
+export interface CategoryAttribute {
+  id: string;
+  attributeKey: string;
+  attributeLabel: string;
+}
+
 export interface Category {
   id: string;
   parentId: string | null;
   name: string;
   slug: string;
   description: string | null;
+  // Included by GET /categories and GET /products/:slug (spec table labels), not by the list.
+  attributes?: CategoryAttribute[];
 }
 
 export interface Product {
@@ -92,6 +100,8 @@ export interface Product {
   brand: string | null;
   status: string;
   updatedAt: string;
+  // Spec values keyed by CategoryAttribute.attributeKey.
+  attributes: Record<string, unknown>;
   category: Category;
   images: ProductImage[];
   variants: ProductVariant[];

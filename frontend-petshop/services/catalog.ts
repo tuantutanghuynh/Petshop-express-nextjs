@@ -7,24 +7,77 @@ import type { Category, PageMeta, Product } from '../lib/types';
 // instead of on every page view. Errors are NOT swallowed: during a build they fail it loudly,
 // and on a background revalidation Next keeps serving the last good page.
 const REVALIDATE_SECONDS = 300;
+const MAX_PAGE_SIZE = 50; // backend cap for GET /products
+export const CATEGORY_PAGE_SIZE = 24;
+
+const cached = (tags: string[]) => ({ next: { revalidate: REVALIDATE_SECONDS, tags } });
+
+export type ProductPage = { products: Product[]; total: number };
+
+// One page of active products in a category (the backend includes its direct children).
+// A category that does not exist yields an empty page; callers decide whether that is a 404.
+async function listProducts(categorySlug: string, page: number, pageSize: number): Promise<ProductPage> {
+  try {
+    const { data, meta } = await apiFetch<Product[], PageMeta>(
+      `/products?page=${page}&pageSize=${pageSize}&categorySlug=${encodeURIComponent(categorySlug)}`,
+      cached(['products']),
+    );
+    return { products: data, total: meta.total };
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.code === 'CATEGORY_NOT_FOUND') return { products: [], total: 0 };
+    throw err;
+  }
+}
 
 export async function getNewestProducts(limit: number): Promise<Product[]> {
-  const { data } = await apiFetch<Product[], PageMeta>(
-    `/products?page=1&pageSize=${limit}&categorySlug=${encodeURIComponent(BRAND_SLUG)}`,
-    { next: { revalidate: REVALIDATE_SECONDS, tags: ['products'] } },
-  ).catch((err: unknown) => {
-    // The brand root does not exist yet (fresh database): show an empty catalogue, not an error page.
-    if (err instanceof ApiRequestError && err.code === 'CATEGORY_NOT_FOUND') return { data: [] as Product[] };
-    throw err;
-  });
+  return (await listProducts(BRAND_SLUG, 1, limit)).products;
+}
+
+export function getCategoryProducts(categorySlug: string, page: number): Promise<ProductPage> {
+  return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE);
+}
+
+async function getAllCategories(): Promise<Category[]> {
+  const { data } = await apiFetch<Category[]>('/categories', cached(['categories']));
   return data;
+}
+
+function shopChildren(all: Category[]): Category[] {
+  const root = all.find((c) => c.parentId === null && c.slug === BRAND_SLUG);
+  return root ? all.filter((c) => c.parentId === root.id) : [];
 }
 
 // The shop's own categories: the children of the brand root category.
 export async function getShopCategories(): Promise<Category[]> {
-  const { data } = await apiFetch<Category[]>('/categories', {
-    next: { revalidate: REVALIDATE_SECONDS, tags: ['categories'] },
-  });
-  const root = data.find((c) => c.parentId === null && c.slug === BRAND_SLUG);
-  return root ? data.filter((c) => c.parentId === root.id) : [];
+  return shopChildren(await getAllCategories());
+}
+
+// A category page exists only for this shop's categories. The database also holds other
+// storefronts (legacy pottery brand); their slugs must answer 404 here, not render under our name.
+export async function getShopCategory(slug: string): Promise<Category | null> {
+  return (await getShopCategories()).find((c) => c.slug === slug) ?? null;
+}
+
+// Product detail, or null when it does not exist, is not active (the API answers 404 for both)
+// or belongs to another storefront.
+export async function getShopProduct(slug: string): Promise<Product | null> {
+  let product: Product;
+  try {
+    ({ data: product } = await apiFetch<Product>(`/products/${encodeURIComponent(slug)}`, cached(['products', `product:${slug}`])));
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return null;
+    throw err;
+  }
+  const isOurs = (await getShopCategories()).some((c) => c.id === product.category.id);
+  return isOurs ? product : null;
+}
+
+// Every active product's slug and updatedAt, for the sitemap (walks all pages; the API caps at 50).
+export async function getAllProductEntries(): Promise<{ slug: string; updatedAt: string }[]> {
+  const out: { slug: string; updatedAt: string }[] = [];
+  for (let page = 1; ; page += 1) {
+    const { products, total } = await listProducts(BRAND_SLUG, page, MAX_PAGE_SIZE);
+    out.push(...products.map((p) => ({ slug: p.slug, updatedAt: p.updatedAt })));
+    if (products.length === 0 || page * MAX_PAGE_SIZE >= total) return out;
+  }
 }
