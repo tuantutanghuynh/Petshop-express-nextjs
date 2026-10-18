@@ -11,6 +11,7 @@ import logger from 'morgan';
 import routes from './routes';
 import notFound from './middlewares/notFound';
 import errorHandler from './middlewares/errorHandler';
+import { apiRateLimitKey, isTrustedServerRequest } from './middlewares/rateLimitKeys';
 
 // Assembles the Express application: security layers, body parsing, the API routes and the
 // error handling chain, in that order. Middleware order is the whole point of this file —
@@ -69,16 +70,20 @@ const corsOptions: CorsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Baseline throttle of 100 requests per 15 minutes per IP across the whole API, as a blunt
-// protection against scraping and runaway clients. Sensitive endpoints do not rely on this
-// number alone: `/auth/*` and `/contact` mount their own stricter limiters in their route
-// files, which run in addition to this one.
+// Baseline throttle of 100 requests per 15 minutes across the whole API, as a blunt protection
+// against scraping and runaway clients. The bucket is the logged-in user when the request carries
+// a valid access token and the IP otherwise, and our own Next.js server is exempt — see
+// middlewares/rateLimitKeys.ts for why counting by IP alone blocked real visitors. Sensitive
+// endpoints do not rely on this number alone: `/contact` and `/quote-requests` mount their own
+// stricter per-IP limiters in their route files, which run in addition to this one.
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per 15 minutes
+  limit: 100,
   standardHeaders: true,
   legacyHeaders: false,
-  message: 'Too many requests from this IP, please try again after 15 minutes',
+  keyGenerator: apiRateLimitKey,
+  skip: isTrustedServerRequest,
+  message: 'Too many requests, please try again after 15 minutes',
 });
 
 app.use('/api/', apiLimiter);

@@ -26,6 +26,8 @@ export const port: string | number = process.env.PORT || 4000;
 export const databaseUrl: string | undefined = process.env.DATABASE_URL;
 export const jwtAccessSecret: string | undefined = process.env.JWT_ACCESS_SECRET;
 export const jwtRefreshSecret: string | undefined = process.env.JWT_REFRESH_SALT;
+// Shared with the Next.js server only; lets its server-side requests skip the API rate limiter.
+export const internalApiSecret: string | undefined = process.env.INTERNAL_API_SECRET || undefined;
 export const cloudinary = {
   cloudName: process.env.CLOUDINARY_CLOUD_NAME,
   apiKey: process.env.CLOUDINARY_API_KEY,
