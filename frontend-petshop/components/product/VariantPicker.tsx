@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { formatVnd } from '../../lib/storefront';
+import { AddToCart } from '../cart/AddToCart';
 import type { ProductVariant } from '../../lib/types';
 
 type Props = { variants: ProductVariant[]; phone?: string };
@@ -11,7 +12,7 @@ const labelOf = (v: ProductVariant) => (typeof v.variantAttributes.label === 'st
 
 // Price and availability of the chosen variant. Starts on the cheapest variant that is in stock.
 // The server HTML already contains that price, so crawlers and no-JS visitors see a real one.
-// Online ordering arrives with the cart; until then the call to action is the shop's phone line.
+// The shop's phone line stays as a second way to order.
 export function VariantPicker({ variants, phone }: Props) {
   const [selectedId, setSelectedId] = useState(() => (variants.find(available) ?? variants[0]).id);
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
@@ -58,15 +59,13 @@ export function VariantPicker({ variants, phone }: Props) {
         {inStock ? '✔ Còn hàng' : 'Tạm hết hàng'}
       </p>
 
-      {phone ? (
-        <a
-          href={`tel:${phone.replace(/[^\d+]/g, '')}`}
-          className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-brand-ink px-6 font-bold text-white hover:bg-brand-deep sm:w-auto"
-        >
-          ☎ Gọi đặt hàng: {phone}
+      {/* key: a new variant starts again at quantity 1 */}
+      <AddToCart key={selected.id} variantId={selected.id} available={selected.stockQuantity - selected.reservedQuantity} />
+
+      {phone && (
+        <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-ink underline">
+          ☎ Hoặc gọi đặt hàng: {phone}
         </a>
-      ) : (
-        <p className="rounded-card bg-surface-alt p-3 text-sm">Đặt hàng online sắp ra mắt.</p>
       )}
     </div>
   );

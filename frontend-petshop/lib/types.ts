@@ -109,3 +109,24 @@ export interface Product {
 
 // GET /api/v1/settings → { key: value } (values are strings; JSON for structured settings).
 export type SiteSettings = Record<string, string>;
+
+// GET /api/v1/cart. `available` = stockQuantity - reservedQuantity; warnings are computed by the
+// backend (UNAVAILABLE | OUT_OF_STOCK | INSUFFICIENT_STOCK) and must be resolved before checkout.
+export interface CartLine {
+  id: string;
+  quantity: number;
+  unitPrice: number;
+  lineTotal: number;
+  available: number;
+  warnings: string[];
+  variant: { id: string; sku: string; variantAttributes: Record<string, unknown>; imageUrl: string | null };
+  product: { id: string; name: string; slug: string };
+}
+
+export interface Cart {
+  id: string | null;
+  brandSlug: string;
+  items: CartLine[];
+  subtotal: number;
+  hasIssues: boolean;
+}
