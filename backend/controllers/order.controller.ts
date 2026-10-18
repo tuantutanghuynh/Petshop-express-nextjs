@@ -357,4 +357,40 @@ export const cancelOrder = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, updated);
 });
 
-export default { createOrder, listMyOrders, getMyOrder, adminList, confirmPayment, cancelOrder };
+// Moves a confirmed order along fulfilment: CONFIRMED → PROCESSING (packed / handed to the courier)
+// → COMPLETED (delivered). Stock is not touched — it left the shelf when the order was confirmed.
+//
+// Completing a COD order is also the moment its money arrives (the courier collected the cash), so
+// it becomes PAID with paidAt stamped; a bank transfer was already PAID and keeps its original
+// paidAt. Same concurrency rule as confirm / cancel: the write only applies if the order is still
+// in the status we validated, so two admins pressing at once cannot both "win".
+//
+// The lookup is scoped to the brand in X-Brand-Slug: an order of another storefront answers 404.
+export const updateFulfilmentStatus = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.brand) throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu thông tin thương hiệu');
+  const id = req.params.id as string;
+  const nextStatus = req.body.status as string;
+
+  const order = await prisma.order.findFirst({ where: { id, brandSlug: req.brand.slug } });
+  if (!order) throw new ApiError(404, 'ORDER_NOT_FOUND', 'Không tìm thấy đơn hàng');
+
+  assertTransition(order.orderStatus, nextStatus);
+
+  const collectsCodCash = nextStatus === ORDER_STATUS.COMPLETED && order.paymentStatus === PAYMENT_STATUS.UNPAID;
+
+  const updated = await prisma.$transaction(async (tx) => {
+    const claimed = await tx.order.updateMany({
+      where: { id: order.id, orderStatus: order.orderStatus },
+      data: {
+        orderStatus: nextStatus,
+        ...(collectsCodCash && { paymentStatus: PAYMENT_STATUS.PAID, paidAt: new Date() }),
+      },
+    });
+    if (claimed.count !== 1) throw orderChangedConcurrently();
+    return tx.order.findUniqueOrThrow({ where: { id: order.id }, include: { items: true } });
+  });
+
+  sendSuccess(res, updated);
+});
+
+export default { createOrder, listMyOrders, getMyOrder, adminList, confirmPayment, cancelOrder, updateFulfilmentStatus };

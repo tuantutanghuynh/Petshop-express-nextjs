@@ -5,7 +5,7 @@ import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
 import resolveBrand from '../middlewares/resolveBrand';
 import * as ctrl from '../controllers/order.controller';
-import { PAYMENT_METHOD } from '../constants/order';
+import { PAYMENT_METHOD, ORDER_STATUS } from '../constants/order';
 
 const router = Router();
 
@@ -43,6 +43,21 @@ router.get('/', ctrl.listMyOrders);
 router.get('/admin/list', requireRole('admin'), ctrl.adminList);
 router.patch('/admin/:id/confirm-payment', requireRole('admin'), ctrl.confirmPayment);
 router.patch('/admin/:id/cancel', requireRole('admin'), ctrl.cancelOrder);
+
+// Fulfilment steps only. Confirming and cancelling have their own endpoints because they move
+// stock; this one never does, so it accepts nothing but the two shipping states.
+router.patch(
+  '/admin/:id/status',
+  requireRole('admin'),
+  [
+    body('status')
+      .isString()
+      .isIn([ORDER_STATUS.PROCESSING, ORDER_STATUS.COMPLETED])
+      .withMessage('Chỉ chuyển được sang PROCESSING hoặc COMPLETED'),
+    validate,
+  ],
+  ctrl.updateFulfilmentStatus
+);
 
 router.get('/:code', ctrl.getMyOrder);
 
