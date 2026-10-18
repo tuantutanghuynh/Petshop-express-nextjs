@@ -122,7 +122,10 @@ describe('L2 — why the checkout SQL looks the way it does', () => {
   });
 });
 
-describe('L2/L3 — admin stock edit racing checkouts (PATCH /products/variants/:id)', () => {
+// Since ADR-007 the admin sets stock through POST …/stock-movements (a STOCKTAKE here, the
+// equivalent of the old absolute PATCH). The invariant under test is unchanged: stock may never end
+// up below the units reserved for customers, however the requests interleave.
+describe('L2/L3 — admin stock edit racing checkouts (stocktake)', () => {
   it(`setting stock while customers reserve never leaves stock below the reservation (I2) — ${ITER}x`, async () => {
     // updateVariant reads reservedQuantity, checks `stockQuantity >= reserved` in JS, then
     // writes. Reservations committed between that read and that write are not seen, so the
@@ -140,7 +143,7 @@ describe('L2/L3 — admin stock edit racing checkouts (PATCH /products/variants/
       }
 
       const [edit] = await Promise.all([
-        call('patch', `/api/v1/products/variants/${v.id}`, { token: admin.token }).send({ stockQuantity: 2 }),
+        call('post', `/api/v1/products/variants/${v.id}/stock-movements`, { token: admin.token }).send({ type: 'STOCKTAKE', countedQuantity: 2 }),
         ...buyers.map((u) => call('post', '/api/v1/orders', { token: u.token }).send(orderBody('BANK_TRANSFER'))),
       ]);
 
@@ -151,7 +154,7 @@ describe('L2/L3 — admin stock edit racing checkouts (PATCH /products/variants/
     expect(failures, 'stock set below units already reserved for customers').toEqual([]);
   });
 
-  it('deterministic replay: an edit that starts while a checkout transaction is open overwrites it into stock < reserved', async () => {
+  it('deterministic replay: a stocktake that starts while a checkout transaction is open never writes stock < reserved', async () => {
     // The random burst above rarely hits the gap (it is a few milliseconds wide). Here the gap
     // is held open on purpose, replaying exactly what createOrder's transaction does:
     //   1. client A = a bank-transfer checkout in progress: reserves 4 units, NOT committed yet;
@@ -167,8 +170,8 @@ describe('L2/L3 — admin stock edit racing checkouts (PATCH /products/variants/
     await a.query('BEGIN');
     await a.query(`UPDATE "ProductVariant" SET "reservedQuantity" = "reservedQuantity" + 4 WHERE id = $1`, [v.id]);
 
-    const edit = call('patch', `/api/v1/products/variants/${v.id}`, { token: admin.token })
-      .send({ stockQuantity: 2 })
+    const edit = call('post', `/api/v1/products/variants/${v.id}/stock-movements`, { token: admin.token })
+      .send({ type: 'STOCKTAKE', countedQuantity: 2 })
       .then((r) => r);
     expect(await isBlocked(edit, 500)).toBe(true); // the edit is waiting on the checkout's lock
 

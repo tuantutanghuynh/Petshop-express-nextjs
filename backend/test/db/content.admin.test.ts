@@ -85,7 +85,8 @@ describe('products (admin)', () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
     const p = await createProduct(child.id, { variants: [{ stock: 10, reserved: 3 }] });
-    const res = await call('patch', `/api/v1/products/variants/${p.variants[0].id}`, { token: admin.token }).send({ stockQuantity: 2 });
+    // stock is set by physical count since ADR-007 (PATCH no longer accepts stockQuantity)
+    const res = await call('post', `/api/v1/products/variants/${p.variants[0].id}/stock-movements`, { token: admin.token }).send({ type: 'STOCKTAKE', countedQuantity: 2 });
     expect(res.status).toBe(409);
     expect(res.body.error.code).toBe('STOCK_BELOW_RESERVED');
   });
