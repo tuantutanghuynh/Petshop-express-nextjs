@@ -10,7 +10,7 @@ type Props = { searchParams: Promise<{ next?: string | string[] }> };
 export default async function RegisterPage({ searchParams }: Props) {
   const { next } = await searchParams;
   return (
-    <main id="main" className="mx-auto w-full max-w-md px-4 py-8">
+    <main id="main" className="mx-auto w-full max-w-md px-4 md:px-6 py-8">
       <h1 className="mb-6 text-2xl font-extrabold">Tạo tài khoản</h1>
       <RegisterForm next={safeNext(typeof next === 'string' ? next : undefined)} />
     </main>

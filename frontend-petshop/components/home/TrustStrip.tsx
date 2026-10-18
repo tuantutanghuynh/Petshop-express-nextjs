@@ -9,7 +9,7 @@ const ITEMS = [
 
 export function TrustStrip() {
   return (
-    <section aria-label="Cam kết của cửa hàng" className="mx-auto max-w-[1200px] px-4 py-6">
+    <section aria-label="Cam kết của cửa hàng" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
       <ul className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {ITEMS.map((item) => (
           <li key={item.title} className="flex items-center gap-3 rounded-card bg-surface-alt p-3.5 text-xs">

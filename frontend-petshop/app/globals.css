@@ -99,6 +99,21 @@ html {
   -webkit-text-size-adjust: 100%;
 }
 
+/* Safety net only: overflowing elements are still found and fixed (mobile-ui.md). */
+body {
+  overflow-x: clip;
+}
+
+/* Tap feedback on touch screens: the grey tap flash is replaced by a short dim of the element
+   itself, and double-tap-to-zoom no longer delays taps on links and buttons. */
+a, button, summary, [role='button'], label:has(> input[type='radio']) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+:where(a, button, summary, [role='button'], label:has(> input[type='radio'])):active:not(:disabled) {
+  opacity: 0.75;
+}
+
 body {
   background: var(--surface);
   color: var(--text);

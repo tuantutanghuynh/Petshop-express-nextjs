@@ -21,7 +21,7 @@ export function VariantPicker({ variants, phone }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="flex flex-wrap items-baseline gap-x-3">
+      <p className="flex flex-wrap items-baseline gap-x-3 tabular-nums">
         <span className="text-2xl font-extrabold text-ink">{formatVnd(selected.price)}</span>
         {discounted && selected.compareAtPrice !== null && (
           <s className="text-muted">{formatVnd(selected.compareAtPrice)}</s>
@@ -60,7 +60,7 @@ export function VariantPicker({ variants, phone }: Props) {
       </p>
 
       {/* key: a new variant starts again at quantity 1 */}
-      <AddToCart key={selected.id} variantId={selected.id} available={selected.stockQuantity - selected.reservedQuantity} />
+      <AddToCart key={selected.id} variantId={selected.id} available={selected.stockQuantity - selected.reservedQuantity} priceLabel={formatVnd(selected.price)} />
 
       {phone && (
         <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-ink underline">

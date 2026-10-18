@@ -4,7 +4,7 @@ import type { Order } from '../../lib/types';
 // Items and totals as they were when the order was placed (snapshots, not today's prices).
 export function OrderItems({ order }: { order: Order }) {
   return (
-    <section aria-labelledby="items-title" className="flex flex-col gap-3">
+    <section aria-labelledby="items-title" className="flex flex-col gap-3 tabular-nums">
       <h2 id="items-title" className="text-lg font-extrabold">Sản phẩm</h2>
       <ul className="flex flex-col">
         {order.items.map((item) => (

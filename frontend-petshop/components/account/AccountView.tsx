@@ -30,7 +30,7 @@ function OrderList() {
   }
   return (
     <div key="orders" className="flex flex-col gap-4">
-      <ul className="flex flex-col gap-3">
+      <ul className="flex flex-col gap-3 tabular-nums">
         {orders.data.map((o) => (
           <li key={o.id}>
             <Link href={`/tai-khoan/don-hang/${encodeURIComponent(o.code)}`} className="flex flex-col gap-1 rounded-card border border-line p-4 hover:bg-surface-alt">

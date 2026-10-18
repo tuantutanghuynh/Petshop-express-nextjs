@@ -17,11 +17,11 @@ export function BottomNav() {
   const tabs = [...NAV_LINKS, CART_TAB, ACCOUNT_TAB];
   return (
     <nav aria-label="Điều hướng nhanh" className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-      <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
+      <ul className="flex">
         {tabs.map((link) => {
           const active = isActive(pathname, link.href);
           return (
-            <li key={link.href}>
+            <li key={link.href} className={`min-w-0 flex-1 ${link.narrowHidden ? 'max-[239px]:hidden' : ''}`}>
               <Link
                 href={link.href}
                 aria-current={active ? 'page' : undefined}

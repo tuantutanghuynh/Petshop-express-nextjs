@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Đặt hàng', robots: { index: fals
 export default async function CheckoutPage() {
   const bank = await getBankInfo();
   return (
-    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6">
+    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6 max-md:pb-24 md:px-6">
       <h1 className="mb-6 text-2xl font-extrabold">Đặt hàng</h1>
       <CheckoutView bank={bank} />
     </main>

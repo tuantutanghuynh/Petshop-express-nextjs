@@ -5,13 +5,14 @@ import { useRouter } from 'next/navigation';
 import { useState, type FormEvent } from 'react';
 import { bffFetch } from '../../lib/bffClient';
 import { cartCount, variantLabel } from '../../lib/cart';
-import { fieldErrors, type FieldErrors } from '../../lib/forms';
+import { fieldErrors, focusFirstError, type FieldErrors } from '../../lib/forms';
 import { newIdempotencyKey, validateCheckout, type BankInfo } from '../../lib/orders';
 import { formatVnd } from '../../lib/storefront';
 import type { Order } from '../../lib/types';
 import { useCart } from '../cart/CartProvider';
 import { EmptyState } from '../ui/EmptyState';
 import { FormAlert } from '../ui/FormAlert';
+import { StickyActionBar } from '../ui/StickyActionBar';
 import { TextField } from '../ui/TextField';
 
 type Method = 'COD' | 'BANK_TRANSFER';
@@ -58,7 +59,8 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    const form = new FormData(event.currentTarget);
+    const formEl = event.currentTarget; // currentTarget is null after the await below
+    const form = new FormData(formEl);
     const values = {
       fullName: String(form.get('fullName') ?? ''),
       phone: String(form.get('phone') ?? ''),
@@ -69,7 +71,10 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
     const clientErrors = validateCheckout(values);
     setErrors(clientErrors);
     setAlert(null);
-    if (Object.keys(clientErrors).length > 0) return;
+    if (Object.keys(clientErrors).length > 0) {
+      focusFirstError(formEl, clientErrors);
+      return;
+    }
 
     setSubmitting(true);
     const res = await bffFetch<Order>('/api/orders', {
@@ -92,7 +97,11 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
       return;
     }
     setSubmitting(false);
-    if (res.error.code === 'VALIDATION_ERROR') setErrors(fieldErrors(res.error.details));
+    if (res.error.code === 'VALIDATION_ERROR') {
+      const serverErrors = fieldErrors(res.error.details);
+      setErrors(serverErrors);
+      focusFirstError(formEl, serverErrors);
+    }
     else setAlert({ text: res.error.message ?? 'Chưa đặt được hàng, vui lòng thử lại.', cart: CART_PROBLEMS.has(res.error.code) });
     if (CART_PROBLEMS.has(res.error.code)) void reload();
   }
@@ -105,7 +114,7 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
   );
 
   return (
-    <form onSubmit={onSubmit} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <form id="checkout-form" onSubmit={onSubmit} noValidate className="grid gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
       <div className="flex flex-col gap-6">
         {alert && (
           <div className="flex flex-col gap-2">
@@ -115,10 +124,10 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
         )}
         <fieldset className="flex flex-col gap-4">
           <legend className="mb-2 text-lg font-extrabold text-ink">Giao hàng tới</legend>
-          <TextField name="fullName" label="Họ tên người nhận" autoComplete="name" required error={errors['shippingAddress.fullName']} />
-          <TextField name="phone" label="Số điện thoại" type="tel" inputMode="tel" autoComplete="tel" required error={errors['shippingAddress.phone']} />
-          <TextField name="addressLine" label="Địa chỉ (số nhà, đường, phường / xã)" autoComplete="street-address" required error={errors['shippingAddress.addressLine']} />
-          <TextField name="city" label="Tỉnh / thành phố" autoComplete="address-level1" required error={errors['shippingAddress.city']} />
+          <TextField name="fullName" label="Họ tên người nhận" autoComplete="name" enterKeyHint="next" required error={errors['shippingAddress.fullName']} />
+          <TextField name="phone" label="Số điện thoại" type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="next" required error={errors['shippingAddress.phone']} />
+          <TextField name="addressLine" label="Địa chỉ (số nhà, đường, phường / xã)" autoComplete="street-address" enterKeyHint="next" required error={errors['shippingAddress.addressLine']} />
+          <TextField name="city" label="Tỉnh / thành phố" autoComplete="address-level1" enterKeyHint="next" required error={errors['shippingAddress.city']} />
           <div className="flex flex-col gap-1">
             <label htmlFor="f-note" className="text-sm font-bold text-ink">Ghi chú (không bắt buộc)</label>
             <textarea id="f-note" name="note" rows={3} maxLength={500} aria-describedby={errors.note ? 'f-note-error' : undefined} className="rounded-[var(--radius-sm)] border border-line bg-surface p-3 text-base text-ink" />
@@ -132,7 +141,7 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
         </fieldset>
       </div>
 
-      <section aria-labelledby="checkout-summary" className="flex flex-col gap-3 rounded-panel bg-surface-alt p-5">
+      <section aria-labelledby="checkout-summary" className="flex flex-col gap-3 rounded-panel bg-surface-alt p-5 tabular-nums">
         <h2 id="checkout-summary" className="text-lg font-extrabold">Đơn hàng ({cartCount(cart)} sản phẩm)</h2>
         <ul className="flex flex-col text-sm">
           {cart.items.map((line) => (
@@ -148,6 +157,13 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
           {submitting ? 'Đang đặt hàng…' : 'Đặt hàng'}
         </button>
       </section>
+      {/* Inside the form (only positioned at the bottom), so it submits like the summary button: same validation and idempotency key. */}
+      <StickyActionBar label="Đặt hàng">
+        <span className="text-sm">Tạm tính <b className="block text-base text-ink tabular-nums">{formatVnd(cart.subtotal)}</b></span>
+        <button type="submit" form="checkout-form" disabled={submitting} className="min-h-12 rounded-full bg-brand-ink px-6 font-bold text-white disabled:opacity-60">
+          {submitting ? 'Đang đặt…' : 'Đặt hàng'}
+        </button>
+      </StickyActionBar>
     </form>
   );
 }

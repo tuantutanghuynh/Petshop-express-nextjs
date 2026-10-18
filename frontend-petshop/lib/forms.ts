@@ -59,3 +59,17 @@ export function validateRegister(v: { email: string; fullName: string; password:
   if (v.confirmPassword !== v.password) errors.confirmPassword = 'Xác nhận mật khẩu không khớp';
   return errors;
 }
+
+// After a failed submit, move focus to the first field (in form order) that has an error: on a
+// phone it is often off screen, and focus scrolls it into view and opens the keyboard on it. Error
+// keys may be backend paths ("shippingAddress.phone"); the input is matched by its last segment.
+export function focusFirstError(form: HTMLFormElement, errors: FieldErrors): void {
+  const names = new Set(Object.keys(errors).map((key) => key.split('.').pop()));
+  for (const el of Array.from(form.elements)) {
+    const name = el.getAttribute('name');
+    if (name && names.has(name) && el instanceof HTMLElement) {
+      el.focus();
+      return;
+    }
+  }
+}

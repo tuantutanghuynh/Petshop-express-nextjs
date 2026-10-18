@@ -8,7 +8,7 @@ import { SectionHeading } from '../ui/SectionHeading';
 // Categories have no image column yet, so each circle shows the name's first letter.
 export function CategoryRow({ categories }: { categories: Category[] }) {
   return (
-    <section aria-labelledby="cat-title" className="mx-auto max-w-[1200px] px-4 py-6">
+    <section aria-labelledby="cat-title" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
       <SectionHeading id="cat-title" title="🐾 Mua theo bé cưng" />
       {categories.length === 0 ? (
         <EmptyState message="Danh mục sản phẩm đang được cập nhật." />

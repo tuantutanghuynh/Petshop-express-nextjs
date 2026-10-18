@@ -16,7 +16,7 @@ export function BankTransferBox({ bank, amount, code, expiresAt }: Props) {
     <section aria-labelledby="bank-title" className="flex flex-col gap-3 rounded-panel bg-yellow-bg p-5">
       <h2 id="bank-title" className="text-lg font-extrabold">Thông tin chuyển khoản</h2>
       {bank ? (
-        <dl className="flex flex-col gap-2 text-sm">
+        <dl className="flex flex-col gap-2 text-sm tabular-nums">
           {[
             ['Ngân hàng', bank.name, ''],
             ['Số tài khoản', bank.account, 'break-all'],

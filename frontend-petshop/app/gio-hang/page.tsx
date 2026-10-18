@@ -7,7 +7,7 @@ export const metadata: Metadata = { title: 'Giỏ hàng', robots: { index: false
 
 export default function CartPage() {
   return (
-    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6">
+    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6 max-md:pb-24 md:px-6">
       <h1 className="mb-6 text-2xl font-extrabold">Giỏ hàng</h1>
       <CartView />
     </main>

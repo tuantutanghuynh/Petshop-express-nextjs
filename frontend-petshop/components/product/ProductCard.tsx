@@ -32,7 +32,7 @@ export function ProductCard({ product }: { product: Product }) {
         <Link href={productPath(product.slug)} className="after:absolute after:inset-0 after:rounded-card">{product.name}</Link>
       </h3>
       {summary && (
-        <p className="mt-auto flex flex-wrap items-baseline gap-x-2">
+        <p className="mt-auto flex flex-wrap items-baseline gap-x-2 tabular-nums">
           <span className="font-extrabold text-ink">
             {summary.hasRange && <small className="font-normal">từ </small>}
             {formatVnd(summary.price)}

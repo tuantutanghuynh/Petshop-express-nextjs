@@ -27,7 +27,7 @@ export default async function SearchPage({ searchParams }: Props) {
   if (result && result.total > 0 && page > totalPages) notFound();
 
   return (
-    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6">
+    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 md:px-6 py-6">
       <h1 className="mb-4 text-2xl font-extrabold">{q ? `Kết quả cho “${q}”` : 'Tìm kiếm'}</h1>
       <div className="mb-6 max-w-xl"><SearchForm defaultValue={typed} /></div>
 

@@ -26,7 +26,7 @@ export function CartLineItem({ line }: { line: CartLine }) {
   }
 
   return (
-    <li className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 border-b border-line py-4 sm:grid-cols-[96px_minmax(0,1fr)]">
+    <li className="grid grid-cols-[72px_minmax(0,1fr)] gap-3 tabular-nums border-b border-line py-4 sm:grid-cols-[96px_minmax(0,1fr)]">
       <div className="relative aspect-square overflow-hidden rounded-card bg-surface-alt">
         {src ? <Image src={src} alt="" fill sizes="96px" className="object-cover" /> : <span aria-hidden="true" className="grid h-full place-items-center text-2xl">🐾</span>}
       </div>

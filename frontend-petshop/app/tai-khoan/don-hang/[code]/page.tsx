@@ -15,7 +15,7 @@ export default async function OrderPage({ params, searchParams }: Props) {
   if (!isOrderCode(code)) notFound();
   const bank = await getBankInfo();
   return (
-    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 py-6">
+    <main id="main" className="mx-auto min-h-dvh max-w-[1200px] px-4 md:px-6 py-6">
       <OrderDetailView code={code} bank={bank} isNew={moi === '1'} />
     </main>
   );

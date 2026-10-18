@@ -2,16 +2,17 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { maxQuantity } from '../../lib/cart';
 import { QuantityStepper } from '../ui/QuantityStepper';
+import { StickyActionBar } from '../ui/StickyActionBar';
 import { useCart } from './CartProvider';
 
-type Props = { variantId: string; available: number };
+type Props = { variantId: string; available: number; priceLabel: string };
 
 // Quantity + "Thêm vào giỏ" for the variant chosen in VariantPicker. A signed-out visitor is sent to
 // the login page and comes back here afterwards. Stock is re-checked by the backend at checkout.
-export function AddToCart({ variantId, available }: Props) {
+export function AddToCart({ variantId, available, priceLabel }: Props) {
   const { status, addItem } = useCart();
   const router = useRouter();
   const pathname = usePathname();
@@ -19,6 +20,17 @@ export function AddToCart({ variantId, available }: Props) {
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const isOut = available <= 0;
+  // The phone action bar appears only once the inline button has scrolled out of view, so the
+  // same button is never shown twice on screen.
+  const inlineRef = useRef<HTMLDivElement>(null);
+  const [inlineVisible, setInlineVisible] = useState(true);
+  useEffect(() => {
+    const el = inlineRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') return;
+    const observer = new IntersectionObserver(([entry]) => setInlineVisible(entry.isIntersecting));
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
 
   async function onAdd() {
     if (status === 'signedOut') {
@@ -39,7 +51,7 @@ export function AddToCart({ variantId, available }: Props) {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div ref={inlineRef} className="flex flex-col gap-3">
       <div className="flex flex-wrap items-center gap-3">
         <QuantityStepper label="Số lượng" value={quantity} max={maxQuantity(available)} onChange={setQuantity} disabled={pending} />
         <button
@@ -56,6 +68,19 @@ export function AddToCart({ variantId, available }: Props) {
           {message.text}{' '}
           {message.ok && <Link href="/gio-hang" className="inline-flex min-h-11 items-center font-bold underline">Xem giỏ hàng</Link>}
         </p>
+      )}
+      {!inlineVisible && (
+        <StickyActionBar label="Thêm vào giỏ">
+          <span className="font-extrabold text-ink tabular-nums">{priceLabel}</span>
+          <button
+            type="button"
+            onClick={() => void onAdd()}
+            disabled={pending || status === 'loading'}
+            className="min-h-12 rounded-full bg-brand-ink px-6 font-bold text-white disabled:opacity-60"
+          >
+            {pending ? 'Đang thêm…' : `Thêm ${quantity > 1 ? `${quantity} ` : ''}vào giỏ`}
+          </button>
+        </StickyActionBar>
       )}
     </div>
   );

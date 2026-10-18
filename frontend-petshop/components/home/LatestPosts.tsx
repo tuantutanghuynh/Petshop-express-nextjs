@@ -10,7 +10,7 @@ const DATE = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit'
 // Not in the mock-up: links the homepage to the care articles (topical authority, seo.md).
 export function LatestPosts({ posts }: { posts: BlogPost[] | null }) {
   return (
-    <section aria-labelledby="posts-title" className="mx-auto max-w-[1200px] px-4 py-6">
+    <section aria-labelledby="posts-title" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
       <SectionHeading id="posts-title" title="📖 Kiến thức chăm sóc" moreHref="/blog" />
       {posts === null ? (
         <EmptyState tone="error" message="Chưa tải được bài viết. Vui lòng thử lại sau ít phút." />

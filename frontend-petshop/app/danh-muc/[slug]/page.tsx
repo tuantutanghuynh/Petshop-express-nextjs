@@ -58,7 +58,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const crumbs: Crumb[] = [{ name: 'Trang chủ', path: '/' }, { name: category.name }];
 
   return (
-    <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8">
+    <main id="main" className="mx-auto max-w-[1200px] px-4 md:px-6 pb-8">
       <JsonLd data={breadcrumbJsonLd(siteUrl(), crumbs)} />
       <Breadcrumb crumbs={crumbs} />
       <header className="mb-6 flex flex-col gap-2">

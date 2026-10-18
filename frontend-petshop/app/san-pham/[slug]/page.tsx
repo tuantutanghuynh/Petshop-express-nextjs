@@ -70,7 +70,7 @@ export default async function ProductPage({ params }: Props) {
   ];
 
   return (
-    <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8">
+    <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8 max-md:pb-24 md:px-6">
       <JsonLd data={productJsonLd(base, product)} />
       <JsonLd data={breadcrumbJsonLd(base, crumbs)} />
       <Breadcrumb crumbs={crumbs} />

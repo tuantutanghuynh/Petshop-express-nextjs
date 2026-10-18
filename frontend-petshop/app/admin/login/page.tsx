@@ -35,14 +35,14 @@ export default function AdminLoginPage() {
         <input
           type="email" required placeholder="Email" value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2"
+          className="min-h-11 rounded border border-gray-300 px-3 py-2 text-base"
         />
         <input
           type="password" required placeholder="Mật khẩu" value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="border border-gray-300 rounded px-3 py-2"
+          className="min-h-11 rounded border border-gray-300 px-3 py-2 text-base"
         />
-        <button type="submit" className="bg-black text-white rounded px-3 py-2">Đăng nhập</button>
+        <button type="submit" className="min-h-11 bg-black text-white rounded px-3 py-2">Đăng nhập</button>
       </form>
       {error && <p className="text-red-600 mt-2">{error}</p>}
     </div>

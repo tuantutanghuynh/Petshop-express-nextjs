@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { cartCount } from '../../lib/cart';
 import { formatVnd } from '../../lib/storefront';
 import { EmptyState } from '../ui/EmptyState';
+import { StickyActionBar } from '../ui/StickyActionBar';
 import { CartLineItem } from './CartLineItem';
 import { useCart } from './CartProvider';
 
@@ -46,7 +47,7 @@ export function CartView() {
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] lg:items-start">
       <ul aria-label="Sản phẩm trong giỏ">{cart.items.map((line) => <CartLineItem key={line.id} line={line} />)}</ul>
-      <section aria-labelledby="summary-title" className="flex flex-col gap-3 rounded-panel bg-surface-alt p-5">
+      <section aria-labelledby="summary-title" className="flex flex-col gap-3 rounded-panel bg-surface-alt p-5 tabular-nums">
         <h2 id="summary-title" className="text-lg font-extrabold">Tóm tắt</h2>
         <p className="flex justify-between"><span>Tạm tính ({cartCount(cart)} sản phẩm)</span><b className="text-ink">{formatVnd(cart.subtotal)}</b></p>
         <p className="text-sm text-muted">Phí giao hàng được báo khi cửa hàng xác nhận đơn.</p>
@@ -58,6 +59,12 @@ export function CartView() {
           </Link>
         )}
       </section>
+      {!cart.hasIssues && (
+        <StickyActionBar label="Đặt hàng">
+          <span className="text-sm">Tạm tính <b className="block text-base text-ink tabular-nums">{formatVnd(cart.subtotal)}</b></span>
+          <Link href="/dat-hang" className="inline-flex min-h-12 items-center rounded-full bg-brand-ink px-6 font-bold text-white">Đặt hàng</Link>
+        </StickyActionBar>
+      )}
     </div>
   );
 }
