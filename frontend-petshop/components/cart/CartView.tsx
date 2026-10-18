@@ -50,8 +50,12 @@ export function CartView() {
         <h2 id="summary-title" className="text-lg font-extrabold">Tóm tắt</h2>
         <p className="flex justify-between"><span>Tạm tính ({cartCount(cart)} sản phẩm)</span><b className="text-ink">{formatVnd(cart.subtotal)}</b></p>
         <p className="text-sm text-muted">Phí giao hàng được báo khi cửa hàng xác nhận đơn.</p>
-        {cart.hasIssues && (
+        {cart.hasIssues ? (
           <p role="status" className="rounded-card bg-pink-bg p-3 text-sm text-pink-ink">Một số sản phẩm cần điều chỉnh trước khi đặt hàng.</p>
+        ) : (
+          <Link href="/dat-hang" className="inline-flex min-h-12 items-center justify-center rounded-full bg-brand-ink px-6 font-bold text-white hover:bg-brand-deep">
+            Đặt hàng
+          </Link>
         )}
       </section>
     </div>

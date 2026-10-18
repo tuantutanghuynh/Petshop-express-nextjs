@@ -9,11 +9,12 @@ import { NAV_LINKS, isActive, type NavLink } from './navLinks';
 // Phone tab bar (hidden from 768px, where the header nav row takes over). Sits above the iPhone
 // home indicator via safe-area-inset-bottom; the page reserves the same space (see layout).
 const CART_TAB: NavLink = { href: '/gio-hang', label: 'Giỏ hàng', icon: '🛒' };
+const ACCOUNT_TAB: NavLink = { href: '/tai-khoan', label: 'Tài khoản', icon: '👤' };
 
 export function BottomNav() {
   const pathname = usePathname();
   const count = cartCount(useCart().cart);
-  const tabs = [...NAV_LINKS, CART_TAB];
+  const tabs = [...NAV_LINKS, CART_TAB, ACCOUNT_TAB];
   return (
     <nav aria-label="Điều hướng nhanh" className="fixed inset-x-0 bottom-0 z-50 border-t border-line bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
       <ul className="grid" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
@@ -34,7 +35,7 @@ export function BottomNav() {
                     </span>
                   )}
                 </span>
-                {link === CART_TAB && count > 0 ? <span>{link.label}<span className="sr-only">, {count} sản phẩm</span></span> : link.label}
+                {link === CART_TAB && count > 0 ? <span>{link.label}<span className="sr-only">, {count} sản phẩm</span></span> : (link.shortLabel ?? link.label)}
               </Link>
             </li>
           );

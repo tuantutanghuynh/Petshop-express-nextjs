@@ -130,3 +130,44 @@ export interface Cart {
   subtotal: number;
   hasIssues: boolean;
 }
+
+// Orders (GET /api/v1/orders, /orders/:code). Items are snapshots taken when the order was placed.
+export interface ShippingAddress {
+  fullName: string;
+  phone: string;
+  addressLine: string;
+  city: string;
+}
+
+export interface OrderItem {
+  id: string;
+  productName: string;
+  sku: string;
+  unitPrice: number;
+  quantity: number;
+  lineTotal: number;
+}
+
+export interface Order {
+  id: string;
+  code: string;
+  orderStatus: string;
+  paymentMethod: 'COD' | 'BANK_TRANSFER' | string;
+  paymentStatus: string;
+  subtotal: number;
+  shippingFee: number;
+  grandTotal: number;
+  shippingAddress: ShippingAddress;
+  note: string | null;
+  expiresAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+  items: OrderItem[];
+}
+
+export interface Customer {
+  id: string;
+  email: string;
+  fullName: string | null;
+  role: string;
+}

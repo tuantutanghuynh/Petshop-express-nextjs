@@ -1,4 +1,5 @@
 import { apiFetch } from '../lib/apiClient';
+import { bankInfo, type BankInfo } from '../lib/orders';
 import { parseSocialLinks } from '../lib/storefront';
 import type { BlogPost, PageMeta, SiteSettings } from '../lib/types';
 
@@ -60,5 +61,16 @@ export async function getShopInfo(): Promise<ShopInfo> {
   } catch (err) {
     console.error('getShopInfo: could not load shop settings', err);
     return { socialLinks: [] };
+  }
+}
+
+// Account for bank transfers, or null — then checkout offers COD only (lib/orders.ts bankInfo).
+// A failure is logged and treated as "not configured": better no transfer option than a wrong one.
+export async function getBankInfo(): Promise<BankInfo | null> {
+  try {
+    return bankInfo(await getSettings(['bank_name', 'bank_account', 'bank_holder']));
+  } catch (err) {
+    console.error('getBankInfo: could not load bank settings', err);
+    return null;
   }
 }
