@@ -1,69 +1,90 @@
-import Image from "next/image";
+import type { Metadata } from 'next';
+import { CategoryRow } from '../components/home/CategoryRow';
+import { FeatureStrip } from '../components/home/FeatureStrip';
+import { FeaturedProducts } from '../components/home/FeaturedProducts';
+import { Hero, type HeroContent } from '../components/home/Hero';
+import { LatestPosts } from '../components/home/LatestPosts';
+import { PromoCards } from '../components/home/PromoCards';
+import { TrustStrip } from '../components/home/TrustStrip';
+import { JsonLd } from '../components/seo/JsonLd';
+import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { imageSrc, isSafeHref, parsePromo } from '../lib/storefront';
+import type { SiteSettings } from '../lib/types';
+import { getNewestProducts, getShopCategories } from '../services/catalog';
+import { getLatestPosts, getSettings, getShopInfo } from '../services/content';
 
-export default function Home() {
+// Search intent: navigational. Title comes from the root layout's default.
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+  openGraph: { url: '/', title: `${SITE_NAME} – Thức ăn, pate, phụ kiện chó mèo`, description: SITE_DESCRIPTION },
+};
+
+const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
+const HERO_KEYS = ['title', 'accent', 'subtitle', 'cta_label', 'cta_href', 'image'].map((k) => `homepage_hero_${k}`);
+
+// Copy used until the admin fills the homepage_hero_* settings. The default button goes to the
+// care articles because the shop pages are not built yet.
+function heroFrom(s: SiteSettings): HeroContent {
+  const href = s.homepage_hero_cta_href;
+  return {
+    title: s.homepage_hero_title || 'Lựa chọn tốt nhất',
+    accent: s.homepage_hero_accent || 'cho bé cưng nhà bạn',
+    subtitle: s.homepage_hero_subtitle || 'Thức ăn dinh dưỡng, pate, phụ kiện chất lượng và kiến thức chăm sóc chó mèo từ người nuôi thật.',
+    ctaLabel: s.homepage_hero_cta_label || 'Đọc kiến thức chăm sóc',
+    ctaHref: href && isSafeHref(href) ? href : '/blog',
+    image: imageSrc(s.homepage_hero_image),
+  };
+}
+
+// A failed section must not take the page down: it is logged and shown as an error state, and
+// the rest of the homepage still renders.
+function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
+  if (result.status === 'fulfilled') return result.value;
+  console.error(`homepage: could not load ${label}`, result.reason);
+  return null;
+}
+
+export default async function HomePage() {
+  const [[settingsRes, categoriesRes, productsRes, postsRes], shop] = await Promise.all([
+    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS]), getShopCategories(), getNewestProducts(5), getLatestPosts(3)]),
+    getShopInfo(), // never throws (falls back to no contact details)
+  ]);
+  const settings = settled(settingsRes, 'settings') ?? {};
+  const base = siteUrl();
+
+  // Schema describes only what the page shows: no logo until a real logo file exists, sameAs
+  // only from configured social links, no SearchAction because there is no public search yet.
+  const organization = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${base}/#organization`,
+    name: SITE_NAME,
+    url: base,
+    description: SITE_DESCRIPTION,
+    ...(shop.socialLinks.length > 0 && { sameAs: shop.socialLinks }),
+    ...(shop.phone && { contactPoint: { '@type': 'ContactPoint', telephone: shop.phone, contactType: 'customer service', availableLanguage: 'vi' } }),
+  };
+  const website = {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${base}/#website`,
+    name: SITE_NAME,
+    url: base,
+    inLanguage: 'vi',
+    publisher: { '@id': `${base}/#organization` },
+  };
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.js
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+    <main id="main">
+      <JsonLd data={organization} />
+      <JsonLd data={website} />
+      <Hero content={heroFrom(settings)} />
+      <FeatureStrip />
+      <CategoryRow categories={settled(categoriesRes, 'categories') ?? []} />
+      <PromoCards promos={PROMO_KEYS.map((k) => parsePromo(settings[k]))} />
+      <FeaturedProducts products={settled(productsRes, 'products')} />
+      <TrustStrip />
+      <LatestPosts posts={settled(postsRes, 'posts')} />
+    </main>
   );
 }

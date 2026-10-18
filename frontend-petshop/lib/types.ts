@@ -55,3 +55,47 @@ export interface AuthTokens {
 export interface UploadResult {
   url: string;
 }
+
+// Catalogue shapes as returned by GET /api/v1/products (variants sorted by price ascending,
+// images by position) and GET /api/v1/categories.
+export interface ProductImage {
+  id: string;
+  url: string;
+  altText: string | null;
+  position: number;
+}
+
+export interface ProductVariant {
+  id: string;
+  sku: string;
+  price: number;
+  compareAtPrice: number | null;
+  stockQuantity: number;
+  reservedQuantity: number;
+  variantAttributes: { label?: string } & Record<string, unknown>;
+  imageUrl: string | null;
+}
+
+export interface Category {
+  id: string;
+  parentId: string | null;
+  name: string;
+  slug: string;
+  description: string | null;
+}
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  brand: string | null;
+  status: string;
+  updatedAt: string;
+  category: Category;
+  images: ProductImage[];
+  variants: ProductVariant[];
+}
+
+// GET /api/v1/settings → { key: value } (values are strings; JSON for structured settings).
+export type SiteSettings = Record<string, string>;

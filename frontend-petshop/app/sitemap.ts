@@ -1,22 +1,19 @@
 import type { MetadataRoute } from 'next';
-import { apiFetch } from '../lib/apiClient';
-import type { BlogPost } from '../lib/types';
+import { buildSitemap, type SitemapPost } from '../lib/seo/sitemap';
+import { siteUrl } from '../lib/site';
+import { getAllPostEntries } from '../services/content';
 
-const SITE_URL = 'https://miniecom-blog.vercel.app'; // TODO: thay domain thật ở Buổi 14
+// sitemap.ts is cached by default; without this a new post would only appear after the next build.
+export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const { data: posts } = await apiFetch<BlogPost[]>('/blog?pageSize=50', { cache: 'no-store' });
-
-  const staticUrls = [
-    { url: `${SITE_URL}/`, lastModified: new Date() },
-    { url: `${SITE_URL}/blog`, lastModified: new Date() },
-    { url: `${SITE_URL}/gallery`, lastModified: new Date() },
-  ];
-
-  const postUrls = posts.map((post) => ({
-    url: `${SITE_URL}/blog/${post.slug}`,
-    lastModified: post.updatedAt,
-  }));
-
-  return [...staticUrls, ...postUrls];
+  let posts: SitemapPost[] = [];
+  try {
+    posts = await getAllPostEntries();
+  } catch (err) {
+    // API down: still serve the static pages rather than a 500 that makes crawlers drop the file.
+    // Logged, not swallowed — the next revalidation retries.
+    console.error('sitemap: could not load blog posts', err);
+  }
+  return buildSitemap(siteUrl(), posts);
 }

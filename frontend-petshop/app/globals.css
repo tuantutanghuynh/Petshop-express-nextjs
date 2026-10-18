@@ -1,26 +1,127 @@
 @import "tailwindcss";
 
+/* Design tokens: copied from design/tokens.css (colours measured from the reference homepage). */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* ---- Primary: teal (top bar, main buttons, links, newsletter band) ---- */
+  --brand-teal: #0FA0A0;        /* measured #12A2A2 / #0C9C9C — white text 3.20:1 → large text only */
+  --brand-teal-hover: #0B9090;  /* measured "Shop Now" button pressed shade */
+  --brand-teal-ink: #087878;    /* white text 5.29:1 — buttons with ≤18px text, links on white */
+  --brand-teal-deep: #066B6B;   /* text on mint / peach backgrounds (≥4.96:1) */
+
+  /* ---- Neutrals ---- */
+  --ink: #0B1B2B;               /* headings, prices — measured hero title #0C1E30 (17.4:1) */
+  --text: #3A4C52;              /* body text — measured #3C4E54 (8.99:1 on white) */
+  --text-muted: #5B6B71;        /* secondary text (5.55:1) — do not go lighter */
+  --surface: #FFFFFF;           /* page and card background (measured #FCFCFC) */
+  --surface-alt: #F6F6F6;       /* trust-strip cards, input fills */
+  --border: #E6EAEB;
+  --mint: #D8EBEB;              /* hero background */
+  --mint-soft: #E4F0F0;         /* footer background */
+
+  /* ---- Promo card pairs: background + accent (+ ink for small text) ---- */
+  --pink: #DC2B5E;              /* "50% OFF", pink button — white text 4.62:1 OK */
+  --pink-bg: #FCDDE9;
+  --pink-ink: #B8204F;          /* small text on pink-bg (4.96:1) */
+
+  --yellow: #FCBE1C;            /* "BUY 1 GET 1", subscribe button — use NAVY text (10.4:1), never white */
+  --yellow-bg: #FCEAC9;
+  --yellow-ink: #8A5A00;        /* small text on yellow-bg (5.01:1) */
+  --yellow-hero: #FCB636;       /* hero right panel */
+
+  --mint-card: #DAF0EA;         /* "30% OFF dried food" card */
+
+  --orange: #F06E1C;            /* "Explore Now" button, cart badge — white text 3.02:1 → use navy text or --orange-ink */
+  --orange-ink: #C2510C;        /* orange button/label with white text (4.69:1) */
+  --orange-text: #A9470D;       /* orange headline on peach (4.58:1); measured #E47C26 only 2.28:1 */
+  --peach-bg: #FCDECD;
+
+  --purple: #5632BE;            /* "Shop Now" on lavender, feature icons — white text 8.09:1 OK */
+  --lavender-bg: #DED0EA;
+  --purple-ink: #4A2AA6;        /* text on lavender (6.59:1) */
+
+  --coral: #FC9FA0;             /* hero right pink panel (decorative only) */
+
+  /* ---- Status (derived from the brand set) ---- */
+  --success: var(--brand-teal-ink);
+  --warning: var(--orange-ink);
+  --danger: var(--pink-ink);
+
+  /* ---- Shape & spacing (scale from mobile-ui.md: 4, 8, 12, 16, 24, 32, 48) ---- */
+  --radius-sm: 8px;             /* inputs, small buttons */
+  --radius-md: 12px;            /* product cards */
+  --radius-lg: 16px;            /* promo cards, banners */
+  --radius-pill: 999px;         /* main CTA buttons, badges */
+  --shadow-card: 0 1px 2px rgb(11 27 43 / 6%), 0 4px 12px rgb(11 27 43 / 6%);
+
+  /* ---- Type: rounded geometric sans like the mock-up, with full Vietnamese support ---- */
+  /* Unlayered, so it overrides Tailwind's own --font-sans and font-sans / preflight pick it up. */
+  --font-sans: var(--font-be-vietnam), system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
 }
 
+/* Tailwind v4 utilities from the tokens: bg-brand-ink, text-ink, bg-pink-bg, rounded-card … */
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand-teal);
+  --color-brand-hover: var(--brand-teal-hover);
+  --color-brand-ink: var(--brand-teal-ink);
+  --color-brand-deep: var(--brand-teal-deep);
+  --color-ink: var(--ink);
+  --color-body: var(--text);
+  --color-muted: var(--text-muted);
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-line: var(--border);
+  --color-mint: var(--mint);
+  --color-mint-soft: var(--mint-soft);
+  --color-mint-card: var(--mint-card);
+  --color-pink: var(--pink);
+  --color-pink-bg: var(--pink-bg);
+  --color-pink-ink: var(--pink-ink);
+  --color-yellow: var(--yellow);
+  --color-yellow-bg: var(--yellow-bg);
+  --color-yellow-ink: var(--yellow-ink);
+  --color-yellow-hero: var(--yellow-hero);
+  --color-orange: var(--orange);
+  --color-orange-ink: var(--orange-ink);
+  --color-orange-text: var(--orange-text);
+  --color-peach: var(--peach-bg);
+  --color-purple: var(--purple);
+  --color-purple-ink: var(--purple-ink);
+  --color-lavender: var(--lavender-bg);
+  --color-coral: var(--coral);
+  --radius-card: var(--radius-md);
+  --radius-panel: var(--radius-lg);
+  --shadow-card: var(--shadow-card);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Light theme only: the palette was designed and contrast-checked on white. The old
+   prefers-color-scheme dark override turned the text near-white on these light surfaces. */
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--surface);
+  color: var(--text);
+  font-family: var(--font-sans);
+  line-height: 1.6;
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3, h4 {
+  color: var(--ink);
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+:focus-visible {
+  outline: 3px solid var(--brand-teal-ink);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
