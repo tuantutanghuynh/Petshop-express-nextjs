@@ -1,5 +1,6 @@
 import { Router } from 'express';
-import { body } from 'express-validator';
+import { body, query } from 'express-validator';
+import { PRODUCT_SORTS, toSearchText } from '../utils/searchText';
 import validate from '../middlewares/validate';
 import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
@@ -15,7 +16,22 @@ const router = Router();
 // `/admin/list` is declared before `/:slug` on purpose. Express matches routes in order, so with
 // the reverse order the literal word "admin" would be captured as a product slug and the admin
 // listing would answer 404 instead.
-router.get('/', ctrl.list);
+// Public list: optional search and sort. q must still have 2–100 characters once normalised
+// (so "  " or a single letter is refused rather than matching everything), and must be a single
+// value — "?q=a&q=b" arrives as an array. sort is a whitelist; anything else is a 422, never passed
+// on to the database. Validators only (no sanitizers): Express 5 makes req.query read-only.
+router.get(
+  '/',
+  [
+    query('q')
+      .optional()
+      .custom((v) => typeof v === 'string' && v.length <= 100 && toSearchText(v).length >= 2)
+      .withMessage('Từ khoá tìm kiếm phải có từ 2 đến 100 ký tự'),
+    query('sort').optional().isIn(PRODUCT_SORTS).withMessage('Kiểu sắp xếp không hợp lệ'),
+    validate,
+  ],
+  ctrl.list,
+);
 router.get('/admin/list', authenticate, requireRole('admin'), ctrl.adminList);
 router.get('/:slug', ctrl.getBySlug);
 

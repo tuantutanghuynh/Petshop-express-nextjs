@@ -8,6 +8,8 @@ import { parsePagination } from '../utils/pagination';
 import { PRODUCT_STATUS } from '../constants/product';
 import { STOCK_MOVEMENT_TYPE } from '../constants/inventory';
 import { adjustStockByAdmin, recordOpening } from '../services/inventory.service';
+import { lockProduct, refreshMinPrice } from '../services/catalog.service';
+import { escapeLike, productOrderBy, toSearchText, type ProductSort } from '../utils/searchText';
 
 // Every read and write path for products, serving both the storefront and the admin dashboard.
 // A product is a catalogue entry; the sellable things with a price and a stock count are its
@@ -21,10 +23,14 @@ import { adjustStockByAdmin, recordOpening } from '../services/inventory.service
 // expands to include child categories, otherwise a product filed under "Bình gốm" would be missing
 // from the parent brand's listing.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { categorySlug } = req.query;
+  const { categorySlug, q, sort } = req.query;
   const { page, take, skip } = parsePagination(req.query, 12, 50);
 
   const where: Prisma.ProductWhereInput = { status: PRODUCT_STATUS.ACTIVE };
+  // q and sort were validated by the route (length, whitelist). The search compares accent-free
+  // text on both sides, so "pate meo" matches "Pate mèo". Prisma does NOT escape % and _ in
+  // `contains`, hence escapeLike.
+  if (typeof q === 'string') where.searchName = { contains: escapeLike(toSearchText(q)) };
 
   if (categorySlug && typeof categorySlug === 'string') {
     const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
@@ -37,7 +43,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      orderBy: productOrderBy((typeof sort === 'string' ? sort : '-createdAt') as ProductSort),
       include: {
         category: true,
         images: { orderBy: { position: 'asc' } },
@@ -85,7 +91,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
 
   const where: Prisma.ProductWhereInput = {};
   if (status && typeof status === 'string') where.status = status;
-  if (search && typeof search === 'string') where.name = { contains: search, mode: 'insensitive' };
+  if (search && typeof search === 'string') where.searchName = { contains: escapeLike(toSearchText(search)) };
 
   if (categorySlug && typeof categorySlug === 'string') {
     const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
@@ -155,6 +161,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
         brand,
         status: status || PRODUCT_STATUS.DRAFT,
         attributes: attributes ?? {},
+        searchName: toSearchText(name),
       },
     });
 
@@ -174,6 +181,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
       // Opening balance for each variant: the ledger starts at the stock it was created with.
       const createdVariants = await tx.productVariant.findMany({ where: { productId: created.id }, select: { id: true } });
       for (const v of createdVariants) await recordOpening(tx, v.id, req.user?.id ?? null);
+      await refreshMinPrice(tx, created.id);
     }
 
     if (images.length) {
@@ -226,7 +234,10 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
 
   const data: Prisma.ProductUpdateInput = {};
   if (categoryId) data.category = { connect: { id: categoryId } };
-  if (name !== undefined) data.name = name;
+  if (name !== undefined) {
+    data.name = name;
+    data.searchName = toSearchText(name);
+  }
   if (slug !== undefined) data.slug = slug;
   if (description !== undefined) data.description = description;
   if (brand !== undefined) data.brand = brand;
@@ -267,7 +278,13 @@ export const updateVariant = asyncHandler(async (req: Request, res: Response) =>
     data.variantAttributes = { ...existingAttrs, label };
   }
 
-  const updated = await prisma.productVariant.update({ where: { id: variant.id }, data });
+  // A price change moves the product's minPrice (sort key): same transaction, product row locked.
+  const updated = await prisma.$transaction(async (tx) => {
+    await lockProduct(tx, variant.productId);
+    const row = await tx.productVariant.update({ where: { id: variant.id }, data });
+    if (price !== undefined) await refreshMinPrice(tx, variant.productId);
+    return row;
+  });
   sendSuccess(res, updated);
 });
 
@@ -390,6 +407,7 @@ export const addVariant = asyncHandler(async (req: Request, res: Response) => {
   const variantAttributes = label ? { label } : {};
 
   const variant = await prisma.$transaction(async (tx) => {
+    await lockProduct(tx, product.id);
     const created = await tx.productVariant.create({
       data: {
         productId: product.id,
@@ -402,6 +420,7 @@ export const addVariant = asyncHandler(async (req: Request, res: Response) => {
       },
     });
     await recordOpening(tx, created.id, req.user?.id ?? null);
+    await refreshMinPrice(tx, product.id);
     return created;
   });
 
@@ -415,13 +434,17 @@ export const removeVariant = asyncHandler(async (req: Request, res: Response) =>
   const existing = await prisma.productVariant.findUnique({ where: { id: variantId } });
   if (!existing) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
 
-  // Prevent deleting if it's the last variant
-  const variantCount = await prisma.productVariant.count({ where: { productId: existing.productId } });
-  if (variantCount <= 1) {
-    throw new ApiError(400, 'LAST_VARIANT', 'Không thể xóa biến thể duy nhất của sản phẩm. Một sản phẩm phải có ít nhất một biến thể.');
-  }
-
-  await prisma.productVariant.delete({ where: { id: variantId } });
+  // The count runs under the product lock, so two concurrent deletes cannot both see "2 left" and
+  // remove the last variant between them. The removed price may have been the minimum.
+  await prisma.$transaction(async (tx) => {
+    await lockProduct(tx, existing.productId);
+    const variantCount = await tx.productVariant.count({ where: { productId: existing.productId } });
+    if (variantCount <= 1) {
+      throw new ApiError(400, 'LAST_VARIANT', 'Không thể xóa biến thể duy nhất của sản phẩm. Một sản phẩm phải có ít nhất một biến thể.');
+    }
+    await tx.productVariant.delete({ where: { id: variantId } });
+    await refreshMinPrice(tx, existing.productId);
+  });
   sendSuccess(res, { message: 'Đã xóa biến thể' });
 });
 

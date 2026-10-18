@@ -1,6 +1,8 @@
 import type { PrismaClient } from '@prisma/client';
 import { PRODUCT_STATUS } from '../constants/product';
 import { recordOpening } from '../services/inventory.service';
+import { refreshMinPrice } from '../services/catalog.service';
+import { toSearchText } from '../utils/searchText';
 
 // Demo catalogue for LOCAL development only (run through scripts/seedPetshop.ts, which refuses any
 // non-local database). It gives the storefront something real to render: several variants, a real
@@ -119,6 +121,7 @@ export async function seedPetshopCatalog(db: PrismaClient): Promise<{ created: n
         data: {
           slug: p.slug,
           name: p.name,
+          searchName: toSearchText(p.name),
           description: descriptionOf(p),
           status: PRODUCT_STATUS.ACTIVE,
           attributes: p.attributes ?? {},
@@ -139,6 +142,7 @@ export async function seedPetshopCatalog(db: PrismaClient): Promise<{ created: n
         });
         await recordOpening(tx, variant.id, null);
       }
+      await refreshMinPrice(tx, product.id);
     });
     created += 1;
   }

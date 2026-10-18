@@ -3,6 +3,8 @@ import prisma from '../../../services/prisma';
 import { signAccessToken } from '../../../services/jwt.service';
 import { PRODUCT_STATUS } from '../../../constants/product';
 import { recordOpening } from '../../../services/inventory.service';
+import { refreshMinPrice } from '../../../services/catalog.service';
+import { toSearchText } from '../../../utils/searchText';
 
 // Test data builders. Each one creates the smallest valid row and lets a test override only
 // the fields it cares about, so a test reads as "a product with 3 in stock" rather than a
@@ -57,10 +59,12 @@ export async function createProduct(
 ) {
   const n = next();
   const variants = opts.variants ?? [{}];
+  const name = opts.name ?? `Pate mèo ${n}`;
   const product = await prisma.product.create({
     data: {
       categoryId,
-      name: opts.name ?? `Pate mèo ${n}`,
+      name,
+      searchName: toSearchText(name),
       slug: opts.slug ?? `pate-meo-${n}`,
       status: opts.status ?? PRODUCT_STATUS.ACTIVE,
       ...(opts.createdAt && { createdAt: opts.createdAt }),
@@ -76,10 +80,11 @@ export async function createProduct(
     },
     include: { variants: { orderBy: { sku: 'asc' } } },
   });
-  // Same opening balance the API writes on creation (ADR-007), so ledger invariants hold for
-  // factory-made products too.
+  // Same opening balance and derived columns the API writes on creation (ADR-007, ADR-011), so
+  // ledger and minPrice invariants hold for factory-made products too.
   await prisma.$transaction(async (tx) => {
     for (const v of product.variants) await recordOpening(tx, v.id, null);
+    await refreshMinPrice(tx, product.id);
   });
   return product;
 }

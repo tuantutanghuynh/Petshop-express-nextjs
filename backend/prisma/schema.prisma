@@ -59,6 +59,12 @@ model Product {
   brand       String?
   status      String           @default("draft")
   attributes  Json             @default("{}")
+  // Derived columns, kept current by services/catalog.service.ts in the same transaction as every
+  // write that affects them. searchName: accent-free lower-case name (utils/searchText.ts) for
+  // public search. minPrice: cheapest variant price, for sorting by price (Prisma cannot order by an
+  // aggregate of a relation). Both null until the first write fills them.
+  searchName  String?
+  minPrice    Int?
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
   variants    ProductVariant[]
@@ -67,6 +73,8 @@ model Product {
   @@index([categoryId])
   // Storefront list: WHERE status = 'active' ORDER BY createdAt DESC, id DESC (id = tie-breaker).
   @@index([status, createdAt, id])
+  // Storefront list sorted by price: WHERE status = 'active' ORDER BY minPrice, id.
+  @@index([status, minPrice, id])
 }
 
 model ProductVariant {
