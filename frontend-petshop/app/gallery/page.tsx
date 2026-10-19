@@ -1,37 +1,70 @@
-import Image from 'next/image';
+import Link from 'next/link';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { GalleryGrid, type GalleryPhoto } from '../../components/gallery/GalleryGrid';
+import { JsonLd } from '../../components/seo/JsonLd';
+import { Breadcrumb } from '../../components/ui/Breadcrumb';
 import { EmptyState } from '../../components/ui/EmptyState';
+import { pageCount, parsePageParam } from '../../lib/pagination';
+import { breadcrumbJsonLd, type Crumb } from '../../lib/seo/structuredData';
+import { SITE_NAME, siteUrl } from '../../lib/site';
 import { imageSrc } from '../../lib/storefront';
-import { getGallery } from '../../services/content';
+import { GALLERY_PAGE_SIZE, getGalleryPage } from '../../services/content';
 
-// Cached for 5 minutes and refreshed at once when the admin adds or removes a photo
-// (POST /api/revalidate with the "gallery" tag).
-export const metadata: Metadata = {
-  title: 'Thư viện ảnh',
-  description: 'Ảnh các bé chó mèo và sản phẩm tại Siêu thị của chó mèo.',
-  alternates: { canonical: '/gallery' },
-};
+// Cached for 5 minutes and refreshed at once when the admin adds a photo ("gallery" tag).
+type Props = { searchParams: Promise<{ page?: string | string[] }> };
 
-export default async function GalleryPage() {
-  const items = (await getGallery()).flatMap((item) => {
+const TITLE = 'Thư viện ảnh các bé';
+const DESCRIPTION = `Những khoảnh khắc đáng yêu của khách hàng và các bé ở ${SITE_NAME}.`;
+const pageHref = (page: number) => (page > 1 ? `/gallery?page=${page}` : '/gallery');
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const page = parsePageParam((await searchParams).page);
+  if (page === null) return { title: 'Không tìm thấy', robots: { index: false } };
+  return {
+    title: page > 1 ? `Thư viện ảnh – Trang ${page}` : 'Thư viện ảnh',
+    description: DESCRIPTION,
+    alternates: { canonical: pageHref(page) },
+    ...(page > 1 && { robots: { index: false, follow: true } }),
+  };
+}
+
+export default async function GalleryPage({ searchParams }: Props) {
+  const page = parsePageParam((await searchParams).page);
+  if (page === null) notFound();
+  const { items, total } = await getGalleryPage(page);
+  const totalPages = pageCount(total, GALLERY_PAGE_SIZE);
+  if (total > 0 && page > totalPages) notFound();
+
+  const photos: GalleryPhoto[] = items.flatMap((item) => {
     const src = imageSrc(item.imageUrl);
-    return src ? [{ ...item, src }] : [];
+    return src ? [{ id: item.id, src, alt: item.altText, title: item.title }] : [];
   });
+  const crumbs: Crumb[] = [{ name: 'Trang chủ', path: '/' }, { name: 'Thư viện ảnh' }];
+  const nav = 'inline-flex min-h-11 items-center rounded-full border border-brand-ink px-5 font-bold text-brand-ink hover:bg-mint';
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold">Thư viện ảnh</h1>
-      {items.length === 0 ? (
+    <div className="flex flex-col gap-6">
+      <JsonLd data={breadcrumbJsonLd(siteUrl(), crumbs)} />
+      <div>
+        <Breadcrumb crumbs={crumbs} />
+        <h1 className="text-[clamp(1.5rem,1.1rem+1.6vw,2.1rem)] font-extrabold">{TITLE}</h1>
+        <p className="mt-2 max-w-prose">{DESCRIPTION}</p>
+      </div>
+      {photos.length === 0 ? (
         <EmptyState message="Thư viện ảnh đang được cập nhật." />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-          {items.map((item, index) => (
-            // Square box reserved before the photo loads, so nothing below it moves (no layout shift).
-            <div key={item.id} className="relative aspect-square overflow-hidden rounded-lg bg-mint">
-              <Image src={item.src} alt={item.altText} fill sizes="(min-width: 1024px) 190px, (min-width: 640px) 33vw, 50vw" className="object-cover" {...(index === 0 ? { fetchPriority: 'high' as const } : {})} />
-            </div>
-          ))}
-        </div>
+        <section aria-labelledby="photos-title">
+          <h2 id="photos-title" className="sr-only">Ảnh</h2>
+          <GalleryGrid photos={photos} />
+        </section>
+      )}
+      {/* Real ?page=N links (crawlable), as in the wireframe's "Xem thêm ảnh". */}
+      {(page > 1 || page < totalPages) && (
+        <nav aria-label="Phân trang ảnh" className="flex justify-center gap-3">
+          {page > 1 && <Link href={pageHref(page - 1)} rel="prev" className={nav}>‹ Ảnh trước</Link>}
+          {page < totalPages && <Link href={pageHref(page + 1)} rel="next" className={nav}>Xem thêm ảnh ›</Link>}
+        </nav>
       )}
     </div>
   );

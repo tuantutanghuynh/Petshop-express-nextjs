@@ -1,53 +1,83 @@
-import Image from 'next/image';
-import Link from 'next/link';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { FeaturedPost } from '../../components/blog/FeaturedPost';
+import { PostCard } from '../../components/blog/PostCard';
+import { TopicChips } from '../../components/blog/TopicChips';
+import { JsonLd } from '../../components/seo/JsonLd';
+import { Breadcrumb } from '../../components/ui/Breadcrumb';
 import { EmptyState } from '../../components/ui/EmptyState';
-import { blogPath } from '../../lib/seo/structuredData';
-import { SITE_NAME } from '../../lib/site';
-import { imageSrc } from '../../lib/storefront';
-import { getPostList } from '../../services/content';
+import { Pagination } from '../../components/ui/Pagination';
+import { blogListHref, parseTopicParam, postCategories } from '../../lib/blog';
+import { pageCount, parsePageParam } from '../../lib/pagination';
+import { breadcrumbJsonLd, type Crumb } from '../../lib/seo/structuredData';
+import { SITE_NAME, siteUrl } from '../../lib/site';
+import { BLOG_PAGE_SIZE, getPostList, getPostPage } from '../../services/content';
 
-// Search intent: informational. Cached for 5 minutes and refreshed at once when the admin publishes
-// (POST /api/revalidate with the "blog" tag).
-export const metadata: Metadata = {
-  title: 'Kiến thức chăm sóc chó mèo',
-  description: `Bài viết về dinh dưỡng, sức khoẻ, tẩy giun, ve rận và chăm sóc chó mèo từ ${SITE_NAME}.`,
-  alternates: { canonical: '/blog' },
-};
+// Search intent: informational. Cached for 5 minutes and refreshed at once when the admin publishes.
+type Props = { searchParams: Promise<{ page?: string | string[]; 'chu-de'?: string | string[] }> };
 
-export default async function BlogListPage() {
-  const posts = await getPostList();
+const TITLE = 'Kiến thức chăm sóc chó mèo';
+const DESCRIPTION = `Dinh dưỡng, sức khoẻ, thú y và mẹo chăm sóc chó mèo hằng ngày từ ${SITE_NAME} — viết bởi người nuôi, có nguồn tham khảo.`;
+
+async function readParams(searchParams: Props['searchParams']) {
+  const sp = await searchParams;
+  return { page: parsePageParam(sp.page), topic: parseTopicParam(sp['chu-de']) };
+}
+
+export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
+  const { page, topic } = await readParams(searchParams);
+  if (page === null || topic === null) return { title: 'Không tìm thấy', robots: { index: false } };
+  const filtered = Boolean(topic) || page > 1;
+  return {
+    title: page > 1 ? `${TITLE} – Trang ${page}` : TITLE,
+    description: DESCRIPTION,
+    // A topic filter or page 2+ lists the same posts as /blog: canonical to /blog (topic) or itself
+    // (page), never indexed, links still followed (ADR-013).
+    alternates: { canonical: topic ? '/blog' : blogListHref({ page }) },
+    ...(filtered && { robots: { index: false, follow: true } }),
+    openGraph: { title: TITLE, description: DESCRIPTION, url: '/blog' },
+  };
+}
+
+export default async function BlogListPage({ searchParams }: Props) {
+  const { page, topic } = await readParams(searchParams);
+  if (page === null || topic === null) notFound();
+
+  const [result, recent] = await Promise.all([getPostPage(page, topic), getPostList()]);
+  if (!result) notFound(); // unknown topic slug
+  const totalPages = pageCount(result.total, BLOG_PAGE_SIZE);
+  if (result.total > 0 && page > totalPages) notFound();
+
+  const topics = postCategories(recent);
+  const currentTopic = topics.find((t) => t.slug === topic);
+  const crumbs: Crumb[] = [{ name: 'Trang chủ', path: '/' }, { name: 'Kiến thức' }];
+  const [featured, ...rest] = page === 1 ? result.posts : [undefined, ...result.posts];
 
   return (
-    <div>
-      <h1 className="mb-4 text-2xl font-bold">Kiến thức chăm sóc chó mèo</h1>
-      {posts.length === 0 ? (
-        <EmptyState message="Bài viết đầu tiên sắp ra mắt." />
+    <div className="flex flex-col gap-6">
+      <JsonLd data={breadcrumbJsonLd(siteUrl(), crumbs)} />
+      <div>
+        <Breadcrumb crumbs={crumbs} />
+        <h1 className="text-[clamp(1.5rem,1.1rem+1.6vw,2.1rem)] font-extrabold">{TITLE}</h1>
+        <p className="mt-2 max-w-prose">{DESCRIPTION}</p>
+      </div>
+      <TopicChips topics={topics} current={topic} />
+
+      {result.posts.length === 0 ? (
+        <EmptyState message={currentTopic ? `Chưa có bài trong chủ đề “${currentTopic.name}”.` : 'Bài viết đầu tiên sắp ra mắt.'} />
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, index) => {
-            // Uploads are full Cloudinary URLs; the old code prefixed the backend origin and broke them.
-            const src = imageSrc(post.coverImageUrl);
-            return (
-              <article key={post.id} className="overflow-hidden rounded-lg border border-gray-200">
-                {/* Fixed 8:5 box: with width/height + h-auto the box took the photo's own ratio once it
-                    loaded and pushed the text down (CLS 0.18 on /blog). */}
-                {src && (
-                  <div className="relative aspect-[8/5] bg-mint">
-                    {/* The first cover is the page's LCP element: fetch it first instead of lazily. */}
-                    <Image src={src} alt="" fill sizes="(min-width: 1024px) 250px, (min-width: 640px) 50vw, 100vw" className="object-cover" {...(index === 0 ? { fetchPriority: 'high' as const } : {})} />
-                  </div>
-                )}
-                <div className="p-4">
-                  <h2 className="text-lg font-semibold">
-                    <Link href={blogPath(post.slug)} className="hover:underline">{post.title}</Link>
-                  </h2>
-                  {post.excerpt && <p className="mt-1 text-gray-600">{post.excerpt}</p>}
-                </div>
-              </article>
-            );
-          })}
-        </div>
+        <>
+          {featured && <FeaturedPost post={featured} />}
+          {rest.length > 0 && (
+            <section aria-labelledby="posts-title">
+              <h2 id="posts-title" className="sr-only">Bài viết</h2>
+              <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {rest.map((post) => post && <li key={post.id}><PostCard post={post} /></li>)}
+              </ul>
+            </section>
+          )}
+          <Pagination hrefFor={(p) => blogListHref({ topic, page: p })} page={page} totalPages={totalPages} />
+        </>
       )}
     </div>
   );

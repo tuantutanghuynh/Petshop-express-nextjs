@@ -38,6 +38,8 @@ export interface BlogPost {
   createdAt: string;
   updatedAt: string;
   author?: Author;
+  // Topic of the post (shared Category table); included by GET /blog and /blog/:slug.
+  category?: { id: string; name: string; slug: string } | null;
 }
 
 export interface GalleryItem {

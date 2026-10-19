@@ -33,9 +33,31 @@ export async function getPost(slug: string): Promise<BlogPost | null> {
   }
 }
 
-export async function getGallery(): Promise<GalleryItem[]> {
-  const { data } = await apiFetch<GalleryItem[]>('/gallery', { next: { revalidate: REVALIDATE_SECONDS, tags: ['gallery'] } });
-  return data;
+export const BLOG_PAGE_SIZE = 12;
+export const GALLERY_PAGE_SIZE = 24;
+
+// One page of published posts, optionally of one topic. null when the topic slug does not exist
+// (the page answers 404), never an empty page pretending the topic is real.
+export async function getPostPage(page: number, topic?: string): Promise<{ posts: BlogPost[]; total: number } | null> {
+  const params = new URLSearchParams({ page: String(page), pageSize: String(BLOG_PAGE_SIZE) });
+  if (topic) params.set('categorySlug', topic);
+  try {
+    const { data, meta } = await apiFetch<BlogPost[], PageMeta>(`/blog?${params}`, {
+      next: { revalidate: REVALIDATE_SECONDS, tags: ['blog'] },
+    });
+    return { posts: data, total: meta.total };
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.code === 'CATEGORY_NOT_FOUND') return null;
+    throw err;
+  }
+}
+
+// One page of the gallery, in the admin's order (position).
+export async function getGalleryPage(page: number): Promise<{ items: GalleryItem[]; total: number }> {
+  const { data, meta } = await apiFetch<GalleryItem[], PageMeta>(`/gallery?page=${page}&pageSize=${GALLERY_PAGE_SIZE}`, {
+    next: { revalidate: REVALIDATE_SECONDS, tags: ['gallery'] },
+  });
+  return { items: data, total: meta.total };
 }
 
 export async function getLatestPosts(limit: number): Promise<BlogPost[]> {
