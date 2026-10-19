@@ -73,3 +73,17 @@ export function zaloHref(raw: string | undefined): string | null {
   const digits = value.replace(/[\s.-]/g, '');
   return /^\+?\d{9,12}$/.test(digits) ? `https://zalo.me/${digits.replace(/^\+/, '')}` : null;
 }
+
+// Owner-written pages (Markdown in settings, edited in /admin/cau-hinh). A page without text answers
+// 404 and is left out of the footer and the sitemap — the site never shows invented policy text.
+export type ContentPage = { key: string; path: string; title: string; description: string };
+
+export const ABOUT_PAGE: ContentPage = {
+  key: 'page_about', path: '/gioi-thieu', title: 'Giới thiệu', description: 'Câu chuyện và những người đứng sau Siêu thị của chó mèo.',
+};
+
+export const CONTENT_PAGES: ContentPage[] = [
+  ABOUT_PAGE,
+  { key: 'policy_giao-hang-doi-tra', path: '/chinh-sach/giao-hang-doi-tra', title: 'Giao hàng & đổi trả', description: 'Cách giao hàng, thời gian, phí và điều kiện đổi trả.' },
+  { key: 'policy_bao-mat', path: '/chinh-sach/bao-mat', title: 'Chính sách bảo mật', description: 'Cách cửa hàng thu thập và bảo vệ thông tin của bạn.' },
+];

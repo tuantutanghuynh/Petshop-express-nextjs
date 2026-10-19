@@ -81,7 +81,7 @@ export default async function ProductPage({ params }: Props) {
           <h1 className="text-[clamp(1.5rem,1.2rem+1.2vw,2.1rem)] font-extrabold">{product.name}</h1>
           {product.brand && <p className="text-sm text-muted">Thương hiệu: <span className="font-bold text-ink">{product.brand}</span></p>}
           {product.variants.length > 0 ? (
-            <VariantPicker variants={product.variants} phone={shop.phone} />
+            <VariantPicker variants={product.variants} phone={shop.phone} product={{ name: product.name, slug: product.slug }} />
           ) : (
             <p className="text-sm text-muted">Sản phẩm đang cập nhật giá.</p>
           )}

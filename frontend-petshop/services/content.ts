@@ -1,6 +1,6 @@
 import { apiFetch } from '../lib/apiClient';
 import { bankInfo, type BankInfo } from '../lib/orders';
-import { SETTING_KEYS, parseAnnouncements } from '../lib/settings';
+import { CONTENT_PAGES, SETTING_KEYS, parseAnnouncements, type ContentPage } from '../lib/settings';
 import { parseSocialLinks } from '../lib/storefront';
 import { ApiRequestError } from '../lib/apiClient';
 import type { BlogPost, GalleryItem, PageMeta, SiteSettings } from '../lib/types';
@@ -130,5 +130,17 @@ export async function getBankInfo(): Promise<BankInfo | null> {
   } catch (err) {
     console.error('getBankInfo: could not load bank settings', err);
     return null;
+  }
+}
+
+// Owner-written pages that have text (CONTENT_PAGES), with their Markdown. Used by the pages, the
+// footer links and the sitemap; an empty page is simply absent.
+export async function getContentPages(): Promise<Array<ContentPage & { markdown: string }>> {
+  try {
+    const s = await getSettings(CONTENT_PAGES.map((p) => p.key));
+    return CONTENT_PAGES.flatMap((p) => (s[p.key]?.trim() ? [{ ...p, markdown: s[p.key] }] : []));
+  } catch (err) {
+    console.error('getContentPages: could not load page texts', err);
+    return [];
   }
 }

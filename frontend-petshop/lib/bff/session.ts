@@ -162,3 +162,10 @@ export function optionalSession(result: BffResult): BffResult {
   }
   return result;
 }
+
+// Forms open to visitors (quote request, contact). Relayed with the brand and the visitor's IP; the
+// access token is added when present so a signed-in customer's request is linked to the account
+// (the backend's optionalAuthenticate ignores a token it cannot verify). Never refreshes.
+export async function relayPublic(jar: CookieJar, call: Omit<BackendCall, 'accessToken'>, ctx: RequestContext): Promise<BffResult> {
+  return callBackend({ ...call, accessToken: jar.get(cookieNames().access) }, ctx);
+}

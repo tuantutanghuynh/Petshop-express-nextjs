@@ -46,6 +46,7 @@ export function ProductCard({ product }: { product: Product }) {
             href={productPath(product.slug)}
             variantId={product.variants.length === 1 ? product.variants[0].id : null}
             isOutOfStock={summary.isOutOfStock}
+            quoteItem={{ variantId: product.variants[0].id, productName: product.name, label: '', price: summary.price, slug: product.slug }}
           />
         </div>
       )}

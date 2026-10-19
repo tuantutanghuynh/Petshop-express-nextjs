@@ -77,8 +77,10 @@ describe('sitemap', () => {
   it('lists the public pages and every published post on the configured domain', () => {
     expect(urls).toEqual([
       'https://example.vn',
+      'https://example.vn/san-pham',
       'https://example.vn/blog',
       'https://example.vn/gallery',
+      'https://example.vn/lien-he',
       'https://example.vn/blog/tay-giun-cho-meo',
       'https://example.vn/blog/ve-ran-o-cho',
     ]);

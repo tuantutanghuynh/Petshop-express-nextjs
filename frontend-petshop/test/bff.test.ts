@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cookieNames, cookieOptions, type CookieOptions } from '../lib/bff/cookies';
 import { clientIpFrom } from '../lib/bff/clientIp';
 import { isSameOrigin } from '../lib/bff/origin';
-import { login, logout, optionalSession, proxy, refresh, type CookieJar } from '../lib/bff/session';
+import { login, logout, optionalSession, proxy, refresh, relayPublic, type CookieJar } from '../lib/bff/session';
 
 // The Next.js BFF keeps the customer's tokens in httpOnly cookies and relays calls to Express.
 // Rules under test:
@@ -237,5 +237,32 @@ describe('optionalSession', () => {
     const res = optionalSession(await proxy(jar, { path: '/cart', method: 'GET' }, ctx));
     expect(res.status).toBe(401);
     expect(res.body.error).toMatchObject({ code: 'ACCESS_EXPIRED' });
+  });
+});
+
+// Quote requests and contact messages are open to visitors. The BFF relays them with the brand and the
+// visitor's IP (the backend rate limits them per visitor), plus the access token when there is one so
+// a signed-in customer's request is linked to their account.
+describe('relayPublic', () => {
+  it('relays without a session', async () => {
+    backend([201, { data: { id: 'q1' }, meta: null, error: null }]);
+    const res = await relayPublic(new MemoryJar(), { path: '/quote-requests', method: 'POST', body: { a: 1 } }, ctx);
+    expect(res.status).toBe(201);
+    expect(header(calls[0], 'Authorization')).toBeNull();
+    expect(header(calls[0], 'X-Brand-Slug')).toBe('petshop');
+    expect(header(calls[0], 'X-Client-IP')).toBe('203.0.113.7');
+  });
+
+  it('adds the access token when the visitor is signed in', async () => {
+    backend([201, { data: {}, meta: null, error: null }]);
+    const jar = new MemoryJar();
+    jar.store.set(names.access, 'AT');
+    await relayPublic(jar, { path: '/quote-requests', method: 'POST', body: {} }, ctx);
+    expect(header(calls[0], 'Authorization')).toBe('Bearer AT');
+  });
+
+  it('passes a rate-limit answer through', async () => {
+    backend([429, { data: null, meta: null, error: { code: 'RATE_LIMIT_EXCEEDED' } }]);
+    expect((await relayPublic(new MemoryJar(), { path: '/contact', method: 'POST', body: {} }, ctx)).status).toBe(429);
   });
 });

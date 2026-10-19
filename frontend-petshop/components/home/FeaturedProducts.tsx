@@ -9,7 +9,7 @@ type Props = { products: Product[] | null };
 export function FeaturedProducts({ products }: Props) {
   return (
     <section aria-labelledby="products-title" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
-      <SectionHeading id="products-title" title="🐾 Sản phẩm nổi bật" />
+      <SectionHeading id="products-title" title="🐾 Sản phẩm nổi bật" moreHref="/san-pham" />
       {products === null ? (
         <EmptyState tone="error" message="Chưa tải được sản phẩm. Vui lòng thử lại sau ít phút." />
       ) : products.length === 0 ? (

@@ -17,6 +17,10 @@ const STYLES: Style[] = [
 
 type Slot = { promo: Promo; slot: number };
 
+// Each row is filled by the promotions that are actually showing (wireframe: rows are always full).
+// With a slot switched off or out of date, the remaining ones share the row instead of leaving a hole.
+const COLS = ['', 'md:grid-cols-1', 'md:grid-cols-2', 'md:grid-cols-3'];
+
 // Right half: the photo, or a soft placeholder block so every card keeps the wireframe's shape.
 function Art({ src, sizes }: { src: string | null; sizes: string }) {
   return (
@@ -64,8 +68,8 @@ export function PromoCards({ promos }: { promos: (Promo | null)[] }) {
   const banners = slots.filter((s) => s.slot >= 3);
   return (
     <section aria-label="Ưu đãi và bộ sưu tập" className="mx-auto flex max-w-[1200px] flex-col gap-4 px-4 py-2 md:px-6">
-      {cards.length > 0 && <div className="grid gap-4 md:grid-cols-3">{cards.map((s) => <Card key={s.slot} {...s} />)}</div>}
-      {banners.length > 0 && <div className="grid gap-4 md:grid-cols-2">{banners.map((s) => <Banner key={s.slot} {...s} />)}</div>}
+      {cards.length > 0 && <div className={`grid gap-4 ${COLS[cards.length]}`}>{cards.map((s) => <Card key={s.slot} {...s} />)}</div>}
+      {banners.length > 0 && <div className={`grid gap-4 ${COLS[banners.length]}`}>{banners.map((s) => <Banner key={s.slot} {...s} />)}</div>}
     </section>
   );
 }

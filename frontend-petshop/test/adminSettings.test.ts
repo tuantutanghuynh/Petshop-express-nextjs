@@ -61,3 +61,18 @@ describe('settingsToForm / formToSettings', () => {
     expect(settings.homepage_hero_title).toBe('Tiêu đề');
   });
 });
+
+// About and policy pages are written by the owner (Markdown) — the site never invents them. An empty
+// page is saved as "" and the public page then answers 404 and drops out of the footer.
+describe('content pages in the settings form', () => {
+  it('round-trips the page texts, trimming them', () => {
+    const form = settingsToForm({ page_about: '# Về chúng tôi', 'policy_bao-mat': '' });
+    expect(form.pages.page_about).toBe('# Về chúng tôi');
+    form.pages['policy_giao-hang-doi-tra'] = '  Giao trong 2–4 ngày.  ';
+    const { settings } = formToSettings(form);
+    expect(settings.page_about).toBe('# Về chúng tôi');
+    expect(settings['policy_giao-hang-doi-tra']).toBe('Giao trong 2–4 ngày.');
+    expect(settings['policy_bao-mat']).toBe('');
+    for (const key of ['page_about', 'policy_giao-hang-doi-tra', 'policy_bao-mat']) expect(ADMIN_SETTING_KEYS).toContain(key);
+  });
+});

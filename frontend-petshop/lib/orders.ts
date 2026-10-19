@@ -25,8 +25,12 @@ export function validateCheckout(v: CheckoutForm): FieldErrors {
 // One key per checkout attempt, created when the checkout page opens. A double click or a retry
 // after a dropped connection sends the same key, and the backend returns the first order instead of
 // creating a second one (backend: Order.idempotencyKey).
+// crypto.randomUUID is missing outside secure contexts (plain http) and in older browsers, so the
+// key falls back to 16 random bytes from getRandomValues, which exists everywhere.
 export function newIdempotencyKey(): string {
-  return crypto.randomUUID();
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 // Order codes look like NP-261016-K3F9A2. Anything else is refused before it reaches a backend URL.

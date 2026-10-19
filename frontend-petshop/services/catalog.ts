@@ -43,6 +43,11 @@ export function getCategoryProducts(categorySlug: string, page: number, sort: Pr
   return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE, { sort });
 }
 
+// Every product of this shop (the brand root includes its children), for /san-pham.
+export function getAllShopProducts(page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
+  return listProducts(BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { sort });
+}
+
 // Accent-insensitive search over this shop's products only (the brand root includes its children).
 export function searchProducts(q: string, page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
   return listProducts(BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { q, sort });

@@ -23,8 +23,7 @@ export const metadata: Metadata = {
 const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
 const HERO_KEYS = ['badge', 'title', 'accent', 'subtitle', 'cta_label', 'cta_href', 'cta2_label', 'cta2_href', 'image'].map((k) => `homepage_hero_${k}`);
 
-// Copy used until the admin fills the homepage_hero_* settings. The default button goes to the
-// care articles because the shop pages are not built yet.
+// Copy used until the admin fills the homepage_hero_* settings (wireframe: "Mua ngay" + "Nhờ tư vấn").
 function heroFrom(s: SiteSettings): HeroContent {
   const href = s.homepage_hero_cta_href;
   const cta2Href = s[SETTING_KEYS.heroCta2Href];
@@ -34,10 +33,12 @@ function heroFrom(s: SiteSettings): HeroContent {
     title: s.homepage_hero_title || 'Lựa chọn tốt nhất',
     accent: s.homepage_hero_accent || 'cho bé cưng nhà bạn',
     subtitle: s.homepage_hero_subtitle || 'Thức ăn dinh dưỡng, pate, phụ kiện chất lượng và kiến thức chăm sóc chó mèo từ người nuôi thật.',
-    ctaLabel: s.homepage_hero_cta_label || 'Đọc kiến thức chăm sóc',
-    ctaHref: href && isSafeHref(href) ? href : '/blog',
-    // The second button only appears once the owner sets both its label and a safe link.
-    cta2: cta2Label && cta2Href && isSafeHref(cta2Href) ? { label: cta2Label, href: cta2Href } : null,
+    ctaLabel: s.homepage_hero_cta_label || 'Mua ngay',
+    ctaHref: href && isSafeHref(href) ? href : '/san-pham',
+    cta2: {
+      label: cta2Label || 'Nhờ tư vấn',
+      href: cta2Href && isSafeHref(cta2Href) ? cta2Href : '/tu-van-bao-gia',
+    },
     image: imageSrc(s.homepage_hero_image),
   };
 }

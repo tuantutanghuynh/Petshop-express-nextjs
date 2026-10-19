@@ -3,9 +3,10 @@
 import { useState } from 'react';
 import { formatVnd } from '../../lib/storefront';
 import { AddToCart } from '../cart/AddToCart';
+import { AskQuoteButton } from '../quote/AskQuoteButton';
 import type { ProductVariant } from '../../lib/types';
 
-type Props = { variants: ProductVariant[]; phone?: string };
+type Props = { variants: ProductVariant[]; phone?: string; product: { name: string; slug: string } };
 
 const available = (v: ProductVariant) => v.stockQuantity - v.reservedQuantity > 0;
 const labelOf = (v: ProductVariant) => (typeof v.variantAttributes.label === 'string' ? v.variantAttributes.label : v.sku);
@@ -13,7 +14,7 @@ const labelOf = (v: ProductVariant) => (typeof v.variantAttributes.label === 'st
 // Price and availability of the chosen variant. Starts on the cheapest variant that is in stock.
 // The server HTML already contains that price, so crawlers and no-JS visitors see a real one.
 // The shop's phone line stays as a second way to order.
-export function VariantPicker({ variants, phone }: Props) {
+export function VariantPicker({ variants, phone, product }: Props) {
   const [selectedId, setSelectedId] = useState(() => (variants.find(available) ?? variants[0]).id);
   const selected = variants.find((v) => v.id === selectedId) ?? variants[0];
   const inStock = available(selected);
@@ -61,6 +62,8 @@ export function VariantPicker({ variants, phone }: Props) {
 
       {/* key: a new variant starts again at quantity 1 */}
       <AddToCart key={selected.id} variantId={selected.id} available={selected.stockQuantity - selected.reservedQuantity} priceLabel={formatVnd(selected.price)} />
+
+      <AskQuoteButton item={{ variantId: selected.id, productName: product.name, label: labelOf(selected), price: selected.price, slug: product.slug }} variant="button" />
 
       {phone && (
         <a href={`tel:${phone.replace(/[^\d+]/g, '')}`} className="inline-flex min-h-11 items-center text-sm font-bold text-brand-ink underline">

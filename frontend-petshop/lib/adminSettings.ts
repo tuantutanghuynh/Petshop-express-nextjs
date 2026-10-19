@@ -1,5 +1,5 @@
 import type { FieldErrors } from './forms';
-import { MAX_ANNOUNCEMENTS, SETTING_KEYS, parseAnnouncements, parseCategoryImages } from './settings';
+import { CONTENT_PAGES, MAX_ANNOUNCEMENTS, SETTING_KEYS, parseAnnouncements, parseCategoryImages } from './settings';
 import { isSafeHref, parseSocialLinks } from './storefront';
 
 // Mapping between stored settings and the /admin/cau-hinh form (test/adminSettings.test.ts).
@@ -32,6 +32,7 @@ export const ADMIN_SETTING_KEYS: string[] = [
   ...Object.values(SHOP_KEYS),
   'shop_social_links',
   ...Object.values(BANK_KEYS),
+  ...CONTENT_PAGES.map((p) => p.key),
 ];
 
 export type PromoForm = {
@@ -55,6 +56,8 @@ export type SettingsForm = {
   categoryImages: Record<string, string>;
   shop: Keyed<typeof SHOP_KEYS> & { socialLinks: string };
   bank: Keyed<typeof BANK_KEYS>;
+  // Markdown of the owner-written pages, keyed by setting key (CONTENT_PAGES).
+  pages: Record<string, string>;
 };
 
 const EMPTY_PROMO: PromoForm = { enabled: true, big: '', title: '', subtitle: '', cta: '', href: '', image: '', startsAt: '', endsAt: '' };
@@ -86,6 +89,7 @@ export function settingsToForm(s: Record<string, string>): SettingsForm {
     categoryImages: parseCategoryImages(s[SETTING_KEYS.categoryImages]),
     shop: { ...readKeys(SHOP_KEYS, s), socialLinks: parseSocialLinks(s.shop_social_links).join('\n') },
     bank: readKeys(BANK_KEYS, s),
+    pages: Object.fromEntries(CONTENT_PAGES.map((p) => [p.key, s[p.key] ?? ''])),
   };
 }
 
@@ -145,5 +149,6 @@ export function formToSettings(f: SettingsForm): { settings: Record<string, stri
   settings.shop_social_links = JSON.stringify(socialLines);
 
   writeKeys(BANK_KEYS, f.bank, settings);
+  for (const page of CONTENT_PAGES) settings[page.key] = (f.pages[page.key] ?? '').trim();
   return { settings, errors };
 }

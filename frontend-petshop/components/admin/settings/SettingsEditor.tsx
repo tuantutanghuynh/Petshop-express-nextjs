@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { revalidateStorefront } from '../../../lib/adminRevalidate';
 import { authFetch, getToken } from '../../../lib/adminAuth';
 import { ADMIN_SETTING_KEYS, formToSettings, settingsToForm, type SettingsForm } from '../../../lib/adminSettings';
+import { CONTENT_PAGES } from '../../../lib/settings';
 import { apiFetch } from '../../../lib/apiClient';
 import { focusFirstError, type FieldErrors } from '../../../lib/forms';
 import { BRAND_SLUG } from '../../../lib/site';
@@ -73,7 +74,7 @@ export function SettingsEditor() {
       setStatus({ ok: false, text: res.error.message || 'Lưu không thành công' });
       return;
     }
-    await revalidateStorefront(['settings']); // homepage, header and footer show it right away
+    await revalidateStorefront(['settings']); // homepage, header, footer and content pages update right away
     setSaving(false);
     setStatus({ ok: true, text: 'Đã lưu. Trang chủ đã cập nhật.' });
   }
@@ -155,6 +156,17 @@ export function SettingsEditor() {
           {bank('account', 'Số tài khoản')}
           {bank('holder', 'Chủ tài khoản')}
         </div>
+      </Section>
+
+      <Section title="Trang nội dung" hint="Viết bằng Markdown (## tiêu đề, - gạch đầu dòng). Trang chưa có nội dung sẽ không hiện trên site. Chính sách phải đúng với cách shop làm thật (giữ hàng 24 giờ, phí ship báo khi xác nhận…).">
+        {CONTENT_PAGES.map((page) => (
+          <div key={page.key} className="flex flex-col gap-1">
+            <label htmlFor={`f-${page.key}`} className="text-sm font-bold text-ink">{page.title} <span className="font-normal text-muted">({page.path})</span></label>
+            <textarea id={`f-${page.key}`} name={page.key} rows={8} value={form.pages[page.key] ?? ''}
+              onChange={(e) => update({ ...form, pages: { ...form.pages, [page.key]: e.target.value } })}
+              className="rounded-[var(--radius-sm)] border border-line p-3 font-mono text-base" />
+          </div>
+        ))}
       </Section>
 
       <div className="fixed inset-x-0 bottom-0 z-40 border-t border-line bg-surface/95 px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] backdrop-blur">

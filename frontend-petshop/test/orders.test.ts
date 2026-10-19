@@ -29,6 +29,21 @@ describe('validateCheckout', () => {
 });
 
 describe('newIdempotencyKey', () => {
+  // crypto.randomUUID exists only in secure contexts (HTTPS / localhost) and in recent browsers. On a
+  // plain-http LAN address it is undefined and checkout crashed; getRandomValues works everywhere.
+  it('still makes a valid key where crypto.randomUUID is missing', () => {
+    const original = crypto.randomUUID;
+    Object.defineProperty(crypto, 'randomUUID', { value: undefined, configurable: true });
+    try {
+      const a = newIdempotencyKey();
+      expect(a).toMatch(/^[A-Za-z0-9_-]{8,100}$/);
+      expect(newIdempotencyKey()).not.toBe(a);
+    } finally {
+      Object.defineProperty(crypto, 'randomUUID', { value: original, configurable: true });
+    }
+  });
+
+
   it('matches the backend header rule and differs every time', () => {
     const a = newIdempotencyKey();
     expect(a).toMatch(/^[A-Za-z0-9_-]{8,100}$/);

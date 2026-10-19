@@ -107,4 +107,11 @@ describe('sitemap with the catalogue', () => {
     expect(entries).toContainEqual({ url: `${BASE}/danh-muc/pate` });
     expect(entries.some((e) => e.url.includes('page='))).toBe(false);
   });
+
+  it('lists owner-written pages only when they have text, and never the quote form', () => {
+    const urls = buildSitemap(BASE, [], { products: [], categories: [], pages: ['/gioi-thieu'] }).map((e) => e.url);
+    expect(urls).toContain(`${BASE}/gioi-thieu`);
+    expect(urls).not.toContain(`${BASE}/chinh-sach/bao-mat`);
+    expect(urls.some((u) => u.includes('tu-van-bao-gia'))).toBe(false);
+  });
 });
