@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { readingMinutes } from '../../lib/blog';
 import { imageSrc } from '../../lib/storefront';
 import type { BlogPost } from '../../lib/types';
 import { EmptyState } from '../ui/EmptyState';
@@ -23,12 +24,14 @@ export function LatestPosts({ posts }: { posts: BlogPost[] | null }) {
             const date = post.publishedAt ?? post.updatedAt;
             return (
               <li key={post.id}>
-                <Link href={`/blog/${encodeURIComponent(post.slug)}`} className="group flex h-full flex-col gap-2">
+                <Link href={`/blog/${encodeURIComponent(post.slug)}`} className="group flex h-full flex-col gap-2 rounded-card border border-line bg-surface p-3">
                   <div className="relative aspect-video overflow-hidden rounded-card bg-mint">
                     {src && <Image src={src} alt="" fill sizes="(min-width: 768px) 380px, 100vw" className="object-cover" />}
                   </div>
                   <h3 className="text-base font-bold group-hover:underline">{post.title}</h3>
-                  <time dateTime={date} className="text-xs text-muted">{DATE.format(new Date(date))}</time>
+                  <small className="mt-auto text-xs text-muted">
+                    <time dateTime={date}>{DATE.format(new Date(date))}</time> · {readingMinutes(post.content)} phút đọc
+                  </small>
                 </Link>
               </li>
             );

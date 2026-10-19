@@ -64,3 +64,12 @@ export function parseCategoryImages(raw: string | undefined): Record<string, str
   }
   return out;
 }
+
+// shop_zalo may hold a phone number or a full Zalo link; anything else gives no button.
+export function zaloHref(raw: string | undefined): string | null {
+  const value = raw?.trim();
+  if (!value) return null;
+  if (value.startsWith('https://')) return value;
+  const digits = value.replace(/[\s.-]/g, '');
+  return /^\+?\d{9,12}$/.test(digits) ? `https://zalo.me/${digits.replace(/^\+/, '')}` : null;
+}

@@ -2,12 +2,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { productPath } from '../../lib/seo/structuredData';
 import { formatVnd, imageSrc, priceSummary } from '../../lib/storefront';
+import { CardAction } from './CardAction';
 import type { Product } from '../../lib/types';
 
 // Product tile: first image, name, cheapest price ("từ" when variants differ), a real discount
 // tag only when compareAtPrice is higher, and "Hết hàng" from stock minus reservations.
-// No star rating (there are no reviews) and no cart button yet (the cart is a later batch).
-// The whole card is one link; the name is the link text, so screen readers hear the product name.
+// No star rating (there are no reviews). The whole card is one link (the name is the link text, so
+// screen readers hear the product name); the corner action is a separate button above it.
 export function ProductCard({ product }: { product: Product }) {
   const summary = priceSummary(product.variants);
   const cover = product.images[0];
@@ -32,13 +33,21 @@ export function ProductCard({ product }: { product: Product }) {
         <Link href={productPath(product.slug)} className="after:absolute after:inset-0 after:rounded-card">{product.name}</Link>
       </h3>
       {summary && (
-        <p className="mt-auto flex flex-wrap items-baseline gap-x-2 tabular-nums">
-          <span className="font-extrabold text-ink">
-            {summary.hasRange && <small className="font-normal">từ </small>}
-            {formatVnd(summary.price)}
-          </span>
-          {summary.compareAtPrice && <s className="text-xs text-muted">{formatVnd(summary.compareAtPrice)}</s>}
-        </p>
+        <div className="mt-auto flex items-end justify-between gap-2">
+          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 tabular-nums">
+            <span className="font-extrabold text-ink">
+              {summary.hasRange && <small className="font-normal">từ </small>}
+              {formatVnd(summary.price)}
+            </span>
+            {summary.compareAtPrice && <s className="text-xs text-muted">{formatVnd(summary.compareAtPrice)}</s>}
+          </p>
+          <CardAction
+            productName={product.name}
+            href={productPath(product.slug)}
+            variantId={product.variants.length === 1 ? product.variants[0].id : null}
+            isOutOfStock={summary.isOutOfStock}
+          />
+        </div>
       )}
     </article>
   );

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isWithinDates, parseAnnouncements, parseCategoryImages } from '../lib/settings';
+import { isWithinDates, parseAnnouncements, parseCategoryImages, zaloHref } from '../lib/settings';
 import { parsePromo } from '../lib/storefront';
 
 // Shop owner–editable homepage content (/admin/cau-hinh). Whatever the admin saved, the public
@@ -60,5 +60,18 @@ describe('parseCategoryImages', () => {
     });
     expect(parseCategoryImages(undefined)).toEqual({});
     expect(parseCategoryImages('[1]')).toEqual({});
+  });
+});
+
+describe('zaloHref', () => {
+  it('turns a phone number into a zalo.me link and keeps an https link', () => {
+    expect(zaloHref('0901 234 567')).toBe('https://zalo.me/0901234567');
+    expect(zaloHref('https://zalo.me/g/abcdef')).toBe('https://zalo.me/g/abcdef');
+  });
+
+  it('ignores anything else', () => {
+    expect(zaloHref(undefined)).toBeNull();
+    expect(zaloHref('zalo shop')).toBeNull();
+    expect(zaloHref('http://zalo.me/1')).toBeNull();
   });
 });
