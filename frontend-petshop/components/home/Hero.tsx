@@ -2,11 +2,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 export type HeroContent = {
+  badge: string;
   title: string;
   accent: string;
   subtitle: string;
   ctaLabel: string;
   ctaHref: string;
+  cta2: { label: string; href: string } | null;
   image: string | null;
 };
 
@@ -18,7 +20,7 @@ export function Hero({ content }: { content: HeroContent }) {
     <section aria-labelledby="hero-title" className="overflow-hidden bg-mint">
       <div className="mx-auto grid max-w-[1200px] gap-4 px-4 pt-6 lg:min-h-[420px] lg:grid-cols-2 lg:items-center lg:pt-0">
         <div className="flex flex-col gap-4 pb-4">
-          <span className="w-fit rounded-full bg-pink-bg px-3 py-1 text-xs font-bold text-pink-ink">♥ Yêu thương &amp; chăm sóc</span>
+          {content.badge && <span className="w-fit rounded-full bg-pink-bg px-3 py-1 text-xs font-bold text-pink-ink">{content.badge}</span>}
           <h1 id="hero-title" className="text-[clamp(1.75rem,1.2rem+2.6vw,3rem)] font-extrabold">
             {content.title}
             <span className="block text-brand-deep">{content.accent}</span>
@@ -28,6 +30,11 @@ export function Hero({ content }: { content: HeroContent }) {
             <Link href={content.ctaHref} className="inline-flex min-h-12 items-center rounded-full bg-brand-ink px-6 font-bold text-white hover:bg-brand-deep">
               {content.ctaLabel}
             </Link>
+            {content.cta2 && (
+              <Link href={content.cta2.href} className="inline-flex min-h-12 items-center rounded-full border-2 border-brand-ink px-6 font-bold text-brand-ink hover:bg-surface">
+                {content.cta2.label}
+              </Link>
+            )}
           </div>
         </div>
         {/* Without a photo the panels are pure decoration: shown on desktop only, so phones do not

@@ -8,6 +8,7 @@ import { PromoCards } from '../components/home/PromoCards';
 import { TrustStrip } from '../components/home/TrustStrip';
 import { JsonLd } from '../components/seo/JsonLd';
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { SETTING_KEYS, parseCategoryImages } from '../lib/settings';
 import { imageSrc, isSafeHref, parsePromo } from '../lib/storefront';
 import type { SiteSettings } from '../lib/types';
 import { getNewestProducts, getShopCategories } from '../services/catalog';
@@ -20,18 +21,23 @@ export const metadata: Metadata = {
 };
 
 const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
-const HERO_KEYS = ['title', 'accent', 'subtitle', 'cta_label', 'cta_href', 'image'].map((k) => `homepage_hero_${k}`);
+const HERO_KEYS = ['badge', 'title', 'accent', 'subtitle', 'cta_label', 'cta_href', 'cta2_label', 'cta2_href', 'image'].map((k) => `homepage_hero_${k}`);
 
 // Copy used until the admin fills the homepage_hero_* settings. The default button goes to the
 // care articles because the shop pages are not built yet.
 function heroFrom(s: SiteSettings): HeroContent {
   const href = s.homepage_hero_cta_href;
+  const cta2Href = s[SETTING_KEYS.heroCta2Href];
+  const cta2Label = s[SETTING_KEYS.heroCta2Label];
   return {
+    badge: s[SETTING_KEYS.heroBadge] ?? '♥ Yêu thương & chăm sóc',
     title: s.homepage_hero_title || 'Lựa chọn tốt nhất',
     accent: s.homepage_hero_accent || 'cho bé cưng nhà bạn',
     subtitle: s.homepage_hero_subtitle || 'Thức ăn dinh dưỡng, pate, phụ kiện chất lượng và kiến thức chăm sóc chó mèo từ người nuôi thật.',
     ctaLabel: s.homepage_hero_cta_label || 'Đọc kiến thức chăm sóc',
     ctaHref: href && isSafeHref(href) ? href : '/blog',
+    // The second button only appears once the owner sets both its label and a safe link.
+    cta2: cta2Label && cta2Href && isSafeHref(cta2Href) ? { label: cta2Label, href: cta2Href } : null,
     image: imageSrc(s.homepage_hero_image),
   };
 }
@@ -46,7 +52,7 @@ function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
 
 export default async function HomePage() {
   const [[settingsRes, categoriesRes, productsRes, postsRes], shop] = await Promise.all([
-    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS]), getShopCategories(), getNewestProducts(5), getLatestPosts(3)]),
+    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS, SETTING_KEYS.categoryImages]), getShopCategories(), getNewestProducts(5), getLatestPosts(3)]),
     getShopInfo(), // never throws (falls back to no contact details)
   ]);
   const settings = settled(settingsRes, 'settings') ?? {};
@@ -80,7 +86,7 @@ export default async function HomePage() {
       <JsonLd data={website} />
       <Hero content={heroFrom(settings)} />
       <FeatureStrip />
-      <CategoryRow categories={settled(categoriesRes, 'categories') ?? []} />
+      <CategoryRow categories={settled(categoriesRes, 'categories') ?? []} images={parseCategoryImages(settings[SETTING_KEYS.categoryImages])} />
       <PromoCards promos={PROMO_KEYS.map((k) => parsePromo(settings[k]))} />
       <FeaturedProducts products={settled(productsRes, 'products')} />
       <TrustStrip />

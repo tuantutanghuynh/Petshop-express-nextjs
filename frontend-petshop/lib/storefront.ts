@@ -1,3 +1,4 @@
+import { isWithinDates } from './settings';
 import type { ProductVariant } from './types';
 
 // Pure helpers that turn raw API values into what storefront pages show. Kept free of React and
@@ -53,9 +54,10 @@ export function isSafeHref(href: string): boolean {
 
 const optionalString = (v: unknown): string | undefined => (typeof v === 'string' && v.trim() ? v.trim() : undefined);
 
-// homepage_promo_N holds a JSON string {title, href, subtitle?, cta?, big?, image?}. Anything
-// missing or malformed hides the banner: an empty slot is better than an invented promotion.
-export function parsePromo(raw: string | undefined): Promo | null {
+// homepage_promo_N holds a JSON string {title, href, subtitle?, cta?, big?, image?, enabled?,
+// startsAt?, endsAt?}. Anything missing or malformed hides the banner — an empty slot is better than
+// an invented promotion — and so does enabled: false or a date window that does not include `now`.
+export function parsePromo(raw: string | undefined, now: Date = new Date()): Promo | null {
   if (!raw) return null;
   let value: unknown;
   try {
@@ -65,6 +67,7 @@ export function parsePromo(raw: string | undefined): Promo | null {
   }
   if (typeof value !== 'object' || value === null) return null;
   const v = value as Record<string, unknown>;
+  if (v.enabled === false || !isWithinDates(v, now)) return null;
   const title = optionalString(v.title);
   const href = optionalString(v.href);
   if (!title || !href || !isSafeHref(href)) return null;

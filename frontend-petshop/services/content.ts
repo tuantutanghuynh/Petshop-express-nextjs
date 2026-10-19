@@ -1,5 +1,6 @@
 import { apiFetch } from '../lib/apiClient';
 import { bankInfo, type BankInfo } from '../lib/orders';
+import { SETTING_KEYS, parseAnnouncements } from '../lib/settings';
 import { parseSocialLinks } from '../lib/storefront';
 import { ApiRequestError } from '../lib/apiClient';
 import type { BlogPost, GalleryItem, PageMeta, SiteSettings } from '../lib/types';
@@ -94,9 +95,11 @@ export type ShopInfo = {
   address?: string;
   hours?: string;
   socialLinks: string[];
+  // Announcement bar lines from /admin/cau-hinh, or null for the built-in defaults.
+  announcements: string[] | null;
 };
 
-const SHOP_KEYS = ['shop_phone', 'shop_zalo', 'shop_email', 'shop_address', 'shop_hours', 'shop_social_links'];
+const SHOP_KEYS = ['shop_phone', 'shop_zalo', 'shop_email', 'shop_address', 'shop_hours', 'shop_social_links', SETTING_KEYS.announcements];
 
 // Contact details shown in the header, footer and Organization JSON-LD. Used by the root layout,
 // so a failure here must not take every page down: it logs and returns no details, and the
@@ -111,10 +114,11 @@ export async function getShopInfo(): Promise<ShopInfo> {
       address: s.shop_address || undefined,
       hours: s.shop_hours || undefined,
       socialLinks: parseSocialLinks(s.shop_social_links),
+      announcements: parseAnnouncements(s[SETTING_KEYS.announcements]),
     };
   } catch (err) {
     console.error('getShopInfo: could not load shop settings', err);
-    return { socialLinks: [] };
+    return { socialLinks: [], announcements: null };
   }
 }
 

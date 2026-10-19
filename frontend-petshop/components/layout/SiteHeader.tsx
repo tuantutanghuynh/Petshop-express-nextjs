@@ -6,13 +6,13 @@ import { AnnouncementBar } from './AnnouncementBar';
 import { Logo } from './Logo';
 import { MainNav } from './MainNav';
 
-type Props = { phone?: string };
+type Props = { phone?: string; announcements: string[] | null };
 
 // Search: a full form from 768px; on phones a search icon that opens /tim-kiem (the form is there).
-export function SiteHeader({ phone }: Props) {
+export function SiteHeader({ phone, announcements }: Props) {
   return (
     <>
-      <AnnouncementBar />
+      <AnnouncementBar items={announcements} />
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
         <div className="mx-auto flex min-h-14 max-w-[1200px] items-center justify-between gap-3 px-4 lg:min-h-[76px]">
           <Logo />
