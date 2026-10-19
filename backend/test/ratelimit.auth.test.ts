@@ -49,3 +49,17 @@ describe('auth rate limit', () => {
     expect((await request(app).post('/api/v1/auth/login').set(headers).send(badLogin)).status).toBe(429);
   });
 });
+
+// /contact (5 / 15 min) and /quote-requests (10 / 15 min) are posted through the Next.js BFF too.
+// Keyed by req.ip they would count every visitor as the Next.js server: five messages and the whole
+// shop could not contact it any more. They must use the visitor IP the BFF passes (X-Client-IP).
+describe('visitor form limits behind the BFF', () => {
+  it('/contact counts each visitor separately', async () => {
+    const app = await freshApp();
+    const via = (ip: string) => ({ 'X-Forwarded-For': '10.0.0.12', 'X-Internal-Secret': SECRET, 'X-Client-IP': ip });
+    const honeypot = { website_url: 'bot' }; // answered without touching the database
+    for (let i = 0; i < 5; i += 1) await request(app).post('/api/v1/contact').set(via('203.0.113.90')).send(honeypot);
+    expect((await request(app).post('/api/v1/contact').set(via('203.0.113.90')).send(honeypot)).status).toBe(429);
+    expect((await request(app).post('/api/v1/contact').set(via('203.0.113.91')).send(honeypot)).status).not.toBe(429);
+  });
+});
