@@ -20,9 +20,10 @@ export function parseSortParam(raw: string | string[] | undefined): ProductSort 
   return (PRODUCT_SORTS as readonly string[]).includes(raw) ? (raw as ProductSort) : null;
 }
 
-export function listHref(basePath: string, state: { q?: string; sort?: ProductSort; page?: number }): string {
+export function listHref(basePath: string, state: { q?: string; category?: string; sort?: ProductSort; page?: number }): string {
   const params = new URLSearchParams();
   if (state.q) params.set('q', state.q);
+  if (state.category) params.set('danh-muc', state.category);
   if (state.sort && state.sort !== DEFAULT_SORT) params.set('sort', state.sort);
   if (state.page && state.page > 1) params.set('page', String(state.page));
   const query = params.toString();
@@ -34,4 +35,10 @@ export function parseSearchQuery(raw: string | string[] | undefined): string | n
   if (typeof raw !== 'string') return null;
   const q = raw.trim().replace(/\s+/g, ' ');
   return q.length >= 2 && q.length <= 100 ? q : null;
+}
+
+// ?danh-muc=<slug> on the search page. The select's "all" option sends an empty value (= none).
+export function parseCategoryParam(raw: string | string[] | undefined): string | undefined | null {
+  if (raw === undefined || raw === '') return undefined;
+  return typeof raw === 'string' && /^[a-z0-9-]{1,80}$/.test(raw) ? raw : null;
 }

@@ -49,8 +49,9 @@ export function getAllShopProducts(page: number, sort: ProductSort = DEFAULT_SOR
 }
 
 // Accent-insensitive search over this shop's products only (the brand root includes its children).
-export function searchProducts(q: string, page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
-  return listProducts(BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { q, sort });
+// `category` (one of the shop's category slugs) narrows the search, from the header's select.
+export function searchProducts(q: string, page: number, sort: ProductSort = DEFAULT_SORT, category?: string): Promise<ProductPage> {
+  return listProducts(category ?? BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { q, sort });
 }
 
 async function getAllCategories(): Promise<Category[]> {
