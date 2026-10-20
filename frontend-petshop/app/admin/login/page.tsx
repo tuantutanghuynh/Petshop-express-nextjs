@@ -22,7 +22,7 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ email, password }),
       });
       setTokens(data.accessToken, data.refreshToken);
-      router.push('/admin/posts');
+      router.push('/admin');
     } catch {
       setError('Email hoặc mật khẩu sai');
     }

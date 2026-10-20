@@ -180,3 +180,10 @@ export interface Customer {
   fullName: string | null;
   role: string;
 }
+
+// GET /orders/admin/list rows, as far as the dashboard reads them.
+export interface AdminOrderSummary { id: string; code: string; grandTotal: number; expiresAt: string | null }
+// GET /quote-requests/admin/list rows (dashboard view).
+export interface QuoteRequestSummary { id: string; customerName: string; phone: string; items: unknown[]; createdAt: string }
+// GET /quote-requests/admin/stats — conversionRate is already a percentage.
+export interface QuoteStats { totalRequests: number; closedCount: number; revenue: number; averageOrderValue: number; conversionRate: number }
