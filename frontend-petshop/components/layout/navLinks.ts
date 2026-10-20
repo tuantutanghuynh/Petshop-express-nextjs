@@ -1,10 +1,12 @@
+import { MEGA_MENU_SLUGS } from '../../lib/megaMenu';
+
 // Site navigation (wireframe layout.js). Every link points at a page that exists.
 // narrowHidden: dropped from the phone tab bar below 240px (200% zoom) so the other tabs keep a 44px
 // target; that page stays reachable from the ☰ menu.
 export type NavLink = { href: string; label: string; icon: string; shortLabel?: string; narrowHidden?: boolean };
 
-// Desktop menu row. "Cho chó" / "Cho mèo" are inserted after "Sản phẩm" when those categories exist
-// (SiteHeader), since they come from the catalogue rather than from code.
+// Desktop menu row. The species mega menus ("Chó ▾", "Mèo ▾") sit before it (SiteHeader), since
+// they come from the catalogue rather than from code.
 export const MAIN_NAV: NavLink[] = [
   { href: '/', label: 'Trang chủ', icon: '🏠' },
   { href: '/san-pham', label: 'Sản phẩm', icon: '▦' },
@@ -14,8 +16,8 @@ export const MAIN_NAV: NavLink[] = [
   { href: '/lien-he', label: 'Liên hệ', icon: '☎' },
 ];
 
-// Category slugs that get their own menu link, in this order (wireframe: "Cho chó", "Cho mèo").
-export const FEATURED_CATEGORY_SLUGS = ['cho', 'meo'];
+// Species with a mega menu, in menu order ("Chó ▾", "Mèo ▾").
+export const FEATURED_CATEGORY_SLUGS = MEGA_MENU_SLUGS;
 
 // Phone tab bar (wireframe): home, catalogue, articles, cart, account.
 export const BOTTOM_TABS: NavLink[] = [

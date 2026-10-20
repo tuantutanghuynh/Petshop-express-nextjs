@@ -1,6 +1,7 @@
 import { ApiRequestError, apiFetch } from '../lib/apiClient';
 import { DEFAULT_SORT, type ProductSort } from '../lib/catalogParams';
 import { BRAND_SLUG } from '../lib/site';
+import { buildCategoryTree, categoryTrail, flattenTree, type CategoryNode } from '../lib/categoryTree';
 import type { Category, PageMeta, Product } from '../lib/types';
 
 // Catalogue reads for public pages. Every call is cached by Next (ISR) for REVALIDATE_SECONDS:
@@ -15,17 +16,19 @@ const cached = (tags: string[]) => ({ next: { revalidate: REVALIDATE_SECONDS, ta
 
 export type ProductPage = { products: Product[]; total: number };
 
-// One page of active products in a category (the backend includes its direct children).
+// One page of active products in a category (the backend includes every descendant category),
+// optionally narrowed to one brand (mega menu "featured brands").
 // A category that does not exist yields an empty page; callers decide whether that is a 404.
 async function listProducts(
   categorySlug: string,
   page: number,
   pageSize: number,
-  options: { sort?: ProductSort; q?: string } = {},
+  options: { sort?: ProductSort; q?: string; brand?: string } = {},
 ): Promise<ProductPage> {
   const params = new URLSearchParams({ page: String(page), pageSize: String(pageSize), categorySlug });
   if (options.sort && options.sort !== DEFAULT_SORT) params.set('sort', options.sort);
   if (options.q) params.set('q', options.q);
+  if (options.brand) params.set('brand', options.brand);
   try {
     const { data, meta } = await apiFetch<Product[], PageMeta>(`/products?${params}`, cached(['products']));
     return { products: data, total: meta.total };
@@ -39,16 +42,16 @@ export async function getNewestProducts(limit: number): Promise<Product[]> {
   return (await listProducts(BRAND_SLUG, 1, limit)).products;
 }
 
-export function getCategoryProducts(categorySlug: string, page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
-  return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE, { sort });
+export function getCategoryProducts(categorySlug: string, page: number, sort: ProductSort = DEFAULT_SORT, brand?: string): Promise<ProductPage> {
+  return listProducts(categorySlug, page, CATEGORY_PAGE_SIZE, { sort, brand });
 }
 
-// Every product of this shop (the brand root includes its children), for /san-pham.
+// Every product of this shop (the brand root includes every category below it), for /san-pham.
 export function getAllShopProducts(page: number, sort: ProductSort = DEFAULT_SORT): Promise<ProductPage> {
   return listProducts(BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { sort });
 }
 
-// Accent-insensitive search over this shop's products only (the brand root includes its children).
+// Accent-insensitive search over this shop's products only (the brand root covers the whole tree).
 // `category` (one of the shop's category slugs) narrows the search, from the header's select.
 export function searchProducts(q: string, page: number, sort: ProductSort = DEFAULT_SORT, category?: string): Promise<ProductPage> {
   return listProducts(category ?? BRAND_SLUG, page, CATEGORY_PAGE_SIZE, { q, sort });
@@ -59,20 +62,30 @@ async function getAllCategories(): Promise<Category[]> {
   return data;
 }
 
-function shopChildren(all: Category[]): Category[] {
-  const root = all.find((c) => c.parentId === null && c.slug === BRAND_SLUG);
-  return root ? all.filter((c) => c.parentId === root.id) : [];
+// The shop's category tree (children of the brand root, nested, in sortOrder).
+export async function getShopCategoryTree(): Promise<CategoryNode[]> {
+  return buildCategoryTree(await getAllCategories(), BRAND_SLUG);
 }
 
-// The shop's own categories: the children of the brand root category.
-export async function getShopCategories(): Promise<Category[]> {
-  return shopChildren(await getAllCategories());
+// Top level of the tree (Chó, Mèo) with their subtrees: header, footer, homepage circles, search select.
+export async function getShopCategories(): Promise<CategoryNode[]> {
+  return getShopCategoryTree();
 }
 
-// A category page exists only for this shop's categories. The database also holds other
+// Every category of the shop, at any depth, parents first (sitemap, product ownership).
+export async function getShopCategoryList(): Promise<CategoryNode[]> {
+  return flattenTree(await getShopCategoryTree());
+}
+
+// A category page exists for any category in our tree, at any depth. The database also holds other
 // storefronts (legacy pottery brand); their slugs must answer 404 here, not render under our name.
-export async function getShopCategory(slug: string): Promise<Category | null> {
-  return (await getShopCategories()).find((c) => c.slug === slug) ?? null;
+export async function getShopCategory(slug: string): Promise<CategoryNode | null> {
+  return (await getShopCategoryList()).find((c) => c.slug === slug) ?? null;
+}
+
+// Species → … → the category, for breadcrumbs; [] when the slug is not ours.
+export async function getCategoryTrail(slug: string): Promise<CategoryNode[]> {
+  return categoryTrail(await getShopCategoryTree(), slug);
 }
 
 // Product detail, or null when it does not exist, is not active (the API answers 404 for both)
@@ -85,7 +98,7 @@ export async function getShopProduct(slug: string): Promise<Product | null> {
     if (err instanceof ApiRequestError && err.status === 404) return null;
     throw err;
   }
-  const isOurs = (await getShopCategories()).some((c) => c.id === product.category.id);
+  const isOurs = (await getShopCategoryList()).some((c) => c.id === product.category.id);
   return isOurs ? product : null;
 }
 

@@ -20,10 +20,11 @@ export function parseSortParam(raw: string | string[] | undefined): ProductSort 
   return (PRODUCT_SORTS as readonly string[]).includes(raw) ? (raw as ProductSort) : null;
 }
 
-export function listHref(basePath: string, state: { q?: string; category?: string; sort?: ProductSort; page?: number }): string {
+export function listHref(basePath: string, state: { q?: string; category?: string; brand?: string; sort?: ProductSort; page?: number }): string {
   const params = new URLSearchParams();
   if (state.q) params.set('q', state.q);
   if (state.category) params.set('danh-muc', state.category);
+  if (state.brand) params.set('thuong-hieu', state.brand);
   if (state.sort && state.sort !== DEFAULT_SORT) params.set('sort', state.sort);
   if (state.page && state.page > 1) params.set('page', String(state.page));
   const query = params.toString();
@@ -41,4 +42,13 @@ export function parseSearchQuery(raw: string | string[] | undefined): string | n
 export function parseCategoryParam(raw: string | string[] | undefined): string | undefined | null {
   if (raw === undefined || raw === '') return undefined;
   return typeof raw === 'string' && /^[a-z0-9-]{1,80}$/.test(raw) ? raw : null;
+}
+
+// ?thuong-hieu=<name> on category pages (featured brands in the mega menu). Same limits as the API:
+// one value, 1–100 characters once trimmed.
+export function parseBrandParam(raw: string | string[] | undefined): string | undefined | null {
+  if (raw === undefined || raw === '') return undefined;
+  if (typeof raw !== 'string') return null;
+  const brand = raw.trim();
+  return brand.length >= 1 && brand.length <= 100 ? brand : null;
 }

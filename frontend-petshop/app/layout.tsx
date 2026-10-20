@@ -7,7 +7,7 @@ import { SiteHeader } from '../components/layout/SiteHeader';
 import { StoreChrome } from '../components/layout/StoreChrome';
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
 import { getShopCategories } from '../services/catalog';
-import { getContentPages, getShopInfo } from '../services/content';
+import { getContentPages, getMegaMenus, getShopInfo } from '../services/content';
 import './globals.css';
 
 // Rounded geometric sans like the mock-up. The "vietnamese" subset is required: without it the
@@ -45,13 +45,14 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   // Header and footer data for every page; each read is cached (ISR) and fails soft.
-  const [shop, categories, pages] = await Promise.all([
+  const [shop, categories, pages, megaMenus] = await Promise.all([
     getShopInfo(),
     getShopCategories().catch((err: unknown) => {
       console.error('layout: could not load categories', err);
       return [];
     }),
     getContentPages(),
+    getMegaMenus(), // never throws
   ]);
   return (
     <html lang="vi" className={beVietnam.variable}>
@@ -59,7 +60,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         <a href="#main" className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-full focus:bg-surface focus:px-4 focus:py-2">
           Bỏ qua tới nội dung chính
         </a>
-        <StoreChrome header={<SiteHeader phone={shop.phone} announcements={shop.announcements} categories={categories} />}
+        <StoreChrome header={<SiteHeader phone={shop.phone} announcements={shop.announcements} categories={categories} megaMenus={megaMenus} />}
           footer={<SiteFooter shop={shop} categories={categories} pages={pages} />} bottomNav={<BottomNav />}>
           {children}
         </StoreChrome>

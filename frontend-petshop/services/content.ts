@@ -1,5 +1,6 @@
 import { apiFetch } from '../lib/apiClient';
 import { bankInfo, type BankInfo } from '../lib/orders';
+import { MEGA_MENU_SLUGS, megaMenuKey, parseMegaMenu, type MegaMenuExtras } from '../lib/megaMenu';
 import { CONTENT_PAGES, SETTING_KEYS, parseAnnouncements, type ContentPage } from '../lib/settings';
 import { parseSocialLinks } from '../lib/storefront';
 import { ApiRequestError } from '../lib/apiClient';
@@ -86,6 +87,18 @@ export async function getSettings(keys: string[]): Promise<SiteSettings> {
     next: { revalidate: REVALIDATE_SECONDS, tags: ['settings'] },
   });
   return data;
+}
+
+// Banner and brands for each species mega menu. The menu also works without them, so a failure
+// logs and returns nothing instead of breaking the layout.
+export async function getMegaMenus(): Promise<Record<string, MegaMenuExtras>> {
+  try {
+    const s = await getSettings(MEGA_MENU_SLUGS.map(megaMenuKey));
+    return Object.fromEntries(MEGA_MENU_SLUGS.map((slug) => [slug, parseMegaMenu(s[megaMenuKey(slug)])]));
+  } catch (err) {
+    console.error('getMegaMenus: could not load menu settings', err);
+    return {};
+  }
 }
 
 export type ShopInfo = {

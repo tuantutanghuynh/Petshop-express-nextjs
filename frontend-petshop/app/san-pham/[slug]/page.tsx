@@ -7,10 +7,11 @@ import { VariantPicker } from '../../../components/product/VariantPicker';
 import { JsonLd } from '../../../components/seo/JsonLd';
 import { Breadcrumb } from '../../../components/ui/Breadcrumb';
 import { excerptFromContent, renderMarkdown } from '../../../lib/markdown';
-import { breadcrumbJsonLd, categoryPath, productJsonLd, productPath, type Crumb } from '../../../lib/seo/structuredData';
+import { categoryCrumbs } from '../../../lib/seo/categoryCrumbs';
+import { breadcrumbJsonLd, productJsonLd, productPath } from '../../../lib/seo/structuredData';
 import { SITE_NAME, siteUrl } from '../../../lib/site';
 import { imageSrc } from '../../../lib/storefront';
-import { getCategoryProducts, getShopProduct } from '../../../services/catalog';
+import { getCategoryProducts, getCategoryTrail, getShopProduct } from '../../../services/catalog';
 import { getShopInfo } from '../../../services/content';
 
 // Product detail. Search intent: transactional.
@@ -51,8 +52,13 @@ export default async function ProductPage({ params }: Props) {
   const product = await getShopProduct(slug);
   if (!product) notFound();
 
-  const [shop, related] = await Promise.all([
+  const [shop, trail, related] = await Promise.all([
     getShopInfo(),
+    getCategoryTrail(product.category.slug).catch((err: unknown) => {
+      // The breadcrumb then shows just the product's own category.
+      console.error('product page: could not load the category trail', err);
+      return [];
+    }),
     getCategoryProducts(product.category.slug, 1)
       .then((r) => r.products.filter((p) => p.id !== product.id).slice(0, RELATED_COUNT))
       .catch((err: unknown) => {
@@ -63,11 +69,7 @@ export default async function ProductPage({ params }: Props) {
   ]);
 
   const base = siteUrl();
-  const crumbs: Crumb[] = [
-    { name: 'Trang chủ', path: '/' },
-    { name: product.category.name, path: categoryPath(product.category.slug) },
-    { name: product.name },
-  ];
+  const crumbs = categoryCrumbs(trail.length > 0 ? trail : [product.category], product.name);
 
   return (
     <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8 max-md:pb-24 md:px-6">

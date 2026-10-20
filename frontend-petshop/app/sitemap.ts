@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { buildSitemap, type SitemapCatalog, type SitemapPost } from '../lib/seo/sitemap';
 import { siteUrl } from '../lib/site';
-import { getAllProductEntries, getShopCategories } from '../services/catalog';
+import { getAllProductEntries, getShopCategoryList } from '../services/catalog';
 import { getAllPostEntries, getContentPages } from '../services/content';
 
 // sitemap.ts is cached by default; without this a new post would only appear after the next build.
@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // answering 500, which makes crawlers drop the whole file. Logged, not swallowed — the next
   // revalidation retries.
   const [[postsRes, productsRes, categoriesRes], pages] = await Promise.all([
-    Promise.allSettled([getAllPostEntries(), getAllProductEntries(), getShopCategories()]),
+    Promise.allSettled([getAllPostEntries(), getAllProductEntries(), getShopCategoryList()]),
     getContentPages(), // never throws
   ]);
   const pick = <T,>(r: PromiseSettledResult<T>, label: string, fallback: T): T => {

@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useRef } from 'react';
 import { categoryPath } from '../../lib/seo/structuredData';
-import type { Category } from '../../lib/types';
+import type { CategoryNode } from '../../lib/categoryTree';
 import { isActive, type NavLink } from './navLinks';
+import { Chevron } from '../ui/Chevron';
 
-type Props = { links: NavLink[]; categories: Category[]; phone?: string };
+type Props = { links: NavLink[]; categories: CategoryNode[]; phone?: string };
 
 // Phone menu behind the ☰ button (wireframe): a native <dialog> drawer — focus is kept inside, Escape
 // and a tap on the backdrop close it, focus returns to ☰. It closes itself after navigating.
@@ -49,9 +50,38 @@ export function MobileMenu({ links, categories, phone }: Props) {
           {categories.length > 0 && (
             <nav aria-label="Danh mục sản phẩm">
               <b className="mb-1 block px-3 text-sm text-muted">Danh mục sản phẩm</b>
+              {/* Species → group → leaf as nested <details>: opens without JavaScript, every row 48px. */}
               <ul className="flex flex-col">
                 {categories.map((c) => (
-                  <li key={c.id}><Link href={categoryPath(c.slug)} className={item(pathname === categoryPath(c.slug))}>{c.name}</Link></li>
+                  <li key={c.id}>
+                    <details className="group">
+                      <summary className={`${item(false)} cursor-pointer list-none justify-between [&::-webkit-details-marker]:hidden`}>
+                        {c.name} <Chevron className="group-open:rotate-180" />
+                      </summary>
+                      <ul className="ml-3 border-l border-line pl-2">
+                        <li><Link href={categoryPath(c.slug)} className={item(pathname === categoryPath(c.slug))}>Tất cả {c.name}</Link></li>
+                        {c.children.map((g) => (
+                          <li key={g.id}>
+                            {g.children.length === 0 ? (
+                              <Link href={categoryPath(g.slug)} className={item(pathname === categoryPath(g.slug))}>{g.name}</Link>
+                            ) : (
+                              <details className="group/g">
+                                <summary className={`${item(false)} cursor-pointer list-none justify-between font-semibold [&::-webkit-details-marker]:hidden`}>
+                                  {g.name} <Chevron className="group-open/g:rotate-180" />
+                                </summary>
+                                <ul className="ml-3 border-l border-line pl-2">
+                                  <li><Link href={categoryPath(g.slug)} className={item(pathname === categoryPath(g.slug))}>Tất cả {g.name}</Link></li>
+                                  {g.children.map((leaf) => (
+                                    <li key={leaf.id}><Link href={categoryPath(leaf.slug)} className={item(pathname === categoryPath(leaf.slug))}>{leaf.name}</Link></li>
+                                  ))}
+                                </ul>
+                              </details>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
                 ))}
               </ul>
             </nav>

@@ -8,10 +8,11 @@ import { PromoCards } from '../components/home/PromoCards';
 import { TrustStrip } from '../components/home/TrustStrip';
 import { JsonLd } from '../components/seo/JsonLd';
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { CATEGORY_CIRCLES_KEY, parseCategoryCircles } from '../lib/categoryCircles';
 import { SETTING_KEYS, parseCategoryImages } from '../lib/settings';
 import { imageSrc, isSafeHref, parsePromo } from '../lib/storefront';
 import type { SiteSettings } from '../lib/types';
-import { getNewestProducts, getShopCategories } from '../services/catalog';
+import { getNewestProducts } from '../services/catalog';
 import { getLatestPosts, getSettings, getShopInfo } from '../services/content';
 
 // Search intent: navigational. Title comes from the root layout's default.
@@ -52,8 +53,8 @@ function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
 }
 
 export default async function HomePage() {
-  const [[settingsRes, categoriesRes, productsRes, postsRes], shop] = await Promise.all([
-    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS, SETTING_KEYS.categoryImages]), getShopCategories(), getNewestProducts(5), getLatestPosts(3)]),
+  const [[settingsRes, productsRes, postsRes], shop] = await Promise.all([
+    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS, SETTING_KEYS.categoryImages, CATEGORY_CIRCLES_KEY]), getNewestProducts(5), getLatestPosts(3)]),
     getShopInfo(), // never throws (falls back to no contact details)
   ]);
   const settings = settled(settingsRes, 'settings') ?? {};
@@ -87,7 +88,7 @@ export default async function HomePage() {
       <JsonLd data={website} />
       <Hero content={heroFrom(settings)} />
       <FeatureStrip />
-      <CategoryRow categories={settled(categoriesRes, 'categories') ?? []} images={parseCategoryImages(settings[SETTING_KEYS.categoryImages])} />
+      <CategoryRow circles={parseCategoryCircles(settings[CATEGORY_CIRCLES_KEY], parseCategoryImages(settings[SETTING_KEYS.categoryImages]))} />
       <PromoCards promos={PROMO_KEYS.map((k) => parsePromo(settings[k]))} />
       <FeaturedProducts products={settled(productsRes, 'products')} />
       <TrustStrip />

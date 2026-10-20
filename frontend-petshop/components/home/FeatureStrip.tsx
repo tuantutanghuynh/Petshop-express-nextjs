@@ -8,9 +8,9 @@ const FEATURES = [
 
 export function FeatureStrip() {
   return (
-    <ul className="mx-auto grid max-w-[1200px] gap-3 px-4 py-4 md:grid-cols-3">
+    <ul className="mx-auto grid max-w-[1200px] gap-3 px-4 py-4 md:grid-cols-3 md:px-6">
       {FEATURES.map((f) => (
-        <li key={f.title} className="flex items-center gap-3 text-sm">
+        <li key={f.title} className="flex items-center gap-3 text-sm md:justify-center">
           <span aria-hidden="true" className={`grid size-10 shrink-0 place-items-center rounded-full text-white ${f.bg}`}>{f.icon}</span>
           <span><b className="block text-ink">{f.title}</b>{f.text}</span>
         </li>

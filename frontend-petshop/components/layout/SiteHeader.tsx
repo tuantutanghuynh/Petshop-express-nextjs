@@ -1,28 +1,31 @@
 import Link from 'next/link';
-import { categoryPath } from '../../lib/seo/structuredData';
-import type { Category } from '../../lib/types';
+import type { CategoryNode } from '../../lib/categoryTree';
+import type { MegaMenuExtras } from '../../lib/megaMenu';
 import { AccountControl } from '../cart/AccountControl';
 import { CartLink } from '../cart/CartLink';
 import { SearchForm } from '../search/SearchForm';
 import { AnnouncementBar } from './AnnouncementBar';
-import { CategoryMenu } from './CategoryMenu';
 import { Logo } from './Logo';
 import { MainNav } from './MainNav';
+import { MegaMenu } from './MegaMenu';
+import { MegaMenuPanel } from './MegaMenuPanel';
 import { MobileMenu } from './MobileMenu';
-import { FEATURED_CATEGORY_SLUGS, MAIN_NAV, type NavLink } from './navLinks';
+import { FEATURED_CATEGORY_SLUGS, MAIN_NAV } from './navLinks';
 
-type Props = { phone?: string; announcements: string[] | null; categories: Category[] };
+type Props = { phone?: string; announcements: string[] | null; categories: CategoryNode[]; megaMenus: Record<string, MegaMenuExtras> };
 
 // Header as in the wireframe. Phone: ☰ (drawer) · logo · 🔍 · cart. From 768px: logo · search with
-// category select · account · cart, and a menu row with the category dropdown, the links and the
-// hotline. Only the small interactive parts are client components.
-export function SiteHeader({ phone, announcements, categories }: Props) {
-  // "Cho chó" / "Cho mèo" straight after "Sản phẩm", when those categories exist.
-  const featured: NavLink[] = FEATURED_CATEGORY_SLUGS.flatMap((slug) => {
-    const c = categories.find((cat) => cat.slug === slug);
-    return c ? [{ href: categoryPath(c.slug), label: c.name, icon: '🐾' }] : [];
+// category select · account · cart, and a menu row with "Trang chủ", the species mega menus
+// ("Chó ▾", "Mèo ▾"), the other links and the hotline. Only the small interactive parts are client
+// components; the mega menu panels are rendered here, on the server.
+export function SiteHeader({ phone, announcements, categories, megaMenus }: Props) {
+  const species = FEATURED_CATEGORY_SLUGS.flatMap((slug) => {
+    const node = categories.find((c) => c.slug === slug);
+    if (!node) return [];
+    const extras = megaMenus[slug] ?? { banner: null, brands: [] };
+    return [{ slug, name: node.name, panel: <MegaMenuPanel node={node} extras={extras} /> }];
   });
-  const links = [...MAIN_NAV.slice(0, 2), ...featured, ...MAIN_NAV.slice(2)];
+  const links = MAIN_NAV;
   const tel = phone?.replace(/[^\d+]/g, '');
 
   return (
@@ -43,11 +46,15 @@ export function SiteHeader({ phone, announcements, categories }: Props) {
           </div>
         </div>
         <nav aria-label="Điều hướng chính" className="hidden border-t border-line md:block">
-          <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-4 py-1.5 md:px-6">
-            {categories.length > 0 && <CategoryMenu categories={categories} />}
-            <MainNav links={links} />
+          {/* Centred row; "safe" falls back to the start when the links overflow (768px), so the
+              first ones are never cut off. */}
+          <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-4 py-1.5 [justify-content:safe_center] md:px-6">
+            {/* Trang chủ, then the species menus, then the other links. */}
+            <MainNav links={links.slice(0, 1)} />
+            {species.length > 0 && <MegaMenu items={species} />}
+            <MainNav links={links.slice(1)} />
             {tel && (
-              <a href={`tel:${tel}`} className="ml-auto hidden min-h-11 shrink-0 items-center gap-1 px-2 text-sm font-extrabold text-ink lg:flex">
+              <a href={`tel:${tel}`} className="hidden min-h-11 shrink-0 items-center gap-1 px-2 text-sm font-extrabold text-ink lg:flex">
                 <span aria-hidden="true">☎</span> Hotline <span className="hidden xl:inline">{phone}</span>
               </a>
             )}

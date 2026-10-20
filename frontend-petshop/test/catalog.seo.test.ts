@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { categoryCrumbs } from '../lib/seo/categoryCrumbs';
 import { pageCount, parsePageParam } from '../lib/pagination';
 import { breadcrumbJsonLd, productJsonLd } from '../lib/seo/structuredData';
 import { buildSitemap } from '../lib/seo/sitemap';
@@ -113,5 +114,24 @@ describe('sitemap with the catalogue', () => {
     expect(urls).toContain(`${BASE}/gioi-thieu`);
     expect(urls).not.toContain(`${BASE}/chinh-sach/bao-mat`);
     expect(urls.some((u) => u.includes('tu-van-bao-gia'))).toBe(false);
+  });
+});
+
+describe('categoryCrumbs', () => {
+  const trail = [{ name: 'Chó', slug: 'cho' }, { name: 'Thức ăn', slug: 'cho-thuc-an' }, { name: 'Hạt cho chó', slug: 'hat-cho-cho' }];
+
+  it('links every ancestor and leaves the current category unlinked', () => {
+    expect(categoryCrumbs(trail)).toEqual([
+      { name: 'Trang chủ', path: '/' },
+      { name: 'Chó', path: '/danh-muc/cho' },
+      { name: 'Thức ăn', path: '/danh-muc/cho-thuc-an' },
+      { name: 'Hạt cho chó' },
+    ]);
+  });
+
+  it('links the whole trail when a product is the current page', () => {
+    const crumbs = categoryCrumbs(trail, 'Hạt X 2kg');
+    expect(crumbs.at(-2)).toEqual({ name: 'Hạt cho chó', path: '/danh-muc/hat-cho-cho' });
+    expect(crumbs.at(-1)).toEqual({ name: 'Hạt X 2kg' });
   });
 });

@@ -76,3 +76,65 @@ describe('content pages in the settings form', () => {
     for (const key of ['page_about', 'policy_giao-hang-doi-tra', 'policy_bao-mat']) expect(ADMIN_SETTING_KEYS).toContain(key);
   });
 });
+
+describe('mega menu settings', () => {
+  it('is part of the keys the form edits', () => {
+    expect(ADMIN_SETTING_KEYS).toEqual(expect.arrayContaining(['mega_menu_cho', 'mega_menu_meo']));
+  });
+
+  it('round-trips banner and brands, dropping empty brand rows', () => {
+    const banner = { image: 'https://a/b.jpg', title: 'T', href: '/danh-muc/cho' };
+    const form = settingsToForm({ mega_menu_cho: JSON.stringify({ banner, brands: [{ name: 'A', logo: 'https://a/l.png' }] }) });
+    expect(form.megaMenus.cho.brands).toHaveLength(8);
+    const { settings, errors } = formToSettings(form);
+    expect(errors).toEqual({});
+    expect(JSON.parse(settings.mega_menu_cho)).toEqual({ banner, brands: [{ name: 'A', logo: 'https://a/l.png' }] });
+    expect(settings.mega_menu_meo).toBe('');
+  });
+
+  it('flags a logo without a name, a non-https image and an unsafe link', () => {
+    const form = settingsToForm({});
+    form.megaMenus.cho.brands[0] = { name: '', logo: 'https://a/l.png' };
+    form.megaMenus.cho.bannerImage = 'http://a/b.jpg';
+    form.megaMenus.cho.bannerHref = 'javascript:alert(1)';
+    const { errors } = formToSettings(form);
+    expect(errors['megaMenus.cho.brands.0.name']).toBeTruthy();
+    expect(errors['megaMenus.cho.bannerImage']).toBeTruthy();
+    expect(errors['megaMenus.cho.bannerHref']).toBeTruthy();
+  });
+
+  it('asks for an image when banner text is filled', () => {
+    const form = settingsToForm({});
+    form.megaMenus.meo.bannerTitle = 'Mèo yêu';
+    expect(formToSettings(form).errors['megaMenus.meo.bannerImage']).toBeTruthy();
+  });
+});
+
+describe('category circles settings', () => {
+  it('edits the "Mua theo bé cưng" circles: 8 rows, defaults until saved', () => {
+    expect(ADMIN_SETTING_KEYS).toContain('homepage_category_circles');
+    const form = settingsToForm({});
+    expect(form.circles).toHaveLength(8);
+    expect(form.circles.slice(0, 2).map((c) => c.label)).toEqual(['Mèo', 'Chó']);
+    expect(form.circles[6]).toEqual({ label: '', href: '', image: '' });
+  });
+
+  it('saves filled rows in order and drops empty ones', () => {
+    const form = settingsToForm({});
+    form.circles = form.circles.map(() => ({ label: '', href: '', image: '' }));
+    form.circles[1] = { label: 'Pate', href: '/danh-muc/pate-cho-meo', image: 'https://a/p.jpg' };
+    const { settings, errors } = formToSettings(form);
+    expect(errors).toEqual({});
+    expect(JSON.parse(settings.homepage_category_circles)).toEqual([{ label: 'Pate', href: '/danh-muc/pate-cho-meo', image: 'https://a/p.jpg' }]);
+  });
+
+  it('asks for a name and a safe link, and an https image', () => {
+    const form = settingsToForm({});
+    form.circles[0] = { label: '', href: '/danh-muc/meo', image: '' };
+    form.circles[1] = { label: 'Chó', href: 'javascript:alert(1)', image: 'http://a/b.jpg' };
+    const { errors } = formToSettings(form);
+    expect(errors['circles.0.label']).toBeTruthy();
+    expect(errors['circles.1.href']).toBeTruthy();
+    expect(errors['circles.1.image']).toBeTruthy();
+  });
+});

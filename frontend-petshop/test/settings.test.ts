@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { DEFAULT_CATEGORY_CIRCLES, MAX_CATEGORY_CIRCLES, parseCategoryCircles } from '../lib/categoryCircles';
 import { isWithinDates, parseAnnouncements, parseCategoryImages, zaloHref } from '../lib/settings';
 import { parsePromo } from '../lib/storefront';
 
@@ -60,6 +61,41 @@ describe('parseCategoryImages', () => {
     });
     expect(parseCategoryImages(undefined)).toEqual({});
     expect(parseCategoryImages('[1]')).toEqual({});
+  });
+});
+
+// "Mua theo bé cưng" circles (wireframe: Mèo, Chó, Thức ăn, Pate, Phụ kiện, Sức khoẻ), edited in
+// /admin/cau-hinh. Until the owner saves a list, the six wireframe circles show, keeping any Chó /
+// Mèo image uploaded under the older per-category setting.
+describe('parseCategoryCircles', () => {
+  it('shows the six wireframe circles until a list is saved', () => {
+    const circles = parseCategoryCircles(undefined, { cho: 'https://res.cloudinary.com/x/cho.jpg' });
+    expect(circles.map((c) => c.label)).toEqual(['Mèo', 'Chó', 'Thức ăn', 'Pate', 'Phụ kiện', 'Sức khoẻ']);
+    expect(circles.find((c) => c.label === 'Chó')).toEqual({ label: 'Chó', href: '/danh-muc/cho', image: 'https://res.cloudinary.com/x/cho.jpg' });
+    expect(circles.find((c) => c.label === 'Mèo')?.image).toBeNull();
+    expect(DEFAULT_CATEGORY_CIRCLES.every((c) => c.href.startsWith('/danh-muc/'))).toBe(true);
+  });
+
+  it('reads a saved list and drops unusable rows', () => {
+    const raw = JSON.stringify([
+      { label: ' Pate ', href: '/danh-muc/pate-cho-meo', image: 'https://res.cloudinary.com/x/p.jpg' },
+      { label: 'No link' },
+      { label: 'Bad', href: 'javascript:alert(1)' },
+      { label: '', href: '/x' },
+      { label: 'x'.repeat(41), href: '/x' },
+      { label: 'Http image', href: '/x', image: 'http://a/b.jpg' },
+    ]);
+    expect(parseCategoryCircles(raw, {})).toEqual([
+      { label: 'Pate', href: '/danh-muc/pate-cho-meo', image: 'https://res.cloudinary.com/x/p.jpg' },
+      { label: 'Http image', href: '/x', image: null },
+    ]);
+  });
+
+  it(`keeps at most ${MAX_CATEGORY_CIRCLES} and falls back to the defaults when nothing usable is saved`, () => {
+    const many = JSON.stringify(Array.from({ length: 12 }, (_, i) => ({ label: `C${i}`, href: `/c${i}` })));
+    expect(parseCategoryCircles(many, {})).toHaveLength(MAX_CATEGORY_CIRCLES);
+    expect(parseCategoryCircles('[]', {})).toHaveLength(6);
+    expect(parseCategoryCircles('{oops', {})).toHaveLength(6);
   });
 });
 

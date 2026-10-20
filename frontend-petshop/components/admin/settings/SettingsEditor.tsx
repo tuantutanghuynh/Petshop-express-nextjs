@@ -5,6 +5,8 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { revalidateStorefront } from '../../../lib/adminRevalidate';
 import { authFetch, getToken } from '../../../lib/adminAuth';
 import { ADMIN_SETTING_KEYS, formToSettings, settingsToForm, type SettingsForm } from '../../../lib/adminSettings';
+import { buildCategoryTree, flattenTree, type CategoryNode } from '../../../lib/categoryTree';
+import { MEGA_MENU_SLUGS } from '../../../lib/megaMenu';
 import { CONTENT_PAGES } from '../../../lib/settings';
 import { apiFetch } from '../../../lib/apiClient';
 import { focusFirstError, type FieldErrors } from '../../../lib/forms';
@@ -12,11 +14,13 @@ import { BRAND_SLUG } from '../../../lib/site';
 import type { Category, SiteSettings } from '../../../lib/types';
 import { FormAlert } from '../../ui/FormAlert';
 import { TextField } from '../../ui/TextField';
+import { CircleFields } from './CircleFields';
 import { ImageField } from './ImageField';
+import { MegaMenuFields } from './MegaMenuFields';
 import { PromoFields } from './PromoFields';
 import { Section } from './Section';
 
-type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; form: SettingsForm; categories: Category[] };
+type Load = { state: 'loading' } | { state: 'error' } | { state: 'ready'; form: SettingsForm; categories: CategoryNode[] };
 
 // /admin/cau-hinh: everything the owner edits on the homepage and shop chrome, saved in one
 // PATCH /settings, then the storefront cache is refreshed so the change shows immediately.
@@ -40,8 +44,7 @@ export function SettingsEditor() {
     ])
       .then(([settings, categories]) => {
         if (!active) return;
-        const root = categories.data.find((c) => c.parentId === null && c.slug === BRAND_SLUG);
-        setLoad({ state: 'ready', form: settingsToForm(settings.data), categories: root ? categories.data.filter((c) => c.parentId === root.id) : [] });
+        setLoad({ state: 'ready', form: settingsToForm(settings.data), categories: buildCategoryTree(categories.data, BRAND_SLUG) });
       })
       .catch(() => active && setLoad({ state: 'error' }));
     return () => {
@@ -53,6 +56,7 @@ export function SettingsEditor() {
   if (load.state === 'error') return <FormAlert message="Chưa tải được cấu hình. Tải lại trang để thử lại." />;
 
   const { form, categories } = load;
+  const allCategories = flattenTree(categories);
   const update = (next: SettingsForm) => setLoad({ ...load, form: next });
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
@@ -123,13 +127,15 @@ export function SettingsEditor() {
         ))}
       </Section>
 
-      <Section title="Ảnh danh mục (vòng tròn trang chủ)" hint={categories.length === 0 ? 'Chưa có danh mục nào của cửa hàng.' : undefined}>
-        <div className="grid gap-4 md:grid-cols-2">
-          {categories.map((c) => (
-            <ImageField key={c.id} id={`categoryImages-${c.slug}`} label={c.name} value={form.categoryImages[c.slug] ?? ''} error={errors[`categoryImages.${c.slug}`]}
-              onChange={(v) => update({ ...form, categoryImages: { ...form.categoryImages, [c.slug]: v } })} />
-          ))}
-        </div>
+      <Section title="Vòng tròn “Mua theo bé cưng”" hint="Tối đa 8 vòng, theo thứ tự. Xoá hết tên và link của một vòng để bỏ vòng đó; để trống tất cả thì trang chủ hiện 6 vòng mặc định.">
+        <CircleFields rows={form.circles} categories={allCategories} errors={errors} onChange={(circles) => update({ ...form, circles })} />
+      </Section>
+
+      <Section title="Menu Chó / Mèo" hint="Banner bên phải và thương hiệu nổi bật trong menu xổ xuống. Bấm vào thương hiệu sẽ lọc sản phẩm có ô “Thương hiệu” đúng tên này (không phân biệt hoa thường).">
+        {MEGA_MENU_SLUGS.map((slug) => (
+          <MegaMenuFields key={slug} slug={slug} label={categories.find((c) => c.slug === slug)?.name ?? slug} value={form.megaMenus[slug]} errors={errors}
+            onChange={(next) => update({ ...form, megaMenus: { ...form.megaMenus, [slug]: next } })} />
+        ))}
       </Section>
 
       <Section title="Thông tin cửa hàng" hint="Hiện ở header, footer, trang liên hệ và dữ liệu cấu trúc (Organization).">

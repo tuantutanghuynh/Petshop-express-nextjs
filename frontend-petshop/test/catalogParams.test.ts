@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SORT, listHref, parseCategoryParam, parseSearchQuery, parseSortParam } from '../lib/catalogParams';
+import { DEFAULT_SORT, listHref, parseBrandParam, parseCategoryParam, parseSearchQuery, parseSortParam } from '../lib/catalogParams';
 
 // URL state of catalogue lists. Every variant of a list must have exactly one URL: defaults are left
 // out (page 1, newest first), unknown values are a 404 rather than a duplicate of the default page.
@@ -49,5 +49,20 @@ describe('search within a category', () => {
     expect(parseCategoryParam('thuc-an-hat')).toBe('thuc-an-hat');
     expect(parseCategoryParam('../admin')).toBeNull();
     expect(parseCategoryParam(['a', 'b'])).toBeNull();
+  });
+});
+
+describe('brand filter param', () => {
+  it('writes the brand as thuong-hieu and keeps it with sort and page', () => {
+    expect(listHref('/danh-muc/cho', { brand: 'Royal Canin', sort: 'price', page: 2 })).toBe('/danh-muc/cho?thuong-hieu=Royal+Canin&sort=price&page=2');
+  });
+
+  it('parses a usable brand and refuses junk', () => {
+    expect(parseBrandParam(undefined)).toBeUndefined();
+    expect(parseBrandParam('')).toBeUndefined();
+    expect(parseBrandParam('  Royal Canin ')).toBe('Royal Canin');
+    expect(parseBrandParam(['a', 'b'])).toBeNull();
+    expect(parseBrandParam('   ')).toBeNull();
+    expect(parseBrandParam('x'.repeat(101))).toBeNull();
   });
 });

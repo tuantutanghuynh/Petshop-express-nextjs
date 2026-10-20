@@ -90,6 +90,8 @@ export interface Category {
   name: string;
   slug: string;
   description: string | null;
+  // Order among siblings; GET /categories already sorts by it.
+  sortOrder?: number;
   // Included by GET /categories and GET /products/:slug (spec table labels), not by the list.
   attributes?: CategoryAttribute[];
 }

@@ -1,5 +1,7 @@
 import type { FieldErrors } from './forms';
 import { CONTENT_PAGES, MAX_ANNOUNCEMENTS, SETTING_KEYS, parseAnnouncements, parseCategoryImages } from './settings';
+import { CATEGORY_CIRCLES_KEY, MAX_CATEGORY_CIRCLES, MAX_CIRCLE_LABEL, parseCategoryCircles } from './categoryCircles';
+import { MAX_BRAND_NAME, MAX_MENU_BRANDS, MEGA_MENU_SLUGS, megaMenuKey, parseMegaMenu } from './megaMenu';
 import { isSafeHref, parseSocialLinks } from './storefront';
 
 // Mapping between stored settings and the /admin/cau-hinh form (test/adminSettings.test.ts).
@@ -27,12 +29,14 @@ const BANK_KEYS = { name: 'bank_name', account: 'bank_account', holder: 'bank_ho
 export const ADMIN_SETTING_KEYS: string[] = [
   SETTING_KEYS.announcements,
   SETTING_KEYS.categoryImages,
+  CATEGORY_CIRCLES_KEY,
   ...Object.values(HERO_KEYS),
   ...Array.from({ length: PROMO_SLOTS }, (_, i) => promoKey(i)),
   ...Object.values(SHOP_KEYS),
   'shop_social_links',
   ...Object.values(BANK_KEYS),
   ...CONTENT_PAGES.map((p) => p.key),
+  ...MEGA_MENU_SLUGS.map(megaMenuKey),
 ];
 
 export type PromoForm = {
@@ -47,6 +51,10 @@ export type PromoForm = {
   endsAt: string;
 };
 
+// One species mega menu: banner on the right and MAX_MENU_BRANDS brand rows (empty rows are dropped
+// when saving).
+export type MegaMenuForm = { bannerImage: string; bannerTitle: string; bannerHref: string; brands: { name: string; logo: string }[] };
+
 type Keyed<T extends Record<string, string>> = { -readonly [K in keyof T]: string };
 
 export type SettingsForm = {
@@ -58,7 +66,13 @@ export type SettingsForm = {
   bank: Keyed<typeof BANK_KEYS>;
   // Markdown of the owner-written pages, keyed by setting key (CONTENT_PAGES).
   pages: Record<string, string>;
+  // Keyed by species slug (MEGA_MENU_SLUGS).
+  megaMenus: Record<string, MegaMenuForm>;
+  // "Mua theo bé cưng" circles, always MAX_CATEGORY_CIRCLES rows (empty rows are dropped when saving).
+  circles: CircleForm[];
 };
+
+export type CircleForm = { label: string; href: string; image: string };
 
 const EMPTY_PROMO: PromoForm = { enabled: true, big: '', title: '', subtitle: '', cta: '', href: '', image: '', startsAt: '', endsAt: '' };
 
@@ -80,6 +94,22 @@ function readPromo(raw: string | undefined): PromoForm {
   }
 }
 
+function readMegaMenu(raw: string | undefined): MegaMenuForm {
+  const m = parseMegaMenu(raw);
+  return {
+    bannerImage: m.banner?.image ?? '',
+    bannerTitle: m.banner?.title ?? '',
+    bannerHref: m.banner?.href ?? '',
+    brands: Array.from({ length: MAX_MENU_BRANDS }, (_, i) => ({ name: m.brands[i]?.name ?? '', logo: m.brands[i]?.logo ?? '' })),
+  };
+}
+
+// The circles the homepage shows now (the defaults until a list is saved), padded to the row count.
+function readCircles(s: Record<string, string>): CircleForm[] {
+  const shown = parseCategoryCircles(s[CATEGORY_CIRCLES_KEY], parseCategoryImages(s[SETTING_KEYS.categoryImages]));
+  return Array.from({ length: MAX_CATEGORY_CIRCLES }, (_, i) => ({ label: shown[i]?.label ?? '', href: shown[i]?.href ?? '', image: shown[i]?.image ?? '' }));
+}
+
 export function settingsToForm(s: Record<string, string>): SettingsForm {
   const lines = parseAnnouncements(s[SETTING_KEYS.announcements]) ?? [];
   return {
@@ -90,11 +120,53 @@ export function settingsToForm(s: Record<string, string>): SettingsForm {
     shop: { ...readKeys(SHOP_KEYS, s), socialLinks: parseSocialLinks(s.shop_social_links).join('\n') },
     bank: readKeys(BANK_KEYS, s),
     pages: Object.fromEntries(CONTENT_PAGES.map((p) => [p.key, s[p.key] ?? ''])),
+    megaMenus: Object.fromEntries(MEGA_MENU_SLUGS.map((slug) => [slug, readMegaMenu(s[megaMenuKey(slug)])])),
+    circles: readCircles(s),
   };
 }
 
 const DAY = /^\d{4}-\d{2}-\d{2}$/;
 const isHttps = (v: string) => v.startsWith('https://');
+
+// mega_menu_<slug> JSON, or "" when the menu has neither a banner nor a brand. A banner needs an
+// image (title and link alone would show nothing); a brand needs a name, the text the "?thuong-hieu="
+// filter matches against Product.brand.
+function writeMegaMenu(slug: string, f: MegaMenuForm, errors: FieldErrors): string {
+  const at = (k: string) => `megaMenus.${slug}.${k}`;
+  const image = f.bannerImage.trim();
+  const title = f.bannerTitle.trim();
+  const href = f.bannerHref.trim();
+  if (image && !isHttps(image)) errors[at('bannerImage')] = 'Ảnh phải là link https://';
+  if (!image && (title || href)) errors[at('bannerImage')] = 'Chọn ảnh banner (hoặc xoá tiêu đề và link)';
+  if (href && !isSafeHref(href)) errors[at('bannerHref')] = 'Link phải bắt đầu bằng / hoặc https://';
+  const brands = f.brands.flatMap((b, i) => {
+    const name = b.name.trim();
+    const logo = b.logo.trim();
+    if (!name && !logo) return [];
+    if (!name) errors[at(`brands.${i}.name`)] = 'Nhập tên thương hiệu';
+    else if (name.length > MAX_BRAND_NAME) errors[at(`brands.${i}.name`)] = `Tối đa ${MAX_BRAND_NAME} ký tự`;
+    if (logo && !isHttps(logo)) errors[at(`brands.${i}.logo`)] = 'Ảnh phải là link https://';
+    return [{ name, ...(logo && { logo }) }];
+  });
+  if (!image && brands.length === 0) return '';
+  return JSON.stringify({ ...(image && { banner: { image, ...(title && { title }), ...(href && { href }) } }), brands });
+}
+
+// homepage_category_circles JSON, or "" (homepage shows the defaults) when every row is empty.
+function writeCircles(rows: CircleForm[], errors: FieldErrors): string {
+  const circles = rows.flatMap((raw, i) => {
+    const label = raw.label.trim();
+    const href = raw.href.trim();
+    const image = raw.image.trim();
+    if (!label && !href && !image) return [];
+    if (!label) errors[`circles.${i}.label`] = 'Nhập tên vòng';
+    else if (label.length > MAX_CIRCLE_LABEL) errors[`circles.${i}.label`] = `Tối đa ${MAX_CIRCLE_LABEL} ký tự`;
+    if (!href || !isSafeHref(href)) errors[`circles.${i}.href`] = 'Nhập link bắt đầu bằng / hoặc https://';
+    if (image && !isHttps(image)) errors[`circles.${i}.image`] = 'Ảnh phải là link https://';
+    return [{ label, href, ...(image && { image }) }];
+  });
+  return circles.length > 0 ? JSON.stringify(circles) : '';
+}
 
 function writeKeys<T extends Record<string, string>>(keys: T, values: Keyed<T>, out: Record<string, string>) {
   for (const [field, key] of Object.entries(keys)) out[key] = (values[field as keyof T] ?? '').trim();
@@ -150,5 +222,7 @@ export function formToSettings(f: SettingsForm): { settings: Record<string, stri
 
   writeKeys(BANK_KEYS, f.bank, settings);
   for (const page of CONTENT_PAGES) settings[page.key] = (f.pages[page.key] ?? '').trim();
+  for (const slug of MEGA_MENU_SLUGS) settings[megaMenuKey(slug)] = writeMegaMenu(slug, f.megaMenus[slug], errors);
+  settings[CATEGORY_CIRCLES_KEY] = writeCircles(f.circles, errors);
   return { settings, errors };
 }
