@@ -96,6 +96,11 @@ export interface Category {
   attributes?: CategoryAttribute[];
 }
 
+// GET /categories/admin/list: a category of the shop with what still uses it (/admin/danh-muc).
+export interface AdminCategory extends Category {
+  _count: { products: number; blogPosts: number; galleryItems: number; children: number };
+}
+
 export interface Product {
   id: string;
   name: string;

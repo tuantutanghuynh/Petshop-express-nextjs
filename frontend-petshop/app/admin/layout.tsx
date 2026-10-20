@@ -7,6 +7,7 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 const LINKS = [
   { href: '/admin/posts', label: 'Bài viết' },
+  { href: '/admin/danh-muc', label: 'Danh mục' },
   { href: '/admin/gallery', label: 'Thư viện ảnh' },
   { href: '/admin/cau-hinh', label: 'Cấu hình trang chủ' },
 ];

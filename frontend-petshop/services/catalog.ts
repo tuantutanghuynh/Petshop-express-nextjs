@@ -88,6 +88,17 @@ export async function getCategoryTrail(slug: string): Promise<CategoryNode[]> {
   return categoryTrail(await getShopCategoryTree(), slug);
 }
 
+// Current slug of a renamed category (ADR-017), or null when `slug` was never a category slug.
+export async function resolveCategorySlug(slug: string): Promise<string | null> {
+  try {
+    const { data } = await apiFetch<{ slug: string }>(`/categories/resolve/${encodeURIComponent(slug)}`, cached(['categories']));
+    return data.slug;
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return null;
+    throw err;
+  }
+}
+
 // Product detail, or null when it does not exist, is not active (the API answers 404 for both)
 // or belongs to another storefront.
 export async function getShopProduct(slug: string): Promise<Product | null> {

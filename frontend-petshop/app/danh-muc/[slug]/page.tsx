@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { ProductGrid } from '../../../components/product/ProductGrid';
 import { SortLinks } from '../../../components/product/SortLinks';
 import { JsonLd } from '../../../components/seo/JsonLd';
@@ -12,7 +12,7 @@ import { pageCount, parsePageParam } from '../../../lib/pagination';
 import { categoryCrumbs } from '../../../lib/seo/categoryCrumbs';
 import { breadcrumbJsonLd, categoryPath } from '../../../lib/seo/structuredData';
 import { SITE_NAME, siteUrl } from '../../../lib/site';
-import { CATEGORY_PAGE_SIZE, getCategoryProducts, getCategoryTrail, getShopCategory } from '../../../services/catalog';
+import { CATEGORY_PAGE_SIZE, getCategoryProducts, getCategoryTrail, getShopCategory, resolveCategorySlug } from '../../../services/catalog';
 
 // Category listing. Search intent: commercial.
 type Props = {
@@ -50,7 +50,13 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const sort = parseSortParam(rawSort);
   const brand = parseBrandParam(rawBrand);
   const category = await getShopCategory(slug);
-  if (!category || page === null || sort === null || brand === null) notFound();
+  if (!category) {
+    // A renamed category keeps its old URL alive: 308 to the current slug with the same list state.
+    const moved = await resolveCategorySlug(slug);
+    if (moved && page !== null && sort !== null && brand !== null) permanentRedirect(listHref(categoryPath(moved), { brand, sort, page }));
+    notFound();
+  }
+  if (page === null || sort === null || brand === null) notFound();
 
   const [{ products, total }, trail] = await Promise.all([getCategoryProducts(category.slug, page, sort, brand), getCategoryTrail(category.slug)]);
   const totalPages = pageCount(total, CATEGORY_PAGE_SIZE);
