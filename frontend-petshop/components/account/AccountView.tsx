@@ -7,7 +7,7 @@ import { formatVnd } from '../../lib/storefront';
 import type { Customer, Order } from '../../lib/types';
 import { useCart } from '../cart/CartProvider';
 import { OrderStatusBadge } from '../orders/OrderStatusBadge';
-import { SignInPrompt } from '../orders/SignInPrompt';
+import { SignInRedirect } from '../orders/SignInRedirect';
 import { useBffResource } from '../orders/useBff';
 import { EmptyState } from '../ui/EmptyState';
 
@@ -54,7 +54,7 @@ export function AccountView() {
   const router = useRouter();
 
   if (me.state === 'loading') return <div key="loading" aria-busy="true" aria-label="Đang tải" className="h-24 animate-pulse rounded-card bg-surface-alt" />;
-  if (me.state === 'signedOut') return <SignInPrompt next="/tai-khoan" text="Đăng nhập để xem tài khoản và đơn hàng." />;
+  if (me.state === 'signedOut') return <SignInRedirect next="/tai-khoan" />;
   if (me.state === 'error') return <EmptyState tone="error" message="Chưa tải được tài khoản." />;
 
   // key: see OrderDetailView — mount the account as new content instead of reusing the skeleton node.

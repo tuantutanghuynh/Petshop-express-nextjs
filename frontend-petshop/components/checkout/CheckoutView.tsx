@@ -10,6 +10,7 @@ import { newIdempotencyKey, validateCheckout, type BankInfo } from '../../lib/or
 import { formatVnd } from '../../lib/storefront';
 import type { Order } from '../../lib/types';
 import { useCart } from '../cart/CartProvider';
+import { SignInRedirect } from '../orders/SignInRedirect';
 import { EmptyState } from '../ui/EmptyState';
 import { FormAlert } from '../ui/FormAlert';
 import { StickyActionBar } from '../ui/StickyActionBar';
@@ -31,14 +32,7 @@ export function CheckoutView({ bank }: { bank: BankInfo | null }) {
   const [submitting, setSubmitting] = useState(false);
 
   if (status === 'loading') return <div aria-busy="true" aria-label="Đang tải" className="h-40 animate-pulse rounded-card bg-surface-alt" />;
-  if (status === 'signedOut') {
-    return (
-      <div className="flex flex-col items-start gap-3">
-        <p>Đăng nhập để đặt hàng.</p>
-        <Link href="/dang-nhap?next=%2Fdat-hang" className="inline-flex min-h-12 items-center rounded-full bg-brand-ink px-6 font-bold text-white">Đăng nhập</Link>
-      </div>
-    );
-  }
+  if (status === 'signedOut') return <SignInRedirect next="/dat-hang" />;
   if (status === 'error' || !cart) return <EmptyState tone="error" message="Chưa tải được giỏ hàng. Vui lòng tải lại trang." />;
   if (cart.items.length === 0) {
     return (

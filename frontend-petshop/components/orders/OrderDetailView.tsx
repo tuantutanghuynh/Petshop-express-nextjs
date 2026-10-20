@@ -7,7 +7,7 @@ import { EmptyState } from '../ui/EmptyState';
 import { BankTransferBox } from './BankTransferBox';
 import { OrderItems } from './OrderItems';
 import { OrderStatusBadge } from './OrderStatusBadge';
-import { SignInPrompt } from './SignInPrompt';
+import { SignInRedirect } from './SignInRedirect';
 import { useBffResource } from './useBff';
 
 const DATE = new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short', timeZone: 'Asia/Ho_Chi_Minh' });
@@ -18,7 +18,7 @@ export function OrderDetailView({ code, bank, isNew }: Props) {
   const order = useBffResource<Order>(`/api/orders/${encodeURIComponent(code)}`);
 
   if (order.state === 'loading') return <div key="loading" aria-busy="true" aria-label="Đang tải đơn hàng" className="h-60 animate-pulse rounded-card bg-surface-alt" />;
-  if (order.state === 'signedOut') return <SignInPrompt next={`/tai-khoan/don-hang/${code}`} text="Đăng nhập để xem đơn hàng." />;
+  if (order.state === 'signedOut') return <SignInRedirect next={`/tai-khoan/don-hang/${code}`} />;
   if (order.state === 'error') {
     return (
       <div className="flex flex-col items-start gap-3">
