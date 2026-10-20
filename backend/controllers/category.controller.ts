@@ -3,6 +3,14 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import {
+  createShopCategory,
+  deleteShopCategory,
+  listShopCategories,
+  reorderShopCategories,
+  resolveCategorySlug,
+  updateShopCategory,
+} from '../services/categoryAdmin.service';
 
 // Read and write access to the Category tree. Categories carry more weight here than the
 // name suggests: each business (Gốm sứ, Petshop) is a root category and its sub-categories
@@ -21,21 +29,40 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, categories);
 });
 
-// Creates a category and answers 201. Passing `parentId` makes the new row a sub-category of
-// an existing one, which is how a brand's sections (Bình gốm, Tượng, Trang trí) are built;
-// omitting it creates a new root, meaning a whole new business. The slug is checked first
-// because it is unique in the schema and it is also the public URL segment, so a duplicate
-// has to fail as a clear 409 rather than as a raw database constraint error.
+// Category administration for one storefront (spec 2026-10-20 admin categories). Every route below
+// runs resolveBrand, so req.brand.categoryIds is the brand root followed by every category under it;
+// the rules (scope, depth, cycles, slug history) live in categoryAdmin.service.ts.
+const scope = (req: Request) => ({ shopIds: req.brand?.categoryIds ?? [] });
+
+export const adminList = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, await listShopCategories(scope(req)));
+});
+
+// Creates a category under a parent of this shop, at the end of its siblings, and answers 201.
 export const create = asyncHandler(async (req: Request, res: Response) => {
   const { name, slug, description, parentId } = req.body;
+  sendSuccess(res, await createShopCategory(scope(req), { name, slug, description, parentId }), null, 201);
+});
 
-  const existing = await prisma.category.findUnique({ where: { slug } });
-  if (existing) throw new ApiError(409, 'SLUG_TAKEN', 'Slug danh mục đã tồn tại');
+// Renames, re-describes, moves or re-slugs a category; the old slug keeps answering with a 308.
+export const update = asyncHandler(async (req: Request, res: Response) => {
+  const { name, slug, description, parentId } = req.body;
+  sendSuccess(res, await updateShopCategory(scope(req), req.params.id as string, { name, slug, description, parentId }));
+});
 
-  const category = await prisma.category.create({
-    data: { name, slug, description, parentId: parentId || null },
-  });
-  sendSuccess(res, category, null, 201);
+export const remove = asyncHandler(async (req: Request, res: Response) => {
+  await deleteShopCategory(scope(req), req.params.id as string);
+  sendSuccess(res, { message: 'Đã xoá danh mục' });
+});
+
+export const reorder = asyncHandler(async (req: Request, res: Response) => {
+  await reorderShopCategories(scope(req), req.body.parentId, req.body.ids);
+  sendSuccess(res, { message: 'Đã lưu thứ tự' });
+});
+
+// Public: the current slug of a renamed category, for the storefront's 308.
+export const resolve = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, { slug: await resolveCategorySlug(req.params.slug as string) });
 });
 
 // --- Thuộc tính của danh mục ---------------------------------------------------------

@@ -365,7 +365,8 @@ describe('categories', () => {
   it('L4 duplicate category slug → 409; attribute keys are slugified and unique per category', async () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
-    expect((await call('post', '/api/v1/categories', { token: admin.token, brand: null }).send({ name: 'X', slug: child.slug })).status).toBe(409);
+    // POST now needs the brand header and a parent (spec 2026-10-20 admin categories).
+    expect((await call('post', '/api/v1/categories', { token: admin.token }).send({ name: 'X', slug: child.slug, parentId: child.id })).status).toBe(409);
     const attr = (label: string) => call('post', `/api/v1/categories/${child.id}/attributes`, { token: admin.token, brand: null }).send({ attributeLabel: label });
     expect((await attr('Trọng lượng')).body.data.attributeKey).toBe('trong_luong');
     expect((await attr('Trọng  lượng!')).status).toBe(409); // same key after slugify

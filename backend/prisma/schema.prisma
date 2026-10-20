@@ -22,18 +22,30 @@ model User {
 }
 
 model Category {
-  id           String              @id @default(uuid())
-  parentId     String?
-  name         String
-  slug         String              @unique
-  description  String?
+  id            String                 @id @default(uuid())
+  parentId      String?
+  name          String
+  slug          String                 @unique
+  description   String?
   // Display order among siblings (menus, chips); ties fall back to the name.
-  sortOrder    Int                 @default(0)
-  createdAt    DateTime            @default(now())
-  attributes   CategoryAttribute[]
-  products     Product[]
-  blogPosts    BlogPost[]
-  galleryItems GalleryItem[]
+  sortOrder     Int                    @default(0)
+  createdAt     DateTime               @default(now())
+  attributes    CategoryAttribute[]
+  slugRedirects CategorySlugRedirect[]
+  products      Product[]
+  blogPosts     BlogPost[]
+  galleryItems  GalleryItem[]
+}
+
+// Former slugs of a category (ADR-017): /danh-muc/<oldSlug> answers 308 to the current slug, so a
+// renamed URL keeps its links and search ranking. Deleted with the category.
+model CategorySlugRedirect {
+  oldSlug    String   @id
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([categoryId])
 }
 
 model CategoryAttribute {
