@@ -18,7 +18,36 @@ describe('seedPetshopCatalog', () => {
     const cats = await call('get', '/api/v1/categories');
     const root = cats.body.data.find((c: { slug: string; parentId: string | null }) => c.slug === 'petshop' && c.parentId === null);
     expect(root).toBeDefined();
-    expect(cats.body.data.filter((c: { parentId: string | null }) => c.parentId === root.id).length).toBeGreaterThanOrEqual(5);
+    // Spec 2026-10-20: the shop's top level is the species, everything else hangs below them.
+    const species = cats.body.data.filter((c: { parentId: string | null }) => c.parentId === root.id).map((c: { slug: string }) => c.slug);
+    expect(species).toEqual(['cho', 'meo']);
+  });
+
+  it('files demo products on tree leaves and keeps the food spec table', async () => {
+    await seedPetshopCatalog(prisma);
+    const hat = await prisma.product.findUniqueOrThrow({
+      where: { slug: 'hat-cho-cho-truong-thanh-vi-ga' },
+      include: { category: { include: { attributes: true } } },
+    });
+    expect(hat.category.slug).toBe('hat-cho-cho');
+    expect(hat.category.attributes.map((a) => a.attributeKey).sort()).toEqual(['do_tuoi', 'khoi_luong', 'xuat_xu']);
+    expect(await prisma.category.count({ where: { slug: { in: ['thuc-an-hat', 'pate', 'phu-kien', 'suc-khoe'] } } })).toBe(0);
+  });
+
+  it('moves demo products off the old flat categories of an earlier seed, then removes them', async () => {
+    const root = await prisma.category.create({ data: { slug: 'petshop', name: 'Siêu thị của chó mèo' } });
+    const pate = await prisma.category.create({ data: { slug: 'pate', name: 'Pate', parentId: root.id } });
+    const keep = await prisma.category.create({ data: { slug: 'phu-kien', name: 'Phụ kiện', parentId: root.id } });
+    await prisma.product.create({ data: { slug: 'pate-cho-vi-bo', name: 'Pate cho chó vị bò', categoryId: pate.id, attributes: {} } });
+    await prisma.product.create({ data: { slug: 'owner-product', name: 'Owner product', categoryId: keep.id, attributes: {} } });
+
+    await seedPetshopCatalog(prisma);
+
+    const moved = await prisma.product.findUniqueOrThrow({ where: { slug: 'pate-cho-vi-bo' }, include: { category: true } });
+    expect(moved.category.slug).toBe('pate-cho-cho');
+    expect(await prisma.category.findUnique({ where: { slug: 'pate' } })).toBeNull();
+    // A category that still holds a product the seed does not own is left alone.
+    expect(await prisma.category.findUnique({ where: { slug: 'phu-kien' } })).not.toBeNull();
   });
 
   it('covers the storefront states: several variants, a real discount, out of stock', async () => {

@@ -4,6 +4,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { categoryScopeIds } from '../services/categoryScope.service';
 import { parsePagination } from '../utils/pagination';
 
 // Every read and write path for blog posts, serving both the public site and the admin
@@ -16,8 +17,8 @@ import { parsePagination } from '../utils/pagination';
 // `meta`. A post is only public when its status is `published` **and** its `publishedAt` has
 // already passed — that second condition is what keeps scheduled posts hidden until their
 // time comes. `pageSize` is capped at 50 so a crafted request cannot ask for the entire
-// table in one query. The category filter expands to include child categories, otherwise a
-// post filed under "Bình gốm" would vanish from the parent brand's listing.
+// table in one query. The category filter expands to every descendant category, otherwise a
+// post filed under "Hạt cho chó" would vanish from the "Chó" and brand listings.
 export const list = asyncHandler(async (req: Request, res: Response) => {
   const { categorySlug } = req.query;
   const { page, take, skip } = parsePagination(req.query, 10, 50);
@@ -28,11 +29,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   };
 
   if (categorySlug && typeof categorySlug === 'string') {
-    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-    const children = await prisma.category.findMany({ where: { parentId: category.id } });
-    const categoryIds = [category.id, ...children.map(c => c.id)];
-    where.categoryId = { in: categoryIds };
+    where.categoryId = { in: await categoryScopeIds(categorySlug) };
   }
 
   const [items, total] = await Promise.all([
@@ -98,11 +95,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   }
 
   if (categorySlug && typeof categorySlug === 'string') {
-    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-    const children = await prisma.category.findMany({ where: { parentId: category.id } });
-    const categoryIds = [category.id, ...children.map(c => c.id)];
-    where.categoryId = { in: categoryIds };
+    where.categoryId = { in: await categoryScopeIds(categorySlug) };
   }
 
   const [items, total] = await Promise.all([

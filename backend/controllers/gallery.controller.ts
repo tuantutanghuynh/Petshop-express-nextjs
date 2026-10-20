@@ -5,6 +5,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { categoryScopeIds } from '../services/categoryScope.service';
 import { parsePagination } from '../utils/pagination';
 
 // CRUD for gallery images. Image files themselves are uploaded separately through
@@ -13,7 +14,7 @@ import { parsePagination } from '../utils/pagination';
 // carry extra logic to clean up files on disk.
 
 // Returns a page of gallery items ordered by their `position` field, optionally narrowed to
-// one brand through `categorySlug`. The filter expands to include child categories so the
+// one brand through `categorySlug`. The filter expands to every descendant category so the
 // brand's landing page shows everything underneath it, not only items pinned directly to the
 // root category. `pageSize` is capped at 50 to keep a single request from pulling the whole
 // gallery. Ordering by `position` leaves room for manual curation; nothing sets it yet, so
@@ -24,14 +25,7 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
 
   const where: { categoryId?: { in: string[] } } = {};
   if (categorySlug && typeof categorySlug === 'string') {
-    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-
-    // Tìm thêm các danh mục con (ví dụ: Bình Gốm, Lọ Hoa...)
-    const children = await prisma.category.findMany({ where: { parentId: category.id } });
-    const categoryIds = [category.id, ...children.map((c) => c.id)];
-
-    where.categoryId = { in: categoryIds };
+    where.categoryId = { in: await categoryScopeIds(categorySlug) };
   }
 
   const [items, total] = await Promise.all([

@@ -55,7 +55,7 @@ type VariantInput = { price?: number; stock?: number; reserved?: number; sku?: s
 // A product with one or more variants. Prices are integers in VND, as in the schema.
 export async function createProduct(
   categoryId: string,
-  opts: { status?: string; name?: string; slug?: string; variants?: VariantInput[]; createdAt?: Date } = {},
+  opts: { status?: string; name?: string; slug?: string; brand?: string; variants?: VariantInput[]; createdAt?: Date } = {},
 ) {
   const n = next();
   const variants = opts.variants ?? [{}];
@@ -67,6 +67,7 @@ export async function createProduct(
       searchName: toSearchText(name),
       slug: opts.slug ?? `pate-meo-${n}`,
       status: opts.status ?? PRODUCT_STATUS.ACTIVE,
+      ...(opts.brand && { brand: opts.brand }),
       ...(opts.createdAt && { createdAt: opts.createdAt }),
       variants: {
         create: variants.map((v, i) => ({

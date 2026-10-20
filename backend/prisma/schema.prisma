@@ -27,6 +27,8 @@ model Category {
   name         String
   slug         String              @unique
   description  String?
+  // Display order among siblings (menus, chips); ties fall back to the name.
+  sortOrder    Int                 @default(0)
   createdAt    DateTime            @default(now())
   attributes   CategoryAttribute[]
   products     Product[]

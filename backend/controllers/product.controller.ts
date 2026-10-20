@@ -4,6 +4,7 @@ import prisma from '../services/prisma';
 import ApiError from '../utils/ApiError';
 import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
+import { categoryScopeIds } from '../services/categoryScope.service';
 import { parsePagination } from '../utils/pagination';
 import { PRODUCT_STATUS } from '../constants/product';
 import { STOCK_MOVEMENT_TYPE } from '../constants/inventory';
@@ -20,10 +21,10 @@ import { escapeLike, productOrderBy, toSearchText, type ProductSort } from '../u
 // counters in `meta`. Only `active` products appear — drafts and archived rows stay hidden without
 // a separate permission check, because the filter lives in the query itself. `pageSize` is capped
 // at 50 so a crafted request cannot pull the whole catalogue in one call. The category filter
-// expands to include child categories, otherwise a product filed under "Bình gốm" would be missing
-// from the parent brand's listing.
+// expands to every descendant category, otherwise a product filed under "Hạt cho chó" would be
+// missing from the "Chó" and brand listings.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const { categorySlug, q, sort } = req.query;
+  const { categorySlug, q, sort, brand } = req.query;
   const { page, take, skip } = parsePagination(req.query, 12, 50);
 
   const where: Prisma.ProductWhereInput = { status: PRODUCT_STATUS.ACTIVE };
@@ -31,13 +32,12 @@ export const list = asyncHandler(async (req: Request, res: Response) => {
   // text on both sides, so "pate meo" matches "Pate mèo". Prisma does NOT escape % and _ in
   // `contains`, hence escapeLike.
   if (typeof q === 'string') where.searchName = { contains: escapeLike(toSearchText(q)) };
+  // Featured brands in the mega menu link to "?brand=Royal Canin". Product.brand is free text typed
+  // by the owner, so the match ignores case (validated by the route: one string, 1–100 characters).
+  if (typeof brand === 'string') where.brand = { equals: brand.trim(), mode: 'insensitive' };
 
   if (categorySlug && typeof categorySlug === 'string') {
-    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-    const children = await prisma.category.findMany({ where: { parentId: category.id } });
-    const categoryIds = [category.id, ...children.map((c) => c.id)];
-    where.categoryId = { in: categoryIds };
+    where.categoryId = { in: await categoryScopeIds(categorySlug) };
   }
 
   const [items, total] = await Promise.all([
@@ -94,11 +94,7 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   if (search && typeof search === 'string') where.searchName = { contains: escapeLike(toSearchText(search)) };
 
   if (categorySlug && typeof categorySlug === 'string') {
-    const category = await prisma.category.findUnique({ where: { slug: categorySlug } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-    const children = await prisma.category.findMany({ where: { parentId: category.id } });
-    const categoryIds = [category.id, ...children.map((c) => c.id)];
-    where.categoryId = { in: categoryIds };
+    where.categoryId = { in: await categoryScopeIds(categorySlug) };
   }
 
   const [items, total] = await Promise.all([

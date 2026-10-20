@@ -9,14 +9,15 @@ import { sendSuccess } from '../utils/ApiResponse';
 // hang off it via `parentId`, so this tree is what keeps two storefronts sharing one
 // database without seeing each other's content.
 
-// Returns every category with its attribute definitions attached. The response is
+// Returns every category with its attribute definitions attached, siblings in `sortOrder` then
+// name order (menus show them as listed). The response is
 // deliberately unfiltered and unpaginated — the table holds a handful of rows, and each
 // frontend picks out its own branch by matching `BRAND_CATEGORY_SLUG` on the client. That
 // means the list does include the other brand's categories, so any admin UI that offers a
 // category picker has to filter the result before rendering it, or an editor can file
 // content under the wrong business.
 export const list = asyncHandler(async (req: Request, res: Response) => {
-  const categories = await prisma.category.findMany({ include: { attributes: true } });
+  const categories = await prisma.category.findMany({ include: { attributes: true }, orderBy: [{ sortOrder: 'asc' }, { name: 'asc' }] });
   sendSuccess(res, categories);
 });
 

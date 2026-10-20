@@ -19,7 +19,8 @@ const router = Router();
 // Public list: optional search and sort. q must still have 2–100 characters once normalised
 // (so "  " or a single letter is refused rather than matching everything), and must be a single
 // value — "?q=a&q=b" arrives as an array. sort is a whitelist; anything else is a 422, never passed
-// on to the database. Validators only (no sanitizers): Express 5 makes req.query read-only.
+// on to the database. brand (mega menu "featured brands") is one string of 1–100 characters.
+// Validators only (no sanitizers): Express 5 makes req.query read-only.
 router.get(
   '/',
   [
@@ -28,6 +29,10 @@ router.get(
       .custom((v) => typeof v === 'string' && v.length <= 100 && toSearchText(v).length >= 2)
       .withMessage('Từ khoá tìm kiếm phải có từ 2 đến 100 ký tự'),
     query('sort').optional().isIn(PRODUCT_SORTS).withMessage('Kiểu sắp xếp không hợp lệ'),
+    query('brand')
+      .optional()
+      .custom((v) => typeof v === 'string' && v.trim().length >= 1 && v.trim().length <= 100)
+      .withMessage('Thương hiệu phải có từ 1 đến 100 ký tự'),
     validate,
   ],
   ctrl.list,

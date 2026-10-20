@@ -14,7 +14,9 @@
     "test:db": "NODE_ENV=test vitest run --config vitest.db.config.ts",
     "test:db:coverage": "NODE_ENV=test vitest run --config vitest.db.config.ts --coverage",
     "test:all": "npm test && npm run test:db",
-    "db:seed:petshop": "tsx scripts/seedPetshop.ts"
+    "db:seed:petshop": "tsx scripts/seedPetshop.ts",
+    "seed:category-tree": "tsx scripts/seedCategoryTree.ts",
+    "db:migrate-demo-categories": "tsx scripts/migrateDemoCategories.ts"
   },
   "keywords": [],
   "author": "",
