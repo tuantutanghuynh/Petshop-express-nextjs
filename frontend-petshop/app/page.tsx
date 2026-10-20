@@ -2,16 +2,17 @@ import type { Metadata } from 'next';
 import { CategoryRow } from '../components/home/CategoryRow';
 import { FeatureStrip } from '../components/home/FeatureStrip';
 import { FeaturedProducts } from '../components/home/FeaturedProducts';
-import { Hero, type HeroContent } from '../components/home/Hero';
+import { Hero } from '../components/home/Hero';
+import { HeroSlider } from '../components/home/HeroSlider';
 import { LatestPosts } from '../components/home/LatestPosts';
 import { PromoCards } from '../components/home/PromoCards';
 import { TrustStrip } from '../components/home/TrustStrip';
 import { JsonLd } from '../components/seo/JsonLd';
 import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { HERO_SLIDES_KEY, LEGACY_HERO_KEYS, parseHeroSlides } from '../lib/heroSlides';
 import { CATEGORY_CIRCLES_KEY, parseCategoryCircles } from '../lib/categoryCircles';
 import { SETTING_KEYS, parseCategoryImages } from '../lib/settings';
-import { imageSrc, isSafeHref, parsePromo } from '../lib/storefront';
-import type { SiteSettings } from '../lib/types';
+import { parsePromo } from '../lib/storefront';
 import { getNewestProducts } from '../services/catalog';
 import { getLatestPosts, getSettings, getShopInfo } from '../services/content';
 
@@ -22,28 +23,6 @@ export const metadata: Metadata = {
 };
 
 const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
-const HERO_KEYS = ['badge', 'title', 'accent', 'subtitle', 'cta_label', 'cta_href', 'cta2_label', 'cta2_href', 'image'].map((k) => `homepage_hero_${k}`);
-
-// Copy used until the admin fills the homepage_hero_* settings (wireframe: "Mua ngay" + "Nhờ tư vấn").
-function heroFrom(s: SiteSettings): HeroContent {
-  const href = s.homepage_hero_cta_href;
-  const cta2Href = s[SETTING_KEYS.heroCta2Href];
-  const cta2Label = s[SETTING_KEYS.heroCta2Label];
-  return {
-    badge: s[SETTING_KEYS.heroBadge] ?? '♥ Yêu thương & chăm sóc',
-    title: s.homepage_hero_title || 'Lựa chọn tốt nhất',
-    accent: s.homepage_hero_accent || 'cho bé cưng nhà bạn',
-    subtitle: s.homepage_hero_subtitle || 'Thức ăn dinh dưỡng, pate, phụ kiện chất lượng và kiến thức chăm sóc chó mèo từ người nuôi thật.',
-    ctaLabel: s.homepage_hero_cta_label || 'Mua ngay',
-    ctaHref: href && isSafeHref(href) ? href : '/san-pham',
-    cta2: {
-      label: cta2Label || 'Nhờ tư vấn',
-      href: cta2Href && isSafeHref(cta2Href) ? cta2Href : '/tu-van-bao-gia',
-    },
-    image: imageSrc(s.homepage_hero_image),
-  };
-}
-
 // A failed section must not take the page down: it is logged and shown as an error state, and
 // the rest of the homepage still renders.
 function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
@@ -54,10 +33,11 @@ function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
 
 export default async function HomePage() {
   const [[settingsRes, productsRes, postsRes], shop] = await Promise.all([
-    Promise.allSettled([getSettings([...HERO_KEYS, ...PROMO_KEYS, SETTING_KEYS.categoryImages, CATEGORY_CIRCLES_KEY]), getNewestProducts(5), getLatestPosts(3)]),
+    Promise.allSettled([getSettings([...LEGACY_HERO_KEYS, HERO_SLIDES_KEY, ...PROMO_KEYS, SETTING_KEYS.categoryImages, CATEGORY_CIRCLES_KEY]), getNewestProducts(5), getLatestPosts(3)]),
     getShopInfo(), // never throws (falls back to no contact details)
   ]);
   const settings = settled(settingsRes, 'settings') ?? {};
+  const heroSlides = parseHeroSlides(settings);
   const base = siteUrl();
 
   // Schema describes only what the page shows: no logo until a real logo file exists, sameAs
@@ -86,7 +66,7 @@ export default async function HomePage() {
     <main id="main">
       <JsonLd data={organization} />
       <JsonLd data={website} />
-      <Hero content={heroFrom(settings)} />
+      {heroSlides.length > 1 ? <HeroSlider slides={heroSlides} /> : <Hero content={heroSlides[0]} />}
       <FeatureStrip />
       <CategoryRow circles={parseCategoryCircles(settings[CATEGORY_CIRCLES_KEY], parseCategoryImages(settings[SETTING_KEYS.categoryImages]))} />
       <PromoCards promos={PROMO_KEYS.map((k) => parsePromo(settings[k]))} />

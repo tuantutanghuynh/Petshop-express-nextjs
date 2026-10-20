@@ -40,25 +40,26 @@ describe('settingsToForm / formToSettings', () => {
     expect(settings.shop_phone).toBe('0901 234 567');
   });
 
+  // The single hero became slides (spec 2026-10-21); slide 1 is prefilled from the old keys.
   it('refuses links, images and dates the storefront would have to drop', () => {
     const form = settingsToForm({});
-    form.hero.ctaHref = 'javascript:alert(1)';
+    form.heroSlides[0].ctaHref = 'javascript:alert(1)';
     form.promos[0] = { ...form.promos[0], title: 'X', href: '//evil.example', image: 'http://x/y.jpg', startsAt: '2026-10-31', endsAt: '2026-10-01' };
     form.promos[1] = { ...form.promos[1], title: 'Y' }; // a promo needs a link too
     form.shop.socialLinks = 'https://facebook.com/a\nfacebook.com/b';
     const { errors } = formToSettings(form);
     expect(Object.keys(errors).sort()).toEqual([
-      'hero.ctaHref', 'promos.0.endsAt', 'promos.0.href', 'promos.0.image', 'promos.1.href', 'shop.socialLinks',
+      'heroSlides.0.ctaHref', 'promos.0.endsAt', 'promos.0.href', 'promos.0.image', 'promos.1.href', 'shop.socialLinks',
     ]);
   });
 
   it('trims text and drops empty announcement lines', () => {
     const form = settingsToForm({});
     form.announcements = ['  Một  ', '', ' Hai'];
-    form.hero.title = '  Tiêu đề ';
+    form.heroSlides[0].title = '  Tiêu đề ';
     const { settings } = formToSettings(form);
     expect(JSON.parse(settings.announcement_items)).toEqual(['Một', 'Hai']);
-    expect(settings.homepage_hero_title).toBe('Tiêu đề');
+    expect(JSON.parse(settings.homepage_hero_slides)[0].title).toBe('Tiêu đề');
   });
 });
 
@@ -136,5 +137,36 @@ describe('category circles settings', () => {
     expect(errors['circles.0.label']).toBeTruthy();
     expect(errors['circles.1.href']).toBeTruthy();
     expect(errors['circles.1.image']).toBeTruthy();
+  });
+});
+
+describe('hero slides settings', () => {
+  it('prefills slide 1 from the old hero keys until slides are saved', () => {
+    const form = settingsToForm({ homepage_hero_title: 'Cũ', homepage_hero_image: 'https://res.cloudinary.com/x/h.jpg' });
+    expect(form.heroSlides).toHaveLength(1);
+    expect(form.heroSlides[0]).toMatchObject({ enabled: true, title: 'Cũ', ctaLabel: 'Mua ngay', ctaHref: '/san-pham', image: 'https://res.cloudinary.com/x/h.jpg' });
+    expect(ADMIN_SETTING_KEYS).toContain('homepage_hero_slides');
+  });
+
+  it('round-trips saved slides, keeping disabled and dated ones for editing', () => {
+    const saved = [
+      { enabled: false, title: 'Tắt', ctaLabel: 'Xem', ctaHref: '/a' },
+      { enabled: true, title: 'Hai', startsAt: '2026-11-01', endsAt: '2026-11-30' },
+    ];
+    const form = settingsToForm({ homepage_hero_slides: JSON.stringify(saved) });
+    expect(form.heroSlides.map((s) => s.title)).toEqual(['Tắt', 'Hai']);
+    const { settings, errors } = formToSettings(form);
+    expect(errors).toEqual({});
+    expect(JSON.parse(settings.homepage_hero_slides)).toEqual(saved);
+  });
+
+  it('drops empty slides and flags a missing title, a button without link, a bad image and reversed dates', () => {
+    const form = settingsToForm({ homepage_hero_slides: '[]' });
+    expect(form.heroSlides).toEqual([]);
+    const blank = { enabled: true, badge: '', title: '', accent: '', subtitle: '', ctaLabel: '', ctaHref: '', cta2Label: '', cta2Href: '', image: '', startsAt: '', endsAt: '' };
+    form.heroSlides = [blank, { ...blank, subtitle: 'x', cta2Label: 'Tư vấn', image: 'http://a/b.jpg', startsAt: '2026-11-02', endsAt: '2026-11-01' }];
+    const { settings, errors } = formToSettings(form);
+    expect(Object.keys(errors).sort()).toEqual(['heroSlides.1.cta2Href', 'heroSlides.1.endsAt', 'heroSlides.1.image', 'heroSlides.1.title']);
+    expect(settings.homepage_hero_slides).toBeDefined();
   });
 });

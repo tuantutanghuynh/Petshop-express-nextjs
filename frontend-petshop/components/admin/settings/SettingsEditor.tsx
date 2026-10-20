@@ -4,7 +4,9 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { revalidateStorefront } from '../../../lib/adminRevalidate';
 import { authFetch, getToken } from '../../../lib/adminAuth';
-import { ADMIN_SETTING_KEYS, formToSettings, settingsToForm, type SettingsForm } from '../../../lib/adminSettings';
+import { ADMIN_SETTING_KEYS, EMPTY_HERO_SLIDE, formToSettings, settingsToForm, type SettingsForm } from '../../../lib/adminSettings';
+import { moveInSiblings } from '../../../lib/adminCategories';
+import { MAX_HERO_SLIDES } from '../../../lib/heroSlides';
 import { buildCategoryTree, flattenTree, type CategoryNode } from '../../../lib/categoryTree';
 import { MEGA_MENU_SLUGS } from '../../../lib/megaMenu';
 import { CONTENT_PAGES } from '../../../lib/settings';
@@ -15,7 +17,7 @@ import type { Category, SiteSettings } from '../../../lib/types';
 import { FormAlert } from '../../ui/FormAlert';
 import { TextField } from '../../ui/TextField';
 import { CircleFields } from './CircleFields';
-import { ImageField } from './ImageField';
+import { HeroSlideFields } from './HeroSlideFields';
 import { MegaMenuFields } from './MegaMenuFields';
 import { PromoFields } from './PromoFields';
 import { Section } from './Section';
@@ -83,10 +85,6 @@ export function SettingsEditor() {
     setStatus({ ok: true, text: 'Đã lưu. Trang chủ đã cập nhật.' });
   }
 
-  const hero = (key: keyof SettingsForm['hero'], label: string, extra: { placeholder?: string; hint?: string } = {}) => (
-    <TextField name={`hero-${key}`} label={label} value={form.hero[key]} error={errors[`hero.${key}`]} {...extra}
-      onChange={(e) => update({ ...form, hero: { ...form.hero, [key]: e.target.value } })} />
-  );
   const shop = (key: keyof Omit<SettingsForm['shop'], 'socialLinks'>, label: string, type = 'text') => (
     <TextField name={`shop-${key}`} label={label} type={type} value={form.shop[key]}
       onChange={(e) => update({ ...form, shop: { ...form.shop, [key]: e.target.value } })} />
@@ -105,19 +103,20 @@ export function SettingsEditor() {
         ))}
       </Section>
 
-      <Section title="Hero trang chủ">
-        <div className="grid gap-3 md:grid-cols-2">
-          {hero('badge', 'Nhãn nhỏ', { placeholder: '♥ Yêu thương & chăm sóc' })}
-          {hero('title', 'Tiêu đề dòng 1', { placeholder: 'Lựa chọn tốt nhất' })}
-          {hero('accent', 'Tiêu đề dòng 2 (màu xanh)', { placeholder: 'cho bé cưng nhà bạn' })}
-          {hero('subtitle', 'Mô tả')}
-          {hero('ctaLabel', 'Nút chính', { placeholder: 'Mua ngay' })}
-          {hero('ctaHref', 'Link nút chính', { placeholder: '/san-pham' })}
-          {hero('cta2Label', 'Nút phụ', { placeholder: 'Nhờ tư vấn' })}
-          {hero('cta2Href', 'Link nút phụ', { placeholder: '/tu-van-bao-gia' })}
-        </div>
-        <ImageField id="hero-image" label="Ảnh hero" value={form.hero.image} error={errors['hero.image']}
-          onChange={(v) => update({ ...form, hero: { ...form.hero, image: v } })} />
+      <Section title="Slide hero" hint={`Tối đa ${MAX_HERO_SLIDES} slide, tự chuyển mỗi 6 giây. Slide tắt, chưa tới ngày hoặc hết hạn sẽ tự ẩn; không còn slide nào thì trang chủ hiện hero mặc định.`}>
+        {form.heroSlides.map((slide, i) => (
+          <HeroSlideFields key={i} index={i} count={form.heroSlides.length} value={slide} errors={errors}
+            onChange={(next) => update({ ...form, heroSlides: form.heroSlides.map((s, j) => (j === i ? next : s)) })}
+            onMove={(dir) => {
+              const order = moveInSiblings(form.heroSlides.map((_, j) => String(j)), String(i), dir);
+              if (order) update({ ...form, heroSlides: order.map((j) => form.heroSlides[Number(j)]) });
+            }}
+            onRemove={() => update({ ...form, heroSlides: form.heroSlides.filter((_, j) => j !== i) })} />
+        ))}
+        {form.heroSlides.length < MAX_HERO_SLIDES && (
+          <button type="button" onClick={() => update({ ...form, heroSlides: [...form.heroSlides, { ...EMPTY_HERO_SLIDE }] })}
+            className="min-h-12 self-start rounded-full border-2 border-brand-ink px-5 font-bold text-brand-ink">+ Thêm slide</button>
+        )}
       </Section>
 
       <Section title="Khuyến mãi (3 thẻ + 2 banner rộng)" hint="Màu cố định theo vị trí. Tắt hoặc ngoài khoảng ngày thì banner tự ẩn. Để trống hết một ô là xoá banner đó.">

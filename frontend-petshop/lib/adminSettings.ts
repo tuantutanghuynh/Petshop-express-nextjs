@@ -1,5 +1,6 @@
 import type { FieldErrors } from './forms';
 import { CONTENT_PAGES, MAX_ANNOUNCEMENTS, SETTING_KEYS, parseAnnouncements, parseCategoryImages } from './settings';
+import { HERO_SLIDES_KEY, LEGACY_HERO_KEYS, MAX_HERO_SLIDES, legacyHero } from './heroSlides';
 import { CATEGORY_CIRCLES_KEY, MAX_CATEGORY_CIRCLES, MAX_CIRCLE_LABEL, parseCategoryCircles } from './categoryCircles';
 import { MAX_BRAND_NAME, MAX_MENU_BRANDS, MEGA_MENU_SLUGS, megaMenuKey, parseMegaMenu } from './megaMenu';
 import { isSafeHref, parseSocialLinks } from './storefront';
@@ -11,18 +12,6 @@ import { isSafeHref, parseSocialLinks } from './storefront';
 export const PROMO_SLOTS = 5;
 const promoKey = (i: number) => `homepage_promo_${i + 1}`;
 
-const HERO_KEYS = {
-  badge: SETTING_KEYS.heroBadge,
-  title: 'homepage_hero_title',
-  accent: 'homepage_hero_accent',
-  subtitle: 'homepage_hero_subtitle',
-  ctaLabel: 'homepage_hero_cta_label',
-  ctaHref: 'homepage_hero_cta_href',
-  cta2Label: SETTING_KEYS.heroCta2Label,
-  cta2Href: SETTING_KEYS.heroCta2Href,
-  image: 'homepage_hero_image',
-} as const;
-
 const SHOP_KEYS = { phone: 'shop_phone', zalo: 'shop_zalo', email: 'shop_email', address: 'shop_address', hours: 'shop_hours' } as const;
 const BANK_KEYS = { name: 'bank_name', account: 'bank_account', holder: 'bank_holder' } as const;
 
@@ -30,7 +19,8 @@ export const ADMIN_SETTING_KEYS: string[] = [
   SETTING_KEYS.announcements,
   SETTING_KEYS.categoryImages,
   CATEGORY_CIRCLES_KEY,
-  ...Object.values(HERO_KEYS),
+  ...LEGACY_HERO_KEYS,
+  HERO_SLIDES_KEY,
   ...Array.from({ length: PROMO_SLOTS }, (_, i) => promoKey(i)),
   ...Object.values(SHOP_KEYS),
   'shop_social_links',
@@ -59,7 +49,7 @@ type Keyed<T extends Record<string, string>> = { -readonly [K in keyof T]: strin
 
 export type SettingsForm = {
   announcements: string[];
-  hero: Keyed<typeof HERO_KEYS>;
+  heroSlides: HeroSlideForm[];
   promos: PromoForm[];
   categoryImages: Record<string, string>;
   shop: Keyed<typeof SHOP_KEYS> & { socialLinks: string };
@@ -104,6 +94,54 @@ function readMegaMenu(raw: string | undefined): MegaMenuForm {
   };
 }
 
+export type HeroSlideForm = {
+  enabled: boolean;
+  badge: string;
+  title: string;
+  accent: string;
+  subtitle: string;
+  ctaLabel: string;
+  ctaHref: string;
+  cta2Label: string;
+  cta2Href: string;
+  image: string;
+  startsAt: string;
+  endsAt: string;
+};
+
+export const EMPTY_HERO_SLIDE: HeroSlideForm = {
+  enabled: true, badge: '', title: '', accent: '', subtitle: '', ctaLabel: '', ctaHref: '', cta2Label: '', cta2Href: '', image: '', startsAt: '', endsAt: '',
+};
+
+const SLIDE_TEXT = ['badge', 'title', 'accent', 'subtitle', 'ctaLabel', 'ctaHref', 'cta2Label', 'cta2Href', 'image', 'startsAt', 'endsAt'] as const;
+
+// Every saved slide (on or off, any dates) so the owner can edit it; before the first save, slide 1
+// is what the homepage shows today (the old hero keys with their defaults).
+function readHeroSlides(s: Record<string, string>): HeroSlideForm[] {
+  const raw = s[HERO_SLIDES_KEY];
+  if (!raw) {
+    const h = legacyHero(s);
+    return [{
+      ...EMPTY_HERO_SLIDE, badge: h.badge, title: h.title, accent: h.accent, subtitle: h.subtitle, ctaLabel: h.ctaLabel, ctaHref: h.ctaHref,
+      cta2Label: h.cta2?.label ?? '', cta2Href: h.cta2?.href ?? '', image: s.homepage_hero_image ?? '',
+    }];
+  }
+  let list: unknown;
+  try {
+    list = JSON.parse(raw);
+  } catch {
+    list = []; // malformed list = start from no slides
+  }
+  return (Array.isArray(list) ? list : [])
+    .filter((v): v is Record<string, unknown> => typeof v === 'object' && v !== null)
+    .slice(0, MAX_HERO_SLIDES)
+    .map((v) => ({
+      ...EMPTY_HERO_SLIDE,
+      ...Object.fromEntries(SLIDE_TEXT.map((k) => [k, typeof v[k] === 'string' ? v[k] : ''])),
+      enabled: v.enabled !== false,
+    }));
+}
+
 // The circles the homepage shows now (the defaults until a list is saved), padded to the row count.
 function readCircles(s: Record<string, string>): CircleForm[] {
   const shown = parseCategoryCircles(s[CATEGORY_CIRCLES_KEY], parseCategoryImages(s[SETTING_KEYS.categoryImages]));
@@ -114,7 +152,7 @@ export function settingsToForm(s: Record<string, string>): SettingsForm {
   const lines = parseAnnouncements(s[SETTING_KEYS.announcements]) ?? [];
   return {
     announcements: Array.from({ length: MAX_ANNOUNCEMENTS }, (_, i) => lines[i] ?? ''),
-    hero: readKeys(HERO_KEYS, s),
+    heroSlides: readHeroSlides(s),
     promos: Array.from({ length: PROMO_SLOTS }, (_, i) => readPromo(s[promoKey(i)])),
     categoryImages: parseCategoryImages(s[SETTING_KEYS.categoryImages]),
     shop: { ...readKeys(SHOP_KEYS, s), socialLinks: parseSocialLinks(s.shop_social_links).join('\n') },
@@ -152,6 +190,27 @@ function writeMegaMenu(slug: string, f: MegaMenuForm, errors: FieldErrors): stri
   return JSON.stringify({ ...(image && { banner: { image, ...(title && { title }), ...(href && { href }) } }), brands });
 }
 
+// homepage_hero_slides JSON — always a list, possibly empty (the homepage then shows the default
+// hero). Empty rows are dropped; a slide with content needs a title, and a button needs its link.
+function writeHeroSlides(rows: HeroSlideForm[], errors: FieldErrors): string {
+  const out = rows.flatMap((raw, i) => {
+    const v = Object.fromEntries(SLIDE_TEXT.map((k) => [k, raw[k].trim()])) as Record<(typeof SLIDE_TEXT)[number], string>;
+    if (SLIDE_TEXT.every((k) => !v[k])) return [];
+    const at = (k: string) => `heroSlides.${i}.${k}`;
+    if (!v.title) errors[at('title')] = 'Nhập tiêu đề';
+    for (const [label, href] of [['ctaLabel', 'ctaHref'], ['cta2Label', 'cta2Href']] as const) {
+      if (v[href] && !isSafeHref(v[href])) errors[at(href)] = 'Link phải bắt đầu bằng / hoặc https://';
+      else if (v[label] && !v[href]) errors[at(href)] = 'Nhập link cho nút này';
+    }
+    if (v.image && !isHttps(v.image)) errors[at('image')] = 'Ảnh phải là link https://';
+    if (v.startsAt && !DAY.test(v.startsAt)) errors[at('startsAt')] = 'Ngày không hợp lệ';
+    if (v.endsAt && !DAY.test(v.endsAt)) errors[at('endsAt')] = 'Ngày không hợp lệ';
+    if (v.startsAt && v.endsAt && v.endsAt < v.startsAt) errors[at('endsAt')] = 'Ngày kết thúc phải sau ngày bắt đầu';
+    return [{ enabled: raw.enabled, ...Object.fromEntries(SLIDE_TEXT.filter((k) => v[k]).map((k) => [k, v[k]])) }];
+  });
+  return JSON.stringify(out.slice(0, MAX_HERO_SLIDES));
+}
+
 // homepage_category_circles JSON, or "" (homepage shows the defaults) when every row is empty.
 function writeCircles(rows: CircleForm[], errors: FieldErrors): string {
   const circles = rows.flatMap((raw, i) => {
@@ -179,13 +238,6 @@ export function formToSettings(f: SettingsForm): { settings: Record<string, stri
   const errors: FieldErrors = {};
 
   settings[SETTING_KEYS.announcements] = JSON.stringify(f.announcements.map((l) => l.trim()).filter(Boolean).slice(0, MAX_ANNOUNCEMENTS));
-
-  writeKeys(HERO_KEYS, f.hero, settings);
-  for (const field of ['ctaHref', 'cta2Href'] as const) {
-    const href = settings[HERO_KEYS[field]];
-    if (href && !isSafeHref(href)) errors[`hero.${field}`] = 'Link phải bắt đầu bằng / (trang trong shop) hoặc https://';
-  }
-  if (settings[HERO_KEYS.image] && !isHttps(settings[HERO_KEYS.image])) errors['hero.image'] = 'Ảnh phải là link https://';
 
   f.promos.forEach((raw, i) => {
     const p = Object.fromEntries(Object.entries(raw).map(([k, v]) => [k, typeof v === 'string' ? v.trim() : v])) as PromoForm;
@@ -223,6 +275,7 @@ export function formToSettings(f: SettingsForm): { settings: Record<string, stri
   writeKeys(BANK_KEYS, f.bank, settings);
   for (const page of CONTENT_PAGES) settings[page.key] = (f.pages[page.key] ?? '').trim();
   for (const slug of MEGA_MENU_SLUGS) settings[megaMenuKey(slug)] = writeMegaMenu(slug, f.megaMenus[slug], errors);
+  settings[HERO_SLIDES_KEY] = writeHeroSlides(f.heroSlides, errors);
   settings[CATEGORY_CIRCLES_KEY] = writeCircles(f.circles, errors);
   return { settings, errors };
 }
