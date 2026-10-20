@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { pool, countRows } from './helpers/db';
 import { call, LEAK } from './helpers/http';
 import { ITER, statusHistogram } from './helpers/concurrency';
+import prisma from '../../services/prisma';
 import { createBrand, createProduct, createUser, fillCart } from './helpers/factories';
 
 // =============================================================================================
@@ -59,6 +60,31 @@ describe('L0 happy path', () => {
     expect((await patch()).body.data.quantity).toBe(4); // retrying does not double it
     expect((await call('delete', `/api/v1/cart/items/${lineId}`, { token: u.token })).status).toBe(200);
     expect(await countRows('CartItem')).toBe(0);
+  });
+});
+
+// Category tree (ADR-016): products sit on leaves three levels below the brand root
+// (petshop → Chó → Thức ăn → Hạt cho chó). The brand check must accept every descendant, not only
+// the root's direct children — otherwise nothing filed on a leaf can be bought.
+describe('category tree ownership', () => {
+  it('adds a product filed on a third-level leaf of the brand', async () => {
+    const { child } = await createBrand();
+    const group = await prisma.category.create({ data: { slug: 'petshop-nhom', name: 'Nhóm', parentId: child.id } });
+    const leaf = await prisma.category.create({ data: { slug: 'petshop-la', name: 'Lá', parentId: group.id } });
+    const product = await createProduct(leaf.id);
+    const u = await createUser();
+    const res = await add(u.token, { variantId: product.variants[0].id });
+    expect(res.status).toBe(201);
+  });
+
+  it('still hides a variant of another brand, however deep it sits', async () => {
+    await createBrand();
+    const { child } = await createBrand('gomsu');
+    const deep = await prisma.category.create({ data: { slug: 'gomsu-sau', name: 'Sâu', parentId: child.id } });
+    const product = await createProduct(deep.id);
+    const u = await createUser();
+    const res = await add(u.token, { variantId: product.variants[0].id });
+    expect(res.status).toBe(404);
   });
 });
 
