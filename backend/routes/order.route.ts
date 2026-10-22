@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { body, header } from 'express-validator';
+import { body, header, query } from 'express-validator';
 import validate from '../middlewares/validate';
 import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
@@ -40,7 +40,19 @@ router.post(
 
 router.get('/', ctrl.listMyOrders);
 
-router.get('/admin/list', requireRole('admin'), ctrl.adminList);
+// Admin list: optional ?q= (order code, phone, account name / email) — one string of 2–50 characters.
+router.get(
+  '/admin/list',
+  requireRole('admin'),
+  [
+    query('q')
+      .optional()
+      .custom((v) => typeof v === 'string' && v.trim().length >= 2 && v.trim().length <= 50)
+      .withMessage('Từ khoá tìm đơn phải có từ 2 đến 50 ký tự'),
+    validate,
+  ],
+  ctrl.adminList,
+);
 router.patch('/admin/:id/confirm-payment', requireRole('admin'), ctrl.confirmPayment);
 router.patch('/admin/:id/cancel', requireRole('admin'), ctrl.cancelOrder);
 

@@ -7,6 +7,7 @@ import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
 import { claimForSale, recordSale, restockCancelled, sellReserved } from '../services/inventory.service';
 import { parsePagination } from '../utils/pagination';
+import { escapeLike } from '../utils/searchText';
 import { PRODUCT_STATUS, MAX_DB_INT } from '../constants/product';
 import {
   ORDER_STATUS,
@@ -237,16 +238,37 @@ export const getMyOrder = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, order);
 });
 
-// Admin listing across all customers for one brand, filterable by order and payment status. This is
-// the screen the shop works from every morning to see which transfers have arrived.
+// Admin listing across all customers for one brand, filterable by order and payment status and
+// searchable (?q=) by code, phone or account. This is the screen the shop works from every morning
+// to see which transfers have arrived.
 export const adminList = asyncHandler(async (req: Request, res: Response) => {
   if (!req.brand) throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu thông tin thương hiệu');
-  const { orderStatus, paymentStatus } = req.query;
+  const { orderStatus, paymentStatus, q } = req.query;
   const { page, take, skip } = parsePagination(req.query, 20, 100);
 
   const where: Prisma.OrderWhereInput = { brandSlug: req.brand.slug };
   if (orderStatus && typeof orderStatus === 'string') where.orderStatus = orderStatus;
   if (paymentStatus && typeof paymentStatus === 'string') where.paymentStatus = paymentStatus;
+  // ?q= finds the order a customer calls about: by code (any case), by phone, or by the account's
+  // name / email. Validated by the route; escapeLike because Prisma does not escape % and _.
+  // The phone is stored as typed ("0912 345 678"), so it is compared digits-to-digits in SQL — only
+  // with ≥ 3 digits, or "1" would match every order. Parameterized query; ids then join the filter.
+  if (typeof q === 'string') {
+    const term = escapeLike(q.trim());
+    const digits = q.replace(/\D/g, '');
+    const phoneMatches = digits.length >= 3
+      ? await prisma.$queryRaw<{ id: string }[]>`
+          SELECT id FROM "Order"
+          WHERE "brandSlug" = ${req.brand.slug}
+            AND regexp_replace("shippingAddress"->>'phone', '[^0-9]', '', 'g') LIKE ${`%${digits}%`}`
+      : [];
+    where.OR = [
+      { code: { contains: term, mode: 'insensitive' } },
+      ...(phoneMatches.length > 0 ? [{ id: { in: phoneMatches.map((r) => r.id) } }] : []),
+      { user: { fullName: { contains: term, mode: 'insensitive' } } },
+      { user: { email: { contains: term, mode: 'insensitive' } } },
+    ];
+  }
 
   const [items, total] = await Promise.all([
     prisma.order.findMany({
