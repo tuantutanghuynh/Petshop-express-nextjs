@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { authFetch } from '../../../lib/adminAuth';
 import { expiringOrders, rangeFor, timeAgo, timeLeft, type Period } from '../../../lib/adminDashboard';
 import { isNavReady } from '../../../lib/adminNav';
+import { ordersHref } from '../../../lib/adminOrders';
 import { BRAND_SLUG } from '../../../lib/site';
 import { formatVnd } from '../../../lib/storefront';
 import type { AdminOrderSummary, PageMeta, QuoteRequestSummary, QuoteStats } from '../../../lib/types';
@@ -73,7 +74,7 @@ export function Dashboard() {
       </div>
       <div className="grid grid-cols-[repeat(auto-fill,minmax(min(100%,150px),1fr))] lg:grid-cols-4 gap-3">
         <StatCard label="Chờ xác nhận chuyển khoản" state={orders.state} value={orders.state === 'ready' ? orders.data.total : null}
-          action={ordersReady ? { href: '/admin/don-hang', text: 'Xử lý ›' } : null} />
+          action={ordersReady ? { href: ordersHref({ tab: 'pending' }), text: 'Xử lý ›' } : null} />
         <StatCard label="Yêu cầu tư vấn mới" state={quotes.state} value={quotes.state === 'ready' ? quotes.data.total : null}
           action={quotesReady ? { href: '/admin/bao-gia', text: 'Gọi lại ›' } : null} />
         <StatCard label="Doanh thu chốt qua tư vấn" state={statsState} value={stats.state === 'ready' ? formatVnd(stats.data.revenue) : null}
@@ -90,7 +91,7 @@ export function Dashboard() {
             <ul>{expiringOrders(orders.data.rows).map((o) => (
               <li key={o.id} className={row}>
                 <div className="min-w-0"><b className="break-words text-ink">{o.code}</b><br /><small className="text-muted tabular-nums">{formatVnd(o.grandTotal)} · {o.expiresAt ? timeLeft(o.expiresAt, now) : ''}</small></div>
-                {ordersReady && <a href={`/admin/don-hang?code=${encodeURIComponent(o.code)}`} className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-brand-ink px-4 font-bold text-white">Xác nhận</a>}
+                {ordersReady && <a href={ordersHref({ tab: 'pending', ma: o.code })} className="inline-flex min-h-11 shrink-0 items-center rounded-full bg-brand-ink px-4 font-bold text-white">Xác nhận</a>}
               </li>
             ))}</ul>
           ))}

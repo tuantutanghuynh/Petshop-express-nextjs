@@ -18,7 +18,8 @@ describe('admin nav', () => {
   });
 
   it('marks pages not built yet', () => {
-    expect(isNavReady('/admin/don-hang')).toBe(false);
+    expect(isNavReady('/admin/bao-gia')).toBe(false);
+    expect(isNavReady('/admin/don-hang')).toBe(true); // shipped in wave B
     expect(isNavReady('/admin/cau-hinh')).toBe(true);
   });
 });

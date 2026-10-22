@@ -187,3 +187,8 @@ export interface AdminOrderSummary { id: string; code: string; grandTotal: numbe
 export interface QuoteRequestSummary { id: string; customerName: string; phone: string; items: unknown[]; createdAt: string }
 // GET /quote-requests/admin/stats — conversionRate is already a percentage.
 export interface QuoteStats { totalRequests: number; closedCount: number; revenue: number; averageOrderValue: number; conversionRate: number }
+
+// GET /orders/admin/list rows: the order with its customer account (admin orders page).
+export interface AdminOrder extends Order {
+  user: { id: string; email: string; fullName: string | null } | null;
+}
