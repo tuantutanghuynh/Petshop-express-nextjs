@@ -192,3 +192,30 @@ export interface QuoteStats { totalRequests: number; closedCount: number; revenu
 export interface AdminOrder extends Order {
   user: { id: string; email: string; fullName: string | null } | null;
 }
+
+// GET /quote-requests/admin/list rows (admin quotes page).
+export interface AdminQuote {
+  id: string;
+  customerName: string;
+  phone: string;
+  email: string | null;
+  address: string | null;
+  note: string | null;
+  items: { productName: string; variantLabel: string | null; sku: string; quantity: number; unitPrice: number; lineTotal: number }[];
+  status: string;
+  finalAmount: number | null;
+  closedAt: string | null;
+  createdAt: string;
+}
+
+// GET /contact/admin/list rows (admin contact messages page).
+export interface AdminContactMessage {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  subject: string | null;
+  message: string;
+  isRead: boolean;
+  createdAt: string;
+}
