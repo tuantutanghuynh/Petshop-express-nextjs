@@ -1,3 +1,5 @@
+import type { Customer, ShippingAddress } from './types';
+
 // The "Nhờ tư vấn" list: products a visitor wants advice / a price for, kept in sessionStorage while
 // they browse and sent with the quote request (test/quoteList.test.ts). The backend re-reads names
 // and prices and clamps quantities; this only keeps the list tidy. Browser-only.
@@ -49,4 +51,17 @@ export function removeFromQuote(variantId: string): void {
 
 export function clearQuote(): void {
   write([]);
+}
+
+export type QuotePrefill = { customerName: string; email: string; phone: string; address: string };
+
+// Contact details for a signed-in customer. The account only keeps name and email; phone and address
+// come from the delivery address of their newest order, when there is one.
+export function quotePrefill(me: Customer, lastAddress: ShippingAddress | null): QuotePrefill {
+  return {
+    customerName: me.fullName?.trim() || lastAddress?.fullName.trim() || '',
+    email: me.email,
+    phone: lastAddress?.phone ?? '',
+    address: lastAddress ? [lastAddress.addressLine, lastAddress.city].map((s) => s.trim()).filter(Boolean).join(', ') : '',
+  };
 }

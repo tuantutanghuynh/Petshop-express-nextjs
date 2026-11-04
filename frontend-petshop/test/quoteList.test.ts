@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { MAX_QUOTE_ITEMS, addToQuote, clearQuote, readQuote, removeFromQuote, setQuoteQuantity, type QuoteItem } from '../lib/quoteList';
+import { MAX_QUOTE_ITEMS, addToQuote, clearQuote, quotePrefill, readQuote, removeFromQuote, setQuoteQuantity, type QuoteItem } from '../lib/quoteList';
 
 // "Nhờ tư vấn" list (wireframe quote.html): kept in sessionStorage while the visitor browses, sent with
 // the quote request. The backend clamps and re-prices everything; the client keeps it tidy.
@@ -44,5 +44,27 @@ describe('quote list', () => {
     expect(readQuote()).toEqual([]);
     sessionStorage.setItem('quote-list', JSON.stringify([{ variantId: 1 }, item('ok')]));
     expect(readQuote().map((i) => i.variantId)).toEqual(['ok']);
+  });
+});
+
+describe('quotePrefill', () => {
+  const me = { id: 'u1', email: 'an@example.com', fullName: 'Nguyễn An', role: 'customer' };
+  const address = { fullName: 'An giao hàng', phone: '0901234567', addressLine: '12 Lê Lợi', city: 'Đà Nẵng' };
+
+  it('fills name and email from the account, phone and address from the last order', () => {
+    expect(quotePrefill(me, address)).toEqual({ customerName: 'Nguyễn An', email: 'an@example.com', phone: '0901234567', address: '12 Lê Lợi, Đà Nẵng' });
+  });
+
+  it('leaves phone and address empty for a customer without orders', () => {
+    expect(quotePrefill(me, null)).toEqual({ customerName: 'Nguyễn An', email: 'an@example.com', phone: '', address: '' });
+  });
+
+  it('falls back to the name on the last order when the account has none', () => {
+    expect(quotePrefill({ ...me, fullName: null }, address).customerName).toBe('An giao hàng');
+    expect(quotePrefill({ ...me, fullName: '  ' }, null).customerName).toBe('');
+  });
+
+  it('does not add a comma when the order has no city', () => {
+    expect(quotePrefill(me, { ...address, city: '' }).address).toBe('12 Lê Lợi');
   });
 });

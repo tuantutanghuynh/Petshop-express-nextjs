@@ -1,12 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { bffFetch } from '../../lib/bffClient';
 import { fieldErrors, focusFirstError, type FieldErrors } from '../../lib/forms';
-import { clearQuote, readQuote, removeFromQuote, setQuoteQuantity, type QuoteItem } from '../../lib/quoteList';
+import { clearQuote, quotePrefill, readQuote, removeFromQuote, setQuoteQuantity, type QuoteItem, type QuotePrefill } from '../../lib/quoteList';
 import { productPath } from '../../lib/seo/structuredData';
 import { formatVnd } from '../../lib/storefront';
+import type { Customer, Order } from '../../lib/types';
 import { FormAlert } from '../ui/FormAlert';
 import { Honeypot } from '../ui/Honeypot';
 import { QuantityStepper } from '../ui/QuantityStepper';
@@ -25,9 +26,34 @@ function validate(v: Record<string, string>): FieldErrors {
   return e;
 }
 
+// Signed-in customer: their contact details (quotePrefill). A visitor gets null (401 from /me).
+async function loadPrefill(): Promise<QuotePrefill | null> {
+  const me = await bffFetch<Customer>('/api/auth/me');
+  if (!me.ok || !me.data) return null;
+  const orders = await bffFetch<Order[]>('/api/orders?page=1');
+  return quotePrefill(me.data, orders.ok ? (orders.data?.[0]?.shippingAddress ?? null) : null);
+}
+
+// Writes the prefill into the empty fields only, so nothing the customer (or the browser's own
+// autofill) already typed is overwritten. Returns whether any field was filled.
+function fillEmpty(form: HTMLFormElement, values: QuotePrefill): boolean {
+  let filled = false;
+  for (const [name, value] of Object.entries(values)) {
+    const el = form.elements.namedItem(name);
+    if (el instanceof HTMLInputElement && !el.value && value) {
+      el.value = value;
+      filled = true;
+    }
+  }
+  return filled;
+}
+
 // /tu-van-bao-gia (wireframe quote.html): the products picked with "Nhờ tư vấn" (sessionStorage)
-// plus contact details; the shop calls back. No account needed.
+// plus contact details; the shop calls back. No account needed — a signed-in customer finds their
+// details already filled in.
 export function QuoteView() {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [prefilled, setPrefilled] = useState(false);
   const [items, setItems] = useState<QuoteItem[] | null>(null);
   const [errors, setErrors] = useState<FieldErrors>({});
   const [alert, setAlert] = useState<string | null>(null);
@@ -38,6 +64,16 @@ export function QuoteView() {
   useEffect(() => {
     const id = requestAnimationFrame(() => setItems(readQuote()));
     return () => cancelAnimationFrame(id);
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    loadPrefill().then((values) => {
+      if (active && values && formRef.current && fillEmpty(formRef.current, values)) setPrefilled(true);
+    });
+    return () => {
+      active = false;
+    };
   }, []);
 
   const refresh = () => setItems(readQuote());
@@ -81,9 +117,10 @@ export function QuoteView() {
   }
 
   return (
-    <form onSubmit={onSubmit} noValidate className="relative grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
+    <form ref={formRef} onSubmit={onSubmit} noValidate className="relative grid grid-cols-[minmax(0,1fr)] gap-8 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] lg:items-start">
       <div className="flex flex-col gap-4">
         <FormAlert message={alert} />
+        {prefilled && <p role="status" className="text-sm text-muted">Đã điền sẵn từ tài khoản của bạn — bạn vẫn sửa được.</p>}
         <TextField name="customerName" label="Họ và tên *" autoComplete="name" enterKeyHint="next" required error={errors.customerName} />
         <TextField name="phone" label="Số điện thoại *" type="tel" inputMode="tel" autoComplete="tel" enterKeyHint="next" required error={errors.phone} />
         <TextField name="email" label="Email (không bắt buộc)" type="email" inputMode="email" autoComplete="email" enterKeyHint="next" error={errors.email} />
