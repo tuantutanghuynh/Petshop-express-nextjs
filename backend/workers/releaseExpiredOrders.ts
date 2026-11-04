@@ -1,4 +1,5 @@
 import prisma from '../services/prisma';
+import { logger } from '../utils/logger';
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
@@ -72,9 +73,9 @@ export function startExpiredOrderSweeper(): NodeJS.Timeout {
   const run = () => {
     releaseExpiredOrders()
       .then((n) => {
-        if (n > 0) console.log(`[sweeper] Đã huỷ ${n} đơn quá hạn và hoàn kho`);
+        if (n > 0) logger.info({ released: n }, `[sweeper] Đã huỷ ${n} đơn quá hạn và hoàn kho`);
       })
-      .catch((err: Error) => console.error('[sweeper] Lỗi khi dọn đơn quá hạn:', err.message));
+      .catch((err: Error) => logger.error({ err }, '[sweeper] Lỗi khi dọn đơn quá hạn'));
   };
 
   run();

@@ -9,6 +9,7 @@ import { issueRefreshToken, rotateRefreshToken, revokeRefreshToken } from '../se
 import asyncHandler from '../utils/asyncHandler';
 import ApiError from '../utils/ApiError';
 import { sendSuccess } from '../utils/ApiResponse';
+import { logger } from '../utils/logger';
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, fullName } = req.body;
@@ -92,7 +93,7 @@ export const requestPasswordReset = asyncHandler(async (req: Request, res: Respo
   // logged by error name only — the link is password-equivalent and must not reach the logs.
   const resetLink = `${siteUrl}/dat-lai-mat-khau?token=${token}&email=${encodeURIComponent(email)}`;
   void sendPasswordReset(email, resetLink).catch((err: unknown) => {
-    console.error('password reset email failed', err instanceof Error ? err.name : 'unknown error');
+    logger.error({ errorName: err instanceof Error ? err.name : 'unknown error' }, 'password reset email failed');
   });
   sendSuccess(res, { message: RESET_REQUESTED_MESSAGE });
 });

@@ -7,6 +7,7 @@ import asyncHandler from '../utils/asyncHandler';
 import { sendSuccess } from '../utils/ApiResponse';
 import { categoryScopeIds } from '../services/categoryScope.service';
 import { parsePagination } from '../utils/pagination';
+import { logger } from '../utils/logger';
 
 // CRUD for gallery images. Image files themselves are uploaded separately through
 // upload.controller.js and reach this file as a URL string. Rows created before the move to
@@ -77,14 +78,14 @@ async function deleteLocalUpload(imageUrl: string | null): Promise<void> {
 
   const filePath = path.resolve(UPLOADS_DIR, imageUrl.slice('/uploads/'.length));
   if (!filePath.startsWith(UPLOADS_DIR + path.sep)) {
-    console.error(`Bỏ qua xoá file ngoài thư mục uploads: ${imageUrl}`);
+    logger.warn({ imageUrl }, 'Bỏ qua xoá file ngoài thư mục uploads');
     return;
   }
 
   try {
     await fs.unlink(filePath);
   } catch (err) {
-    console.error(`Lỗi khi xoá file ảnh: ${filePath}`, err);
+    logger.error({ err, filePath }, 'Lỗi khi xoá file ảnh');
   }
 }
 

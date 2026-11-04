@@ -42,6 +42,9 @@ const nodeEnv = process.env.NODE_ENV || 'development';
 export const isProduction: boolean = nodeEnv === 'production';
 export const isDevelopment: boolean = nodeEnv === 'development';
 
+// Lowest log level written (pino: trace, debug, info, warn, error, fatal).
+export const logLevel: string = process.env.LOG_LEVEL || (isProduction ? 'info' : 'debug');
+
 // Origin of the storefront, for links the backend writes into emails (password reset). Development
 // defaults to the local Next.js server; production must set it (assertProductionConfig).
 export const siteUrl: string = (process.env.PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');

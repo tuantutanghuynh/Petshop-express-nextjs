@@ -6,6 +6,7 @@ import { isBlocked, ITER } from './helpers/concurrency';
 import { createAdmin, createBrand, createProduct, createUser, fillCart, orderBody } from './helpers/factories';
 import prisma from '../../services/prisma';
 import { releaseExpiredOrders, startExpiredOrderSweeper } from '../../workers/releaseExpiredOrders';
+import { logger } from '../../utils/logger';
 
 // =============================================================================================
 // Second pass over the commerce write paths (skills: transaction-race-test, deep-test, TDD).
@@ -209,7 +210,7 @@ describe('deep-test — the expiry sweeper itself', () => {
   });
 
   it('a database error during a sweep is logged, never thrown — a timer callback that rejects would kill the server', async () => {
-    const logged = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const logged = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     vi.spyOn(prisma.order, 'findMany').mockRejectedValueOnce(new Error('connection reset'));
     const unhandled = vi.fn();
     process.on('unhandledRejection', unhandled);
@@ -221,7 +222,8 @@ describe('deep-test — the expiry sweeper itself', () => {
     process.off('unhandledRejection', unhandled);
 
     expect(unhandled).not.toHaveBeenCalled();
-    expect(logged.mock.calls.flat().join(' ')).toContain('connection reset');
+    // Logged through the backend logger with the error object, so its message (the cause) is kept.
+    expect(logged.mock.calls.some(([fields]) => (fields as { err?: Error }).err?.message === 'connection reset')).toBe(true);
   });
 
   it('runs once immediately and does not keep the process alive on its own (timer is unref\'d)', async () => {

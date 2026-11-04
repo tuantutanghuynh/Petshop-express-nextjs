@@ -7,11 +7,11 @@ import helmet from 'helmet';
 import compression from 'compression';
 import rateLimit from 'express-rate-limit';
 import cookieParser from 'cookie-parser';
-import logger from 'morgan';
 import routes from './routes';
 import notFound from './middlewares/notFound';
 import errorHandler from './middlewares/errorHandler';
 import { apiRateLimitFor, apiRateLimitKey, isServerRenderRequest } from './middlewares/rateLimitKeys';
+import requestLogger from './middlewares/requestLogger';
 import { API_RATE_LIMIT_WINDOW_MS } from './constants/rateLimit';
 import prisma from './services/prisma';
 import asyncHandler from './utils/asyncHandler';
@@ -30,6 +30,10 @@ const app = express();
 // the rate limiters below would count all users into one shared bucket and one busy visitor
 // would lock everybody else out.
 app.set('trust proxy', 1);
+
+// First, so every request is logged with its id — including those answered early by the rate
+// limiter or CORS (middlewares/requestLogger.ts).
+app.use(requestLogger);
 
 // Gzip nén dung lượng API
 app.use(compression());
@@ -100,10 +104,9 @@ app.use('/api', (_req: Request, res: Response, next) => {
   next();
 });
 
-// Request logging plus body parsing. The 10MB body cap is far above the usual JSON payload
-// because blog content comes from a rich text editor that can inline images as base64 data
-// URIs; the Express default of 100KB rejected those saves with an opaque 500.
-app.use(logger('dev'));
+// Body parsing. The 10MB body cap is far above the usual JSON payload because blog content comes
+// from a rich text editor that can inline images as base64 data URIs; the Express default of
+// 100KB rejected those saves with an opaque 500.
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 app.use(cookieParser());

@@ -49,7 +49,9 @@ export function errorHandler(err: unknown, req: Request, res: Response, next: Ne
     });
   }
 
-  console.error(err);
+  // Logged with the request id (X-Request-Id in the response), so a customer's report can be
+  // matched to this line; the client only sees the generic message below.
+  req.log.error({ err }, 'unhandled error');
   return res.status(500).json({
     data: null,
     meta: null,

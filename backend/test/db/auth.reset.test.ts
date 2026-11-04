@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { siteUrl } from '../../config/env';
 import { setMailTransportForTests, type MailMessage } from '../../services/email.service';
+import { logger } from '../../utils/logger';
 import { call } from './helpers/http';
 import { createUser } from './helpers/factories';
 
@@ -64,7 +65,7 @@ describe('request-password-reset sends the link by email', () => {
 
   it('still answers 200 when the email cannot be sent, without logging the link', async () => {
     const u = await createUser({ email: 'smtpdown@example.com' });
-    const errors = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const errors = vi.spyOn(logger, 'error').mockImplementation(() => undefined);
     let failed: () => void = () => undefined;
     const done = new Promise<void>((r) => { failed = r; });
     setMailTransportForTests({ sendMail: async () => { failed(); throw new Error('SMTP connection refused'); } });

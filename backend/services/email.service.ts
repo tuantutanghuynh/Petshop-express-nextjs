@@ -1,5 +1,6 @@
 import nodemailer from 'nodemailer';
 import { isDevelopment, isProduction, smtp } from '../config/env';
+import { logger } from '../utils/logger';
 
 // Outgoing email (spec 2026-11-04 password reset). Content is built by pure functions; sending goes
 // through one transport: SMTP when SMTP_HOST is set; otherwise development prints the email to the
@@ -50,13 +51,13 @@ export function setMailTransportForTests(transport: MailTransport | null): void 
 
 const consoleTransport: MailTransport = {
   sendMail: async (m) => {
-    console.info(`[email to ${m.to}] ${m.subject}\n${m.text}`);
+    logger.info({ to: m.to }, `${m.subject}\n${m.text}`);
   },
 };
 
 const droppingTransport: MailTransport = {
   sendMail: async (m) => {
-    console.warn(`Email not sent (SMTP is not configured): ${m.subject}`);
+    logger.warn({ subject: m.subject }, 'Email not sent (SMTP is not configured)');
   },
 };
 
