@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { formatVnd, imageSrc, parsePromo, parseSocialLinks, priceSummary } from '../lib/storefront';
+import { formatVnd, imageSrc, parsePromo, parseSocialLinks, priceSummary, promoLines } from '../lib/storefront';
 import type { ProductVariant } from '../lib/types';
 
 // Pure helpers behind the homepage. They turn raw API values into what the page shows, and they
@@ -54,6 +54,21 @@ describe('parsePromo', () => {
   it('refuses links that could run script', () => {
     expect(parsePromo(JSON.stringify({ title: 'X', href: 'javascript:alert(1)' }))).toBeNull();
     expect(parsePromo(JSON.stringify({ title: 'X', href: '//evil.example' }))).toBeNull();
+  });
+});
+
+describe('promoLines', () => {
+  it('splits the text the admin typed on two lines', () => {
+    expect(promoLines('MUA 1\nTẶNG 1')).toEqual(['MUA 1', 'TẶNG 1']);
+    expect(promoLines('Đồ chơi\r\ncho cún!')).toEqual(['Đồ chơi', 'cho cún!']);
+  });
+
+  it('keeps a single line as it is', () => {
+    expect(promoLines('-50%')).toEqual(['-50%']);
+  });
+
+  it('drops blank lines and keeps the extra ones on the second line', () => {
+    expect(promoLines('  MUA 1 \n\n TẶNG 1 \n kèm quà ')).toEqual(['MUA 1', 'TẶNG 1 kèm quà']);
   });
 });
 

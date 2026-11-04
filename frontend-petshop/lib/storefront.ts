@@ -81,6 +81,13 @@ export function parsePromo(raw: string | undefined, now: Date = new Date()): Pro
   return promo;
 }
 
+// The big text and the banner title may be typed on two lines ("MUA 1" / "TẶNG 1", "Đồ chơi" /
+// "cho cún!"), as in the wireframe. More lines would not fit the card, so they join the second one.
+export function promoLines(text: string): string[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  return lines.length <= 2 ? lines : [lines[0], lines.slice(1).join(' ')];
+}
+
 // shop_social_links: a JSON array or one URL per line. Only https URLs survive; they feed the
 // footer links and Organization.sameAs, so a typo must not become a broken or unsafe link.
 export function parseSocialLinks(raw: string | undefined): string[] {
