@@ -11,7 +11,8 @@ import logger from 'morgan';
 import routes from './routes';
 import notFound from './middlewares/notFound';
 import errorHandler from './middlewares/errorHandler';
-import { apiRateLimitKey, isServerRenderRequest } from './middlewares/rateLimitKeys';
+import { apiRateLimitFor, apiRateLimitKey, isServerRenderRequest } from './middlewares/rateLimitKeys';
+import { API_RATE_LIMIT_WINDOW_MS } from './constants/rateLimit';
 import prisma from './services/prisma';
 import asyncHandler from './utils/asyncHandler';
 import { isShuttingDown } from './utils/lifecycle';
@@ -73,15 +74,16 @@ const corsOptions: CorsOptions = {
 };
 app.use(cors(corsOptions));
 
-// Baseline throttle of 100 requests per 15 minutes across the whole API, as a blunt protection
-// against scraping and runaway clients. The bucket is the logged-in user when the request carries
+// Baseline throttle across the whole API, as a blunt protection against scraping and runaway
+// clients: 100 requests per 15 minutes, 1 000 for a verified admin token so the owner can enter
+// products in bulk (constants/rateLimit.ts, ADR-019). The bucket is the logged-in user when the request carries
 // a valid access token and the visitor IP otherwise; page renders by our Next.js server are exempt — see
 // middlewares/rateLimitKeys.ts for why counting by IP alone blocked real visitors. Sensitive
 // endpoints do not rely on this number alone: `/contact` and `/quote-requests` mount their own
 // stricter per-IP limiters in their route files, which run in addition to this one.
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 100,
+  windowMs: API_RATE_LIMIT_WINDOW_MS,
+  limit: apiRateLimitFor,
   standardHeaders: true,
   legacyHeaders: false,
   keyGenerator: apiRateLimitKey,

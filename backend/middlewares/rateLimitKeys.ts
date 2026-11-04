@@ -1,8 +1,10 @@
 import crypto from 'crypto';
 import net from 'net';
 import type { Request } from 'express';
+import type { JwtPayload } from 'jsonwebtoken';
 import { ipKeyGenerator } from 'express-rate-limit';
 import { internalApiSecret } from '../config/env';
+import { ADMIN_API_RATE_LIMIT, API_RATE_LIMIT } from '../constants/rateLimit';
 import { verifyAccessToken } from '../services/jwt.service';
 
 // Decides whose bucket a request is counted in by the global API rate limiter, and which
@@ -12,6 +14,26 @@ import { verifyAccessToken } from '../services/jwt.service';
 //   - phones on 4G share carrier-NAT IPs with thousands of strangers, so one busy user would
 //     block everyone else on the same mobile network (this matters for the future Flutter app).
 
+const verifiedTokens = new WeakMap<Request, JwtPayload | null>();
+
+// The payload of this request's Bearer token when it passes signature and expiry checks, null
+// otherwise. Verified once and remembered for the request: the bucket and the allowance below both
+// need it, and checking a JWT signature twice per request is wasted work.
+function bearerPayload(req: Request): JwtPayload | null {
+  if (verifiedTokens.has(req)) return verifiedTokens.get(req) ?? null;
+  const [scheme, token] = (req.headers.authorization || '').split(' ');
+  let payload: JwtPayload | null = null;
+  if (scheme === 'Bearer' && token) {
+    try {
+      payload = verifyAccessToken(token);
+    } catch {
+      payload = null; // not a valid token: treated exactly like an anonymous request
+    }
+  }
+  verifiedTokens.set(req, payload);
+  return payload;
+}
+
 // The limiter key: the user id when the request carries a VERIFIED access token, the client IP
 // otherwise. Only a token that passes signature and expiry checks earns a per-user bucket; an
 // unsigned, forged, expired or random token falls back to the IP. If any token string counted,
@@ -19,16 +41,17 @@ import { verifyAccessToken } from '../services/jwt.service';
 // IPv6 addresses are grouped by /56 subnet (ipKeyGenerator) because one household or phone gets
 // a whole range and could otherwise rotate addresses to dodge the limit.
 export function apiRateLimitKey(req: Request): string {
-  const [scheme, token] = (req.headers.authorization || '').split(' ');
-  if (scheme === 'Bearer' && token) {
-    try {
-      const payload = verifyAccessToken(token);
-      if (typeof payload.sub === 'string' && payload.sub) return `user:${payload.sub}`;
-    } catch {
-      // not a valid token: counted against the IP below, exactly like an anonymous request
-    }
-  }
+  const sub = bearerPayload(req)?.sub;
+  if (typeof sub === 'string' && sub) return `user:${sub}`;
   return ipBucket(req);
+}
+
+// Requests allowed per window for this caller (ADR-019): a verified admin token gets the admin
+// allowance for bulk product entry; customers, visitors and tokens that do not verify get the
+// normal one. The role is read from the token, like requireRole does, so a demoted admin keeps the
+// larger allowance until the access token expires (15 minutes at most).
+export function apiRateLimitFor(req: Request): number {
+  return bearerPayload(req)?.role === 'admin' ? ADMIN_API_RATE_LIMIT : API_RATE_LIMIT;
 }
 
 // The visitor's IP. Usually req.ip (the proxy hop is trusted in app.ts). When our Next.js server
