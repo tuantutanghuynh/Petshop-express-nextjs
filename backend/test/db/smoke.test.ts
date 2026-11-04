@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import prisma from '../../services/prisma';
 import { pool } from './helpers/db';
 import { call } from './helpers/http';
 import { createBrand, createProduct } from './helpers/factories';
@@ -44,4 +45,8 @@ describe('database readiness and limits', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual({ status: 'ready' });
   });
+
+  it('cancels a statement that runs longer than the timeout', async () => {
+    await expect(prisma.$queryRaw`SELECT 1 FROM pg_sleep(11)`).rejects.toThrow(/statement timeout/i);
+  }, 20_000);
 });
