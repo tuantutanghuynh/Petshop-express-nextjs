@@ -48,6 +48,16 @@ model CategorySlugRedirect {
   @@index([categoryId])
 }
 
+// Former product slugs for 308 redirects (ADR-018), like CategorySlugRedirect.
+model ProductSlugRedirect {
+  oldSlug   String   @id
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
 model CategoryAttribute {
   id              String   @id @default(uuid())
   categoryId      String
@@ -64,25 +74,26 @@ model CategoryAttribute {
 }
 
 model Product {
-  id          String           @id @default(uuid())
-  categoryId  String
-  category    Category         @relation(fields: [categoryId], references: [id])
-  name        String
-  slug        String           @unique
-  description String?
-  brand       String?
-  status      String           @default("draft")
-  attributes  Json             @default("{}")
+  id            String                @id @default(uuid())
+  categoryId    String
+  category      Category              @relation(fields: [categoryId], references: [id])
+  name          String
+  slug          String                @unique
+  description   String?
+  brand         String?
+  status        String                @default("draft")
+  attributes    Json                  @default("{}")
   // Derived columns, kept current by services/catalog.service.ts in the same transaction as every
   // write that affects them. searchName: accent-free lower-case name (utils/searchText.ts) for
   // public search. minPrice: cheapest variant price, for sorting by price (Prisma cannot order by an
   // aggregate of a relation). Both null until the first write fills them.
-  searchName  String?
-  minPrice    Int?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
-  variants    ProductVariant[]
-  images      ProductImage[]
+  searchName    String?
+  minPrice      Int?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  variants      ProductVariant[]
+  images        ProductImage[]
+  slugRedirects ProductSlugRedirect[]
 
   @@index([categoryId])
   // Storefront list: WHERE status = 'active' ORDER BY createdAt DESC, id DESC (id = tie-breaker).

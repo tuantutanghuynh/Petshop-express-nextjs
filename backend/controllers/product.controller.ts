@@ -11,6 +11,16 @@ import { STOCK_MOVEMENT_TYPE } from '../constants/inventory';
 import { adjustStockByAdmin, recordOpening } from '../services/inventory.service';
 import { lockProduct, refreshMinPrice } from '../services/catalog.service';
 import { escapeLike, productOrderBy, toSearchText, type ProductSort } from '../utils/searchText';
+import {
+  assertCategoryInShop,
+  assertProductSlugFree,
+  changeProductSlug,
+  getShopProduct,
+  imageInShop,
+  productInShop,
+  resolveProductSlug,
+  variantInShop,
+} from '../services/productAdmin.service';
 
 // Every read and write path for products, serving both the storefront and the admin dashboard.
 // A product is a catalogue entry; the sellable things with a price and a stock count are its
@@ -81,6 +91,10 @@ export const getBySlug = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, product);
 });
 
+// Every admin route runs resolveBrand, so req.brand.categoryIds is the shop's category tree; the
+// ownership checks live in services/productAdmin.service.ts and answer 404 outside it.
+const scope = (req: Request) => ({ shopIds: req.brand?.categoryIds ?? [] });
+
 // Admin-only listing that, unlike `list`, also returns drafts and archived products so the editor
 // can find work in progress. It supports a case-insensitive `search` on the name and an optional
 // `status` filter. The `categorySlug` filter matters just as much here as on the public side:
@@ -89,13 +103,15 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   const { status, categorySlug, search } = req.query;
   const { page, take, skip } = parsePagination(req.query, 20, 100);
 
+  const shopIds = scope(req).shopIds;
   const where: Prisma.ProductWhereInput = {};
   if (status && typeof status === 'string') where.status = status;
   if (search && typeof search === 'string') where.searchName = { contains: escapeLike(toSearchText(search)) };
 
-  if (categorySlug && typeof categorySlug === 'string') {
-    where.categoryId = { in: await categoryScopeIds(categorySlug) };
-  }
+  // Always this shop; a category filter can only narrow it (another storefront's slug → nothing).
+  where.categoryId = {
+    in: categorySlug && typeof categorySlug === 'string' ? (await categoryScopeIds(categorySlug)).filter((id) => shopIds.includes(id)) : shopIds,
+  };
 
   const [items, total] = await Promise.all([
     prisma.product.findMany({
@@ -113,6 +129,16 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
   ]);
 
   sendSuccess(res, items, { page, pageSize: take, total });
+});
+
+// One product of the shop in any status, with the category's spec fields, for the admin form.
+export const adminGet = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, await getShopProduct(scope(req), req.params.id as string));
+});
+
+// Public: where a renamed product lives now (ADR-018). The storefront answers its old URL with 308.
+export const resolve = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, { slug: await resolveProductSlug(req.params.slug as string) });
 });
 
 // Creates a product together with its variants and images in a single transaction, answering 201
@@ -134,11 +160,8 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
     images = [],
   } = req.body;
 
-  const existingSlug = await prisma.product.findUnique({ where: { slug } });
-  if (existingSlug) throw new ApiError(409, 'SLUG_TAKEN', 'Slug đã tồn tại, vui lòng chọn slug khác');
-
-  const category = await prisma.category.findUnique({ where: { id: categoryId } });
-  if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
+  assertCategoryInShop(scope(req), categoryId);
+  await assertProductSlugFree(slug);
 
   const skus = variants.map((v: { sku: string }) => v.sku);
   if (new Set(skus).size !== skus.length) {
@@ -169,7 +192,7 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
           price: v.price,
           compareAtPrice: v.compareAtPrice ?? null,
           stockQuantity: v.stockQuantity ?? 0,
-          variantAttributes: v.variantAttributes ?? {},
+          variantAttributes: v.label ? { label: v.label } : (v.variantAttributes ?? {}),
           variantKey: v.variantKey || v.sku,
           imageUrl: v.imageUrl ?? null,
         })),
@@ -213,20 +236,13 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 // wipes inventory. They get their own endpoints later.
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (!existing) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Không tìm thấy sản phẩm');
+  const existing = await productInShop(scope(req), id);
 
   const { categoryId, name, slug, description, brand, status, attributes } = req.body;
 
-  if (slug && slug !== existing.slug) {
-    const takenSlug = await prisma.product.findUnique({ where: { slug } });
-    if (takenSlug) throw new ApiError(409, 'SLUG_TAKEN', 'Slug đã tồn tại, vui lòng chọn slug khác');
-  }
-
-  if (categoryId && categoryId !== existing.categoryId) {
-    const category = await prisma.category.findUnique({ where: { id: categoryId } });
-    if (!category) throw new ApiError(404, 'CATEGORY_NOT_FOUND', 'Không tìm thấy danh mục');
-  }
+  const slugChanged = slug !== undefined && slug !== existing.slug;
+  if (slugChanged) await assertProductSlugFree(slug, id);
+  if (categoryId && categoryId !== existing.categoryId) assertCategoryInShop(scope(req), categoryId);
 
   const data: Prisma.ProductUpdateInput = {};
   if (categoryId) data.category = { connect: { id: categoryId } };
@@ -234,21 +250,24 @@ export const update = asyncHandler(async (req: Request, res: Response) => {
     data.name = name;
     data.searchName = toSearchText(name);
   }
-  if (slug !== undefined) data.slug = slug;
+  if (slugChanged) data.slug = slug;
   if (description !== undefined) data.description = description;
   if (brand !== undefined) data.brand = brand;
   if (status !== undefined) data.status = status;
   if (attributes !== undefined) data.attributes = attributes;
 
-  const product = await prisma.product.update({
-    where: { id },
-    data,
-    include: {
-      category: true,
-      images: { orderBy: { position: 'asc' } },
-      variants: { orderBy: { price: 'asc' } },
-    },
-  });
+  const include = {
+    category: true,
+    images: { orderBy: { position: 'asc' } },
+    variants: { orderBy: { price: 'asc' } },
+  } satisfies Prisma.ProductInclude;
+  // A new slug and the old one kept for the 308 (ADR-018) are written together.
+  const product = slugChanged
+    ? await prisma.$transaction(async (tx) => {
+        await changeProductSlug(tx, existing, slug);
+        return tx.product.update({ where: { id }, data, include });
+      })
+    : await prisma.product.update({ where: { id }, data, include });
 
   sendSuccess(res, product);
 });
@@ -260,8 +279,7 @@ export const updateVariant = asyncHandler(async (req: Request, res: Response) =>
   const variantId = req.params.variantId as string;
   const { price, compareAtPrice, label } = req.body;
 
-  const variant = await prisma.productVariant.findUnique({ where: { id: variantId } });
-  if (!variant) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
+  const variant = await variantInShop(scope(req), variantId);
 
   // Stock is NOT editable here any more (the route rejects stockQuantity): an absolute overwrite
   // erased every sale made between the admin reading the number and saving it. Stock changes go
@@ -297,6 +315,7 @@ export const createStockMovement = asyncHandler(async (req: Request, res: Respon
       : { type: STOCK_MOVEMENT_TYPE.ADJUST, delta: Number(delta), reason, note: note ?? null };
 
   const userId = req.user.id;
+  await variantInShop(scope(req), variantId);
   const variant = await prisma.$transaction((tx) => adjustStockByAdmin(tx, variantId, input, userId));
   sendSuccess(res, variant, null, 201);
 });
@@ -304,6 +323,7 @@ export const createStockMovement = asyncHandler(async (req: Request, res: Respon
 // The ledger of one variant, newest first, for the admin's stock history panel.
 export const listStockMovements = asyncHandler(async (req: Request, res: Response) => {
   const variantId = req.params.variantId as string;
+  await variantInShop(scope(req), variantId);
   const { page, take, skip } = parsePagination(req.query, 20, 100);
   const where = { variantId };
   const [items, total] = await Promise.all([
@@ -327,8 +347,7 @@ export const addImage = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const { url, altText } = req.body;
 
-  const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Không tìm thấy sản phẩm');
+  const product = await productInShop(scope(req), id);
 
   const last = await prisma.productImage.findFirst({
     where: { productId: product.id },
@@ -352,8 +371,7 @@ export const updateImage = asyncHandler(async (req: Request, res: Response) => {
   const imageId = req.params.imageId as string;
   const { altText, position } = req.body;
 
-  const existing = await prisma.productImage.findUnique({ where: { id: imageId } });
-  if (!existing) throw new ApiError(404, 'IMAGE_NOT_FOUND', 'Không tìm thấy ảnh');
+  const existing = await imageInShop(scope(req), imageId);
 
   const data: Prisma.ProductImageUpdateInput = {};
   if (altText !== undefined) data.altText = altText;
@@ -366,8 +384,7 @@ export const updateImage = asyncHandler(async (req: Request, res: Response) => {
 // Detaches an image from a product.
 export const removeImage = asyncHandler(async (req: Request, res: Response) => {
   const imageId = req.params.imageId as string;
-  const existing = await prisma.productImage.findUnique({ where: { id: imageId } });
-  if (!existing) throw new ApiError(404, 'IMAGE_NOT_FOUND', 'Không tìm thấy ảnh');
+  const existing = await imageInShop(scope(req), imageId);
 
   await prisma.productImage.delete({ where: { id: existing.id } });
   sendSuccess(res, { message: 'Đã xoá ảnh' });
@@ -376,9 +393,7 @@ export const removeImage = asyncHandler(async (req: Request, res: Response) => {
 // Permanently deletes a product along with its variants and images.
 export const remove = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
-
-  const existing = await prisma.product.findUnique({ where: { id } });
-  if (!existing) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Không tìm thấy sản phẩm');
+  await productInShop(scope(req), id);
 
   await prisma.$transaction([
     prisma.productImage.deleteMany({ where: { productId: id } }),
@@ -394,8 +409,7 @@ export const addVariant = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const { sku, price, compareAtPrice, stockQuantity, label } = req.body;
 
-  const product = await prisma.product.findUnique({ where: { id } });
-  if (!product) throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Không tìm thấy sản phẩm');
+  const product = await productInShop(scope(req), id);
 
   const existingSku = await prisma.productVariant.findUnique({ where: { sku } });
   if (existingSku) throw new ApiError(409, 'SKU_TAKEN', `SKU đã tồn tại: ${sku}`);
@@ -427,8 +441,7 @@ export const addVariant = asyncHandler(async (req: Request, res: Response) => {
 export const removeVariant = asyncHandler(async (req: Request, res: Response) => {
   const variantId = req.params.variantId as string;
 
-  const existing = await prisma.productVariant.findUnique({ where: { id: variantId } });
-  if (!existing) throw new ApiError(404, 'VARIANT_NOT_FOUND', 'Không tìm thấy biến thể');
+  const existing = await variantInShop(scope(req), variantId);
 
   // The count runs under the product lock, so two concurrent deletes cannot both see "2 left" and
   // remove the last variant between them. The removed price may have been the minimum.
@@ -452,6 +465,8 @@ export default {
   list,
   getBySlug,
   adminList,
+  adminGet,
+  resolve,
   create,
   update,
   updateVariant,

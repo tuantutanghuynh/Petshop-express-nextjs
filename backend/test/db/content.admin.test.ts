@@ -429,7 +429,7 @@ describe('products (admin) — editing', () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
     const p = await createProduct(child.id, { variants: [{ stock: 7, price: 10_000 }] });
-    const res = await call('patch', `/api/v1/products/${p.id}`, { token: admin.token, brand: null }).send({ name: 'Tên mới', stockQuantity: 0, price: 1 });
+    const res = await call('patch', `/api/v1/products/${p.id}`, { token: admin.token }).send({ name: 'Tên mới', stockQuantity: 0, price: 1 });
     expect(res.status).toBe(200);
     expect(res.body.data.name).toBe('Tên mới');
     expect(res.body.data.slug).toBe(p.slug);
@@ -441,21 +441,21 @@ describe('products (admin) — editing', () => {
     const { child } = await createBrand();
     const a = await createProduct(child.id);
     const b = await createProduct(child.id);
-    expect((await call('patch', `/api/v1/products/${b.id}`, { token: admin.token, brand: null }).send({ slug: a.slug })).status).toBe(409);
-    expect((await call('patch', `/api/v1/products/${b.id}`, { token: admin.token, brand: null }).send({ slug: b.slug })).status).toBe(200);
+    expect((await call('patch', `/api/v1/products/${b.id}`, { token: admin.token }).send({ slug: a.slug })).status).toBe(409);
+    expect((await call('patch', `/api/v1/products/${b.id}`, { token: admin.token }).send({ slug: b.slug })).status).toBe(200);
   });
 
   it('L0 images: new ones go to the end, alt text defaults to the product name, unknown image is 404', async () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
     const p = await createProduct(child.id, { name: 'Cát vệ sinh' });
-    const add = (url: string) => call('post', `/api/v1/products/${p.id}/images`, { token: admin.token, brand: null }).send({ url });
+    const add = (url: string) => call('post', `/api/v1/products/${p.id}/images`, { token: admin.token }).send({ url });
     expect((await add('https://cdn/a.jpg')).body.data).toMatchObject({ position: 0, altText: 'Cát vệ sinh' });
     const second = (await add('https://cdn/b.jpg')).body.data;
     expect(second.position).toBe(1);
-    expect((await call('patch', `/api/v1/products/images/${second.id}`, { token: admin.token, brand: null }).send({ position: 5 })).body.data.position).toBe(5);
-    expect((await call('delete', `/api/v1/products/images/${second.id}`, { token: admin.token, brand: null })).status).toBe(200);
-    expect((await call('delete', `/api/v1/products/images/${second.id}`, { token: admin.token, brand: null })).status).toBe(404);
+    expect((await call('patch', `/api/v1/products/images/${second.id}`, { token: admin.token }).send({ position: 5 })).body.data.position).toBe(5);
+    expect((await call('delete', `/api/v1/products/images/${second.id}`, { token: admin.token })).status).toBe(200);
+    expect((await call('delete', `/api/v1/products/images/${second.id}`, { token: admin.token })).status).toBe(404);
   });
 
   it('L4 addVariant rejects a SKU already used by another product (409)', async () => {
@@ -463,7 +463,7 @@ describe('products (admin) — editing', () => {
     const { child } = await createBrand();
     const a = await createProduct(child.id, { variants: [{ sku: 'TAKEN' }] });
     const b = await createProduct(child.id);
-    expect((await call('post', `/api/v1/products/${b.id}/variants`, { token: admin.token, brand: null }).send({ sku: 'TAKEN', price: 1 })).status).toBe(409);
+    expect((await call('post', `/api/v1/products/${b.id}/variants`, { token: admin.token }).send({ sku: 'TAKEN', price: 1 })).status).toBe(409);
     expect(a.variants[0].sku).toBe('TAKEN');
   });
 
@@ -471,7 +471,7 @@ describe('products (admin) — editing', () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
     const p = await createProduct(child.id, { variants: [{}, {}] });
-    expect((await call('delete', `/api/v1/products/variants/${p.variants[0].id}`, { token: admin.token, brand: null })).status).toBe(200);
+    expect((await call('delete', `/api/v1/products/variants/${p.variants[0].id}`, { token: admin.token })).status).toBe(200);
     expect(await countRows('ProductVariant')).toBe(1);
   });
 
@@ -480,7 +480,7 @@ describe('products (admin) — editing', () => {
     const { child } = await createBrand();
     await createProduct(child.id, { status: 'draft', name: 'Vòng cổ chó' });
     await createProduct(child.id, { name: 'Pate mèo' });
-    const res = await call('get', '/api/v1/products/admin/list?search=vòng&pageSize=1000', { token: admin.token, brand: null });
+    const res = await call('get', '/api/v1/products/admin/list?search=vòng&pageSize=1000', { token: admin.token });
     expect(res.body.data.map((p: { name: string }) => p.name)).toEqual(['Vòng cổ chó']);
     expect(res.body.meta.pageSize).toBe(100);
   });

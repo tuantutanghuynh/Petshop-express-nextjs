@@ -53,7 +53,7 @@ async function expectLedgerMatchesStock(variantId: string) {
 }
 
 const adjust = (token: string, variantId: string, body: Record<string, unknown>) =>
-  call('post', `/api/v1/products/variants/${variantId}/stock-movements`, { token, brand: null }).send(body);
+  call('post', `/api/v1/products/variants/${variantId}/stock-movements`, { token }).send(body);
 
 async function shop(stock = 10) {
   const { child } = await createBrand();
@@ -71,7 +71,7 @@ describe('opening balance', () => {
   it('creating a product through the API records an OPENING movement per variant, by the admin', async () => {
     const admin = await createAdmin();
     const { child } = await createBrand();
-    const res = await call('post', '/api/v1/products', { token: admin.token, brand: null }).send({
+    const res = await call('post', '/api/v1/products', { token: admin.token }).send({
       categoryId: child.id, name: 'Hạt mèo', slug: 'hat-meo-opening', status: 'active',
       variants: [{ sku: 'OPEN-1', price: 1000, stockQuantity: 12 }, { sku: 'OPEN-2', price: 2000 }],
     });
@@ -85,7 +85,7 @@ describe('opening balance', () => {
   it('adding a variant records its OPENING movement', async () => {
     const admin = await createAdmin();
     const { product } = await shop(5);
-    const res = await call('post', `/api/v1/products/${product.id}/variants`, { token: admin.token, brand: null }).send({ sku: 'ADD-OPEN', price: 500, stockQuantity: 7 });
+    const res = await call('post', `/api/v1/products/${product.id}/variants`, { token: admin.token }).send({ sku: 'ADD-OPEN', price: 500, stockQuantity: 7 });
     expect(res.status).toBe(201);
     expect(await movements(res.body.data.id)).toMatchObject([{ delta: 7, reason: 'OPENING', quantityAfter: 7, userId: admin.id }]);
   });
@@ -273,10 +273,10 @@ describe('legacy absolute edit and history', () => {
   it('PATCH /products/variants/:id refuses stockQuantity (422) and leaves stock alone; price edits still work', async () => {
     const admin = await createAdmin();
     const { variant } = await shop(10);
-    const res = await call('patch', `/api/v1/products/variants/${variant.id}`, { token: admin.token, brand: null }).send({ stockQuantity: 3 });
+    const res = await call('patch', `/api/v1/products/variants/${variant.id}`, { token: admin.token }).send({ stockQuantity: 3 });
     expect(res.status).toBe(422);
     expect(await variantStock(variant.id)).toEqual({ stock: 10, reserved: 0 });
-    const price = await call('patch', `/api/v1/products/variants/${variant.id}`, { token: admin.token, brand: null }).send({ price: 45_000 });
+    const price = await call('patch', `/api/v1/products/variants/${variant.id}`, { token: admin.token }).send({ price: 45_000 });
     expect(price.status).toBe(200);
     expect(price.body.data.price).toBe(45_000);
   });
@@ -287,12 +287,12 @@ describe('legacy absolute edit and history', () => {
     await adjust(admin.token, variant.id, { type: 'ADJUST', delta: 5, reason: 'PURCHASE' });
     await adjust(admin.token, variant.id, { type: 'ADJUST', delta: -2, reason: 'DAMAGED' });
 
-    const res = await call('get', `/api/v1/products/variants/${variant.id}/stock-movements?page=1&pageSize=2`, { token: admin.token, brand: null });
+    const res = await call('get', `/api/v1/products/variants/${variant.id}/stock-movements?page=1&pageSize=2`, { token: admin.token });
     expect(res.status).toBe(200);
     expect(res.body.data.map((m: Movement) => m.reason)).toEqual(['DAMAGED', 'PURCHASE']);
     expect(res.body.meta).toMatchObject({ page: 1, pageSize: 2, total: 3 });
 
     const u = await createUser();
-    expect((await call('get', `/api/v1/products/variants/${variant.id}/stock-movements`, { token: u.token, brand: null })).status).toBe(403);
+    expect((await call('get', `/api/v1/products/variants/${variant.id}/stock-movements`, { token: u.token })).status).toBe(403);
   });
 });

@@ -1,21 +1,40 @@
 import { Router } from 'express';
-import { body, query } from 'express-validator';
+import { body, query, type ValidationChain } from 'express-validator';
 import { PRODUCT_SORTS, toSearchText } from '../utils/searchText';
 import validate from '../middlewares/validate';
 import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
+import resolveBrand from '../middlewares/resolveBrand';
 import * as ctrl from '../controllers/product.controller';
 import { PRODUCT_STATUS_VALUES, MAX_DB_INT } from '../constants/product';
 import { ADJUST_REASONS, STOCK_MOVEMENT_TYPE } from '../constants/inventory';
 
 const router = Router();
 
+// Admin routes are limited to the shop of X-Brand-Slug: resolveBrand runs last, after the cheap
+// token, role and field checks, so those answer without touching the database and anything outside
+// the shop's category tree answers 404 (spec 2026-11-04 admin products).
+const admin = [authenticate, requireRole('admin')];
+const SLUG = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const slugRule = (rule: ValidationChain) =>
+  rule.isString().isLength({ max: 120 }).matches(SLUG).withMessage('Slug chỉ gồm a-z, 0-9 và dấu - giữa các chữ (tối đa 120 ký tự)');
+const nameRule = (rule: ValidationChain) => rule.isString().trim().isLength({ min: 1, max: 200 }).withMessage('Tên sản phẩm từ 1 đến 200 ký tự');
+const productFieldRules = () => [
+  body('brand').optional({ values: 'null' }).isString().trim().isLength({ max: 100 }).withMessage('Thương hiệu tối đa 100 ký tự'),
+  body('description').optional({ values: 'null' }).isString().isLength({ max: 20_000 }).withMessage('Mô tả tối đa 20.000 ký tự'),
+  body('status').optional().isIn(PRODUCT_STATUS_VALUES),
+  body('attributes')
+    .optional()
+    .custom((v) => typeof v === 'object' && v !== null && !Array.isArray(v))
+    .withMessage('Thông số không hợp lệ'),
+];
+
 // Routes for the product catalogue. Public endpoints serve the storefront and need no token;
 // everything that writes sits behind `authenticate` + `requireRole('admin')`.
 
-// `/admin/list` is declared before `/:slug` on purpose. Express matches routes in order, so with
-// the reverse order the literal word "admin" would be captured as a product slug and the admin
-// listing would answer 404 instead.
+// `/admin/...` and `/resolve/...` are declared before `/:slug` on purpose. Express matches routes in
+// order, so with the reverse order the literal word "admin" would be captured as a product slug and
+// the admin listing would answer 404 instead.
 // Public list: optional search and sort. q must still have 2–100 characters once normalised
 // (so "  " or a single letter is refused rather than matching everything), and must be a single
 // value — "?q=a&q=b" arrives as an array. sort is a whitelist; anything else is a 422, never passed
@@ -37,7 +56,10 @@ router.get(
   ],
   ctrl.list,
 );
-router.get('/admin/list', authenticate, requireRole('admin'), ctrl.adminList);
+router.get('/admin/list', ...admin, resolveBrand, ctrl.adminList);
+router.get('/admin/:id', ...admin, resolveBrand, ctrl.adminGet);
+// Former slug → current slug of a product on sale, for the storefront's 308 (ADR-018).
+router.get('/resolve/:slug', ctrl.resolve);
 router.get('/:slug', ctrl.getBySlug);
 
 // Prices are validated as integers because the column is `Int` and money is never stored as a
@@ -45,15 +67,15 @@ router.get('/:slug', ctrl.getBySlug);
 // blocks negative prices that would make an order total smaller than it should be.
 router.post(
   '/',
-  authenticate,
-  requireRole('admin'),
+  ...admin,
   [
-    body('categoryId').notEmpty(),
-    body('name').notEmpty(),
-    body('slug').notEmpty(),
-    body('status').optional().isIn(PRODUCT_STATUS_VALUES),
+    body('categoryId').isString().notEmpty().withMessage('Chọn danh mục'),
+    nameRule(body('name')),
+    slugRule(body('slug')),
+    ...productFieldRules(),
     body('variants').isArray({ min: 1 }).withMessage('Sản phẩm phải có ít nhất một biến thể'),
-    body('variants.*.sku').notEmpty(),
+    body('variants.*.sku').isString().trim().isLength({ min: 1, max: 64 }).withMessage('SKU từ 1 đến 64 ký tự'),
+    body('variants.*.label').optional().isString().isLength({ max: 100 }).withMessage('Nhãn biến thể tối đa 100 ký tự'),
     body('variants.*.price').isInt({ min: 0, max: MAX_DB_INT }),
     body('variants.*.compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
     body('variants.*.stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
@@ -61,30 +83,38 @@ router.post(
     body('images.*.url').optional().notEmpty(),
     validate,
   ],
+  resolveBrand,
   ctrl.create
 );
 
 router.post(
   '/:id/variants',
-  authenticate,
-  requireRole('admin'),
+  ...admin,
   [
     body('sku').notEmpty().withMessage('SKU không được để trống'),
     body('price').isInt({ min: 0, max: MAX_DB_INT }).withMessage('Giá không hợp lệ'),
     body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
     body('stockQuantity').optional().isInt({ min: 0, max: MAX_DB_INT }),
+    body('label').optional().isString().isLength({ max: 100 }).withMessage('Nhãn biến thể tối đa 100 ký tự'),
     validate,
   ],
+  resolveBrand,
   ctrl.addVariant
 );
 
-router.delete('/variants/:variantId', authenticate, requireRole('admin'), ctrl.removeVariant);
+router.delete('/variants/:variantId', ...admin, resolveBrand, ctrl.removeVariant);
 
 router.patch(
   '/:id',
-  authenticate,
-  requireRole('admin'),
-  [body('status').optional().isIn(PRODUCT_STATUS_VALUES), validate],
+  ...admin,
+  [
+    nameRule(body('name').optional()),
+    slugRule(body('slug').optional()),
+    body('categoryId').optional().isString().notEmpty(),
+    ...productFieldRules(),
+    validate,
+  ],
+  resolveBrand,
   ctrl.update
 );
 
@@ -94,10 +124,10 @@ router.patch(
 // instead of silently doing nothing.
 router.patch(
   '/variants/:variantId',
-  authenticate,
-  requireRole('admin'),
+  ...admin,
   [
     body('price').optional().isInt({ min: 0, max: MAX_DB_INT }),
+    body('label').optional().isString().isLength({ max: 100 }).withMessage('Nhãn biến thể tối đa 100 ký tự'),
     body('compareAtPrice').optional({ nullable: true }).isInt({ min: 0, max: MAX_DB_INT }),
     body('stockQuantity')
       .not()
@@ -105,6 +135,7 @@ router.patch(
       .withMessage('Không sửa tồn kho ở đây — dùng POST /products/variants/:id/stock-movements'),
     validate,
   ],
+  resolveBrand,
   ctrl.updateVariant
 );
 
@@ -115,8 +146,7 @@ const isAdjust = body('type').equals(STOCK_MOVEMENT_TYPE.ADJUST);
 const isStocktake = body('type').equals(STOCK_MOVEMENT_TYPE.STOCKTAKE);
 router.post(
   '/variants/:variantId/stock-movements',
-  authenticate,
-  requireRole('admin'),
+  ...admin,
   [
     body('type').isIn(Object.values(STOCK_MOVEMENT_TYPE)),
     body('delta')
@@ -129,32 +159,41 @@ router.post(
     body('note').optional({ nullable: true }).isString().isLength({ max: 500 }),
     validate,
   ],
+  resolveBrand,
   ctrl.createStockMovement
 );
 
-router.get('/variants/:variantId/stock-movements', authenticate, requireRole('admin'), ctrl.listStockMovements);
+router.get('/variants/:variantId/stock-movements', ...admin, resolveBrand, ctrl.listStockMovements);
 
 // Images are managed one at a time rather than by replacing the whole set. Sending the full array
 // on every change would mean a dropped request could wipe every photo of a product; this way the
 // worst case is one image not being added.
 router.post(
   '/:id/images',
-  authenticate,
-  requireRole('admin'),
-  [body('url').trim().notEmpty(), validate],
+  ...admin,
+  [
+    body('url').trim().notEmpty(),
+    body('altText').optional({ values: 'null' }).isString().isLength({ max: 200 }).withMessage('Mô tả ảnh tối đa 200 ký tự'),
+    validate,
+  ],
+  resolveBrand,
   ctrl.addImage
 );
 
 router.patch(
   '/images/:imageId',
-  authenticate,
-  requireRole('admin'),
-  [body('position').optional().isInt(), validate],
+  ...admin,
+  [
+    body('position').optional().isInt({ min: 0, max: 1000 }),
+    body('altText').optional({ values: 'null' }).isString().isLength({ max: 200 }).withMessage('Mô tả ảnh tối đa 200 ký tự'),
+    validate,
+  ],
+  resolveBrand,
   ctrl.updateImage
 );
 
-router.delete('/images/:imageId', authenticate, requireRole('admin'), ctrl.removeImage);
+router.delete('/images/:imageId', ...admin, resolveBrand, ctrl.removeImage);
 
-router.delete('/:id', authenticate, requireRole('admin'), ctrl.remove);
+router.delete('/:id', ...admin, resolveBrand, ctrl.remove);
 
 export default router;
