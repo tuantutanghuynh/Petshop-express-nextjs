@@ -1,10 +1,9 @@
 import jwt, { type JwtPayload, type SignOptions } from 'jsonwebtoken';
-import { jwtAccessSecret, jwtRefreshSecret } from '../config/env';
+import { jwtAccessSecret } from '../config/env';
 
 export type AccessPayload = { sub: string; role: string };
 
 const ACCESS_TOKEN_TTL: SignOptions['expiresIn'] = '15m';
-const REFRESH_TOKEN_TTL: SignOptions['expiresIn'] = '7d';
 
 // Signs a payload — `{ sub, role }` in this project — into an access token valid for 15
 // minutes. The TTL is deliberately short because a stateless JWT cannot be revoked once
@@ -26,14 +25,4 @@ export function verifyAccessToken(token: string): JwtPayload {
     return jwt.verify(token, jwtAccessSecret) as JwtPayload;
 }
 
-export function signRefreshToken(payload: AccessPayload): string {
-    if (!jwtRefreshSecret) throw new Error('Thiếu JWT_REFRESH_SALT');
-    return jwt.sign(payload, jwtRefreshSecret, { expiresIn: REFRESH_TOKEN_TTL });
-}
-
-export function verifyRefreshToken(token: string): JwtPayload {
-    if (!jwtRefreshSecret) throw new Error('Thiếu JWT_REFRESH_SALT');
-    return jwt.verify(token, jwtRefreshSecret) as JwtPayload;
-}
-
-export default { signAccessToken, verifyAccessToken, signRefreshToken, verifyRefreshToken };
+export default { signAccessToken, verifyAccessToken };
