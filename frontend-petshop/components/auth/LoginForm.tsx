@@ -10,7 +10,7 @@ import { TextField } from '../ui/TextField';
 
 // Wrong email and wrong password get the same message: the backend answers both with one 401 so
 // the form cannot be used to find out which emails have an account.
-export function LoginForm({ next }: { next: string }) {
+export function LoginForm({ next, notice }: { next: string; notice?: string }) {
   const router = useRouter();
   const [errors, setErrors] = useState<FieldErrors>({});
   const [alert, setAlert] = useState<string | null>(null);
@@ -47,9 +47,13 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <form onSubmit={onSubmit} noValidate className="flex flex-col gap-4">
+      {notice && <p role="status" className="rounded-card bg-mint px-4 py-3 text-sm font-bold text-brand-deep">{notice}</p>}
       <FormAlert message={alert} />
       <TextField name="email" label="Email" type="email" inputMode="email" autoComplete="email" enterKeyHint="next" required error={errors.email} />
-      <TextField name="password" label="Mật khẩu" type="password" autoComplete="current-password" enterKeyHint="go" required error={errors.password} />
+      <div className="flex flex-col gap-1">
+        <TextField name="password" label="Mật khẩu" type="password" autoComplete="current-password" enterKeyHint="go" required error={errors.password} />
+        <Link href="/quen-mat-khau" className="inline-flex min-h-11 items-center self-end text-sm font-bold text-brand-ink underline">Quên mật khẩu?</Link>
+      </div>
       <button
         type="submit"
         disabled={submitting}

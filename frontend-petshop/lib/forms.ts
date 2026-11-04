@@ -60,6 +60,22 @@ export function validateRegister(v: { email: string; fullName: string; password:
   return errors;
 }
 
+// /quen-mat-khau: only the address the link goes to.
+export function validateForgotPassword(v: { email: string }): FieldErrors {
+  const email = emailError(v.email);
+  return email ? { email } : {};
+}
+
+// /dat-lai-mat-khau: the registration password rules; `newPassword` is the backend's field name, so
+// a 422 from the server lands on the same input.
+export function validateResetPassword(v: { newPassword: string; confirmPassword: string }): FieldErrors {
+  const errors: FieldErrors = {};
+  const password = passwordError(v.newPassword);
+  if (password) errors.newPassword = password;
+  if (v.confirmPassword !== v.newPassword) errors.confirmPassword = 'Xác nhận mật khẩu không khớp';
+  return errors;
+}
+
 // After a failed submit, move focus to the first field (in form order) that has an error: on a
 // phone it is often off screen, and focus scrolls it into view and opens the keyboard on it. Error
 // keys may be backend paths ("shippingAddress.phone"); the input is matched by its last segment.

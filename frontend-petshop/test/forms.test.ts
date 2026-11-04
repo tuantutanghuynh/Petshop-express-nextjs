@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fieldErrors, safeNext, validateLogin, validateRegister } from '../lib/forms';
+import { fieldErrors, safeNext, validateLogin, validateForgotPassword, validateRegister, validateResetPassword } from '../lib/forms';
 
 describe('safeNext', () => {
   it('keeps a same-site path', () => {
@@ -55,5 +55,33 @@ describe('validateRegister', () => {
 
   it('checks the confirmation', () => {
     expect(validateRegister({ ...ok, confirmPassword: 'other' }).confirmPassword).toMatch(/không khớp/);
+  });
+});
+
+// /dat-lai-mat-khau: same password rules as registration (backend routes/auth.route.ts). The field
+// is named newPassword like the backend body, so a 422 from the server lands on the same field.
+describe('validateResetPassword', () => {
+  it('accepts a strong password typed twice', () => {
+    expect(validateResetPassword({ newPassword: 'NewPass#456', confirmPassword: 'NewPass#456' })).toEqual({});
+  });
+
+  it('asks for a password', () => {
+    expect(validateResetPassword({ newPassword: '', confirmPassword: '' }).newPassword).toBeDefined();
+  });
+
+  it('refuses a weak password with the registration message', () => {
+    expect(validateResetPassword({ newPassword: 'abcdefgh', confirmPassword: 'abcdefgh' }).newPassword).toBe('Mật khẩu phải chứa ít nhất một chữ hoa');
+  });
+
+  it('wants the confirmation to match', () => {
+    expect(validateResetPassword({ newPassword: 'NewPass#456', confirmPassword: 'NewPass#457' })).toEqual({ confirmPassword: 'Xác nhận mật khẩu không khớp' });
+  });
+});
+
+describe('validateForgotPassword', () => {
+  it('needs a well-formed email, nothing else', () => {
+    expect(validateForgotPassword({ email: 'an@example.com' })).toEqual({});
+    expect(validateForgotPassword({ email: '' }).email).toBeDefined();
+    expect(validateForgotPassword({ email: 'an@' }).email).toBeDefined();
   });
 });
