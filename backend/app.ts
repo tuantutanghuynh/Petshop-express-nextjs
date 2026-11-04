@@ -12,6 +12,9 @@ import routes from './routes';
 import notFound from './middlewares/notFound';
 import errorHandler from './middlewares/errorHandler';
 import { apiRateLimitKey, isServerRenderRequest } from './middlewares/rateLimitKeys';
+import prisma from './services/prisma';
+import asyncHandler from './utils/asyncHandler';
+import { isShuttingDown } from './utils/lifecycle';
 
 // Assembles the Express application: security layers, body parsing, the API routes and the
 // error handling chain, in that order. Middleware order is the whole point of this file —
@@ -108,6 +111,25 @@ app.use(cookieParser());
 app.get('/health', (_req: Request, res: Response) => {
   res.json({ status: 'ok' });
 });
+
+// Readiness probe: 503 once shutdown has started (so no new traffic arrives while requests
+// drain) or when the database does not answer. The error itself is the answer, so it is not
+// re-thrown, and no database detail is returned.
+app.get(
+  '/health/ready',
+  asyncHandler(async (_req: Request, res: Response) => {
+    if (isShuttingDown()) {
+      res.status(503).json({ status: 'shutting-down' });
+      return;
+    }
+    try {
+      await prisma.$queryRaw`SELECT 1`;
+      res.json({ status: 'ready' });
+    } catch {
+      res.status(503).json({ status: 'db-unavailable' });
+    }
+  }),
+);
 
 // Serves images uploaded before the move to Cloudinary. It has to stay above `notFound`,
 // otherwise the catch-all answers first and every one of these files 404s — which is exactly

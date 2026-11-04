@@ -36,3 +36,12 @@ describe('DB test harness', () => {
     expect(rows[0].n).toBe('0');
   });
 });
+
+// Readiness and statement limits of the shared Prisma client (spec v2 §3.2–3.3).
+describe('database readiness and limits', () => {
+  it('reports ready while the database answers', async () => {
+    const res = await call('get', '/health/ready', { brand: null });
+    expect(res.status).toBe(200);
+    expect(res.body).toEqual({ status: 'ready' });
+  });
+});
