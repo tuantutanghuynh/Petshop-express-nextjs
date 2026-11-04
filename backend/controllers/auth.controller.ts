@@ -1,6 +1,8 @@
 import type { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
+import { siteUrl } from '../config/env';
+import { sendPasswordReset } from '../services/email.service';
 import prisma from '../services/prisma';
 import { signAccessToken } from '../services/jwt.service';
 import { issueRefreshToken, rotateRefreshToken, revokeRefreshToken } from '../services/token.service';
@@ -85,14 +87,13 @@ export const requestPasswordReset = asyncHandler(async (req: Request, res: Respo
       expiresAt: new Date(Date.now() + 60 * 60 * 1000),
     },
   });
-  // No email provider is wired up yet, so on a developer's machine the link is printed to the
-  // console as the only way to get it. Everywhere else it must never be logged: the raw token is a
-  // password-equivalent, and anyone who can read the hosting logs could take over every account
-  // that asks for a reset. Until an email service exists, resets therefore only work locally.
-  if (process.env.NODE_ENV === 'development') {
-    const resetLink = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`;
-    console.log(`[PASSWORD RESET] ${email}:\n${resetLink}`);
-  }
+  // Sent without waiting: if the answer waited for SMTP, a known address would answer measurably
+  // slower than an unknown one, and timing alone would reveal who has an account. A failure is
+  // logged by error name only — the link is password-equivalent and must not reach the logs.
+  const resetLink = `${siteUrl}/dat-lai-mat-khau?token=${token}&email=${encodeURIComponent(email)}`;
+  void sendPasswordReset(email, resetLink).catch((err: unknown) => {
+    console.error('password reset email failed', err instanceof Error ? err.name : 'unknown error');
+  });
   sendSuccess(res, { message: RESET_REQUESTED_MESSAGE });
 });
 
@@ -119,6 +120,9 @@ export const resetPassword = asyncHandler(async (req: Request, res: Response) =>
     const { count } = await tx.passwordResetToken.deleteMany({ where: { id: resetToken.id } });
     if (count !== 1) throw new ApiError(400, 'INVALID_TOKEN', 'Token reset không hợp lệ');
     await tx.user.update({ where: { id: user.id }, data: { passwordHash } });
+    // A reset is often how an owner takes back a stolen account: every refresh token issued before
+    // it stops working, so all other devices must sign in again with the new password.
+    await tx.refreshToken.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
   });
 
   sendSuccess(res, { message: 'Mật khẩu đã được đặt lại thành công' });

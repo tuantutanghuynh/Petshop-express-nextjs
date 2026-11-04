@@ -36,6 +36,37 @@ export const cloudinary = {
   apiSecret: process.env.CLOUDINARY_API_SECRET,
 };
 
+// Unset NODE_ENV counts as development, as in Express: `npm run dev` does not set it, while the
+// test scripts set "test" and the hosting platform sets "production".
+const nodeEnv = process.env.NODE_ENV || 'development';
+export const isProduction: boolean = nodeEnv === 'production';
+export const isDevelopment: boolean = nodeEnv === 'development';
+
+// Origin of the storefront, for links the backend writes into emails (password reset). Development
+// defaults to the local Next.js server; production must set it (assertProductionConfig).
+export const siteUrl: string = (process.env.PUBLIC_SITE_URL || 'http://localhost:3000').replace(/\/+$/, '');
+
+// Outgoing email over SMTP (Gmail with an app password works before the shop has a domain; any
+// provider's SMTP later). Without a host, development prints emails to the console instead.
+export const smtp = {
+  host: process.env.SMTP_HOST || undefined,
+  port: Number(process.env.SMTP_PORT) || 587,
+  user: process.env.SMTP_USER || undefined,
+  pass: process.env.SMTP_PASS || undefined,
+  from: process.env.MAIL_FROM || undefined,
+};
+
+const PRODUCTION_REQUIRED = ['PUBLIC_SITE_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM'] as const;
+
+// Called before the server starts listening (bin/www.ts). In production a missing setting would
+// make "forgot password" silently send nothing, so the server refuses to start and names what is
+// missing — names only, never values. `env` is a parameter so tests need not touch process.env.
+export function assertProductionConfig(env: NodeJS.ProcessEnv = process.env): void {
+  if (env.NODE_ENV !== 'production') return;
+  const missing = PRODUCTION_REQUIRED.filter((name) => !env[name]);
+  if (missing.length > 0) throw new Error(`Thiếu biến môi trường cho production: ${missing.join(', ')}`);
+}
+
 const config: EnvConfig = {
   port,
   databaseUrl,

@@ -76,8 +76,11 @@ router.post(
   ctrl.requestPasswordReset
 );
 
+// Limited like login: the token is long enough not to be guessed, but an unlimited endpoint that
+// hashes a password on every call is still an easy way to load the server.
 router.post(
   '/reset-password',
+  authLimiter,
   [
     emailRule(),
     body('token').notEmpty(),

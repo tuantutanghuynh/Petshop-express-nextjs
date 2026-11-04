@@ -1,12 +1,15 @@
 #!/usr/bin/env node
 import app from '../app';
-import { port } from '../config/env';
+import { assertProductionConfig, port } from '../config/env';
 import prisma from '../services/prisma';
 import { isShuttingDown, markShuttingDown } from '../utils/lifecycle';
 import { startExpiredOrderSweeper } from '../workers/releaseExpiredOrders';
 
 // Longest a deploy waits for in-flight requests before the process is cut anyway.
 const SHUTDOWN_GRACE_MS = 15_000;
+
+// Refuse to start in production without what password reset emails need (names the missing variables).
+assertProductionConfig();
 
 const server = app.listen(port, () => {
   console.log(`Server đang chạy tại http://localhost:${port}`);

@@ -79,6 +79,7 @@ describe('POST /api/v1/auth/refresh and password reset validation', () => {
   it.each(hostile)('rejects %s as the reset-password email', async (_name, email) => {
     const res = await request(app)
       .post('/api/v1/auth/reset-password')
+      .set('X-Forwarded-For', freshIp())
       .send({ email, token: 't', newPassword: STRONG });
     expectValidationError(res);
   });
@@ -86,6 +87,7 @@ describe('POST /api/v1/auth/refresh and password reset validation', () => {
   it('rejects a weak new password on reset', async () => {
     const res = await request(app)
       .post('/api/v1/auth/reset-password')
+      .set('X-Forwarded-For', freshIp())
       .send({ email: 'user@example.com', token: 't', newPassword: 'weak' });
     expectValidationError(res);
   });
