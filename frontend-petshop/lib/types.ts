@@ -116,6 +116,12 @@ export interface Product {
   variants: ProductVariant[];
 }
 
+// GET /products/admin/:id — any status, with the category's spec fields (text or number).
+export interface AdminProduct extends Omit<Product, 'category'> {
+  categoryId: string;
+  category: Category & { attributes: (CategoryAttribute & { attributeType: string })[] };
+}
+
 // GET /api/v1/settings → { key: value } (values are strings; JSON for structured settings).
 export type SiteSettings = Record<string, string>;
 

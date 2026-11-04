@@ -99,6 +99,17 @@ export async function resolveCategorySlug(slug: string): Promise<string | null> 
   }
 }
 
+// Current slug of a renamed product on sale (ADR-018), or null when `slug` was never a product slug.
+export async function resolveProductSlug(slug: string): Promise<string | null> {
+  try {
+    const { data } = await apiFetch<{ slug: string }>(`/products/resolve/${encodeURIComponent(slug)}`, cached(['products']));
+    return data.slug;
+  } catch (err) {
+    if (err instanceof ApiRequestError && err.status === 404) return null;
+    throw err;
+  }
+}
+
 // Product detail, or null when it does not exist, is not active (the API answers 404 for both)
 // or belongs to another storefront.
 export async function getShopProduct(slug: string): Promise<Product | null> {

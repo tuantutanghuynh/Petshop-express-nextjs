@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, permanentRedirect } from 'next/navigation';
 import { ProductGallery } from '../../../components/product/ProductGallery';
 import { ProductGrid } from '../../../components/product/ProductGrid';
 import { SpecTable } from '../../../components/product/SpecTable';
@@ -11,7 +11,7 @@ import { categoryCrumbs } from '../../../lib/seo/categoryCrumbs';
 import { breadcrumbJsonLd, productJsonLd, productPath } from '../../../lib/seo/structuredData';
 import { SITE_NAME, siteUrl } from '../../../lib/site';
 import { imageSrc } from '../../../lib/storefront';
-import { getCategoryProducts, getCategoryTrail, getShopProduct } from '../../../services/catalog';
+import { getCategoryProducts, getCategoryTrail, getShopProduct, resolveProductSlug } from '../../../services/catalog';
 import { getShopInfo } from '../../../services/content';
 
 // Product detail. Search intent: transactional.
@@ -50,7 +50,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function ProductPage({ params }: Props) {
   const { slug } = await params;
   const product = await getShopProduct(slug);
-  if (!product) notFound();
+  if (!product) {
+    // A renamed product keeps its old links (ADR-018): 308 to the current slug.
+    const moved = await resolveProductSlug(slug);
+    if (moved) permanentRedirect(productPath(moved));
+    notFound();
+  }
 
   const [shop, trail, related] = await Promise.all([
     getShopInfo(),

@@ -7,7 +7,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin', label: 'Tổng quan', icon: '◧', ready: true },
   { href: '/admin/don-hang', label: 'Đơn hàng', icon: '🧾', ready: true },
   { href: '/admin/bao-gia', label: 'Yêu cầu báo giá', icon: '☎', ready: true },
-  { href: '/admin/san-pham', label: 'Sản phẩm', icon: '📦', ready: false },
+  { href: '/admin/san-pham', label: 'Sản phẩm', icon: '📦', ready: true },
   { href: '/admin/danh-muc', label: 'Danh mục & thông số', icon: '🗂', ready: true },
   { href: '/admin/posts', label: 'Bài viết', icon: '📝', ready: true },
   { href: '/admin/gallery', label: 'Thư viện ảnh', icon: '🖼', ready: true },

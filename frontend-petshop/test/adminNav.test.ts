@@ -17,8 +17,9 @@ describe('admin nav', () => {
     expect(activeNavItem('/admin/postsx')).toBeUndefined();
   });
 
-  it('marks pages not built yet', () => {
-    expect(isNavReady('/admin/san-pham')).toBe(false);
+  it('marks which pages are built', () => {
+    expect(isNavReady('/admin/san-pham')).toBe(true); // shipped in wave D1
+    expect(isNavReady('/admin/khong-co')).toBe(false);
     expect(isNavReady('/admin/bao-gia')).toBe(true); // shipped in wave C
     expect(isNavReady('/admin/don-hang')).toBe(true); // shipped in wave B
     expect(isNavReady('/admin/cau-hinh')).toBe(true);
