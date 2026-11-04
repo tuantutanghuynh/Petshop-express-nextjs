@@ -54,6 +54,11 @@ async function callBackend(call: BackendCall, ctx: RequestContext): Promise<BffR
   const secret = process.env.INTERNAL_API_SECRET;
   if (secret) headers.set('X-Internal-Secret', secret);
   if (ctx.clientIp) headers.set('X-Client-IP', ctx.clientIp);
+  // The backend logs every request under this id (backend/middlewares/requestLogger.ts), so a failure
+  // seen here can be found in its log. Not added to cached page fetches (lib/apiClient.ts): a header
+  // that changes on every call would make each one a separate entry in Next's data cache.
+  const requestId = crypto.randomUUID();
+  headers.set('X-Request-Id', requestId);
 
   let res: Response;
   try {
@@ -64,7 +69,7 @@ async function callBackend(call: BackendCall, ctx: RequestContext): Promise<BffR
       cache: 'no-store',
     });
   } catch (err) {
-    console.error('bff: backend unreachable', err);
+    console.error('bff: backend unreachable', { requestId, path: call.path }, err);
     return fail(502, 'BACKEND_UNAVAILABLE', 'Hệ thống đang bận, vui lòng thử lại sau ít phút');
   }
   if (res.status === 204) return { status: 204, body: { data: null, meta: null, error: null } };

@@ -117,6 +117,17 @@ describe('proxy', () => {
     expect(header(calls[0], 'X-Client-IP')).toBe('203.0.113.7');
   });
 
+  it('gives every backend call its own request id, in the form the backend keeps', async () => {
+    backend([200, { data: {}, meta: null, error: null }], [200, { data: {}, meta: null, error: null }]);
+    const jar = new MemoryJar();
+    jar.set(names.access, 'AT');
+    await proxy(jar, { path: '/cart', method: 'GET' }, ctx);
+    await proxy(jar, { path: '/cart', method: 'GET' }, ctx);
+    const [first, second] = [header(calls[0], 'X-Request-Id'), header(calls[1], 'X-Request-Id')];
+    expect(first).toMatch(/^[A-Za-z0-9_-]{8,100}$/); // backend/middlewares/requestLogger.ts
+    expect(second).not.toBe(first);
+  });
+
   it('forwards an Idempotency-Key when given', async () => {
     backend([201, { data: {}, meta: null, error: null }]);
     const jar = new MemoryJar();
