@@ -15,18 +15,20 @@ import { categorySubtreeIds } from '../utils/categoryTree';
 // when a customer complains. A missing header fails loudly on the very first request instead.
 // The resolved `categoryIds` covers the brand root and every category below it (products sit on
 // leaves three levels down — ADR-016), which is what ownership checks compare a product against.
+// The whole tree is read in ONE query and the root is found in memory: the table is small, and one
+// round trip instead of two matters when the database is far away. Nothing is cached, so a category
+// written by any process (admin, seed script, another instance) counts from the next request.
 export const resolveBrand = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
   const slug = req.get('X-Brand-Slug');
   if (!slug) {
     throw new ApiError(400, 'BRAND_REQUIRED', 'Thiếu header X-Brand-Slug');
   }
 
-  const category = await prisma.category.findUnique({ where: { slug } });
+  const all = await prisma.category.findMany({ select: { id: true, slug: true, parentId: true } });
+  const category = all.find((c) => c.slug === slug);
   if (!category || category.parentId !== null) {
     throw new ApiError(404, 'BRAND_NOT_FOUND', 'Không tìm thấy thương hiệu');
   }
-
-  const all = await prisma.category.findMany({ select: { id: true, parentId: true } });
 
   req.brand = {
     slug: category.slug,
