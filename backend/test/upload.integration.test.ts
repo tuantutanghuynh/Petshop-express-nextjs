@@ -97,9 +97,9 @@ describe('POST /api/v1/uploads/image', () => {
         contentType: 'image/jpeg',
       });
 
-    // Multer rejects oversized file via limit error or connection reset / 500
-    expect([413, 422, 500]).toContain(res.status);
-    expect(res.body.error).toBeDefined();
+    // Too big is the client's doing: 413 in the standard envelope, not a generic 500.
+    expect(res.status).toBe(413);
+    expect(res.body.error.code).toBe('FILE_TOO_LARGE');
   });
 
   it('returns 500 when Cloudinary stream fails', async () => {

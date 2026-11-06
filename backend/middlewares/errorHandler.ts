@@ -1,11 +1,13 @@
 import type { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
+import { MulterError } from 'multer';
 import ApiError from '../utils/ApiError';
 
 // Known failures that are the CLIENT's doing, translated into the 4xx they really are. Without
 // this they all fell through to the generic 500 below, so a customer double-clicking "register"
 // or a script posting a field as an array saw "server error" for something that is not one.
 //   - body-parser: malformed JSON (400) and a body over the size limit (413);
+//   - multer: an uploaded file over the size cap in middlewares/upload.ts (413);
 //   - Prisma P2002: a unique index rejected a duplicate that slipped past a check-then-insert
 //     (two requests checked "slug free" at the same moment) — that is a conflict, 409;
 //   - PrismaClientValidationError: a value of the wrong type reached a query (an array where a
@@ -18,6 +20,9 @@ function toClientError(err: unknown): ApiError | null {
   }
   if (bodyError?.type === 'entity.too.large') {
     return new ApiError(413, 'PAYLOAD_TOO_LARGE', 'Dữ liệu gửi lên quá lớn');
+  }
+  if (err instanceof MulterError && err.code === 'LIMIT_FILE_SIZE') {
+    return new ApiError(413, 'FILE_TOO_LARGE', 'Ảnh quá lớn, tối đa 15MB');
   }
   if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
     return new ApiError(409, 'DUPLICATE', 'Dữ liệu này đã tồn tại');
