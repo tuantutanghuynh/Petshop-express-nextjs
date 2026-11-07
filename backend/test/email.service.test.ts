@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { passwordResetEmail, sendPasswordReset, setMailTransportForTests, type MailMessage } from '../services/email.service';
+import { newsletterConfirmEmail, newsletterWelcomeEmail, passwordResetEmail, sendNewsletterConfirm, sendPasswordReset, setMailTransportForTests, type MailMessage } from '../services/email.service';
 
 // Password reset email (spec 2026-11-04): what the customer receives, and that it goes to the
 // right person through whatever transport is configured. A test transport replaces SMTP here.
@@ -31,5 +31,32 @@ describe('sendPasswordReset', () => {
     expect(sent).toHaveLength(1);
     expect(sent[0]).toMatchObject({ to: 'an@example.com', subject: passwordResetEmail(LINK).subject });
     expect(sent[0].text).toContain(LINK);
+  });
+});
+
+const CONFIRM = 'https://shop.example/xac-nhan-dang-ky?token=abc&x=1';
+const UNSUB = 'https://shop.example/huy-dang-ky?token=def&x=1';
+
+describe('newsletter emails', () => {
+  it('confirmation carries the link, its lifetime and the shop name', () => {
+    const mail = newsletterConfirmEmail(CONFIRM);
+    expect(mail.subject).toMatch(/xác nhận/i);
+    expect(mail.text).toContain(CONFIRM);
+    expect(mail.text).toContain('48 giờ');
+    expect(mail.text).toContain('Siêu thị của chó mèo');
+    expect(mail.html).toContain('href="https://shop.example/xac-nhan-dang-ky?token=abc&amp;x=1"');
+  });
+
+  it('welcome carries the unsubscribe link', () => {
+    const mail = newsletterWelcomeEmail(UNSUB);
+    expect(mail.text).toContain(UNSUB);
+    expect(mail.html).toContain('href="https://shop.example/huy-dang-ky?token=def&amp;x=1"');
+  });
+
+  it('sends the confirmation to the subscriber', async () => {
+    const sent: MailMessage[] = [];
+    setMailTransportForTests({ sendMail: async (m) => { sent.push(m); } });
+    await sendNewsletterConfirm('an@example.com', CONFIRM);
+    expect(sent.map((m) => m.to)).toEqual(['an@example.com']);
   });
 });
