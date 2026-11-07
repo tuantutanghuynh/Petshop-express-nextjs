@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type { VariantForm } from '../../../lib/adminProducts';
 import type { FieldErrors } from '../../../lib/forms';
 import { TextField } from '../../ui/TextField';
+import { StockDialog } from './StockDialog';
 
 type Props = {
   mode: 'create' | 'edit';
@@ -13,15 +14,19 @@ type Props = {
   // Edit mode: a saved row is deleted at once (after a confirm); resolves to an error message, or
   // null when it worked. New rows are saved with the form.
   onRemoveSaved?: (id: string) => Promise<string | null>;
+  // Edit mode: a stock adjustment was saved for a variant (StockDialog); the form shows the new numbers.
+  onStockChange?: (id: string, stock: number, reserved: number) => void;
 };
 
 const EMPTY: VariantForm = { id: null, label: '', sku: '', price: '', compareAtPrice: '', stock: '0', reserved: 0 };
 const BUTTON = 'min-h-11 rounded-full px-4 text-sm font-bold';
 
-// "Biến thể, giá & tồn kho" (wireframe admin-product-edit.html). Stock of a saved variant is shown,
-// not edited: it changes through the stock ledger (wave D2), never by overwriting the number.
-export function VariantRows({ mode, rows, errors, onChange, onRemoveSaved }: Props) {
+// "Biến thể, giá & tồn kho" (wireframe admin-product-edit.html). Stock of a saved variant is never
+// typed over: "Điều chỉnh" records a delivery, damage, return or stocktake in the stock ledger
+// (StockDialog), so every change keeps a reason and sales in between are not lost.
+export function VariantRows({ mode, rows, errors, onChange, onRemoveSaved, onStockChange }: Props) {
   const [busy, setBusy] = useState<number | null>(null);
+  const [adjusting, setAdjusting] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const set = (i: number, patch: Partial<VariantForm>) => onChange(rows.map((r, n) => (n === i ? { ...r, ...patch } : r)));
   const err = (i: number, f: string) => errors[`variants.${i}.${f}`];
@@ -58,7 +63,13 @@ export function VariantRows({ mode, rows, errors, onChange, onRemoveSaved }: Pro
             {r.id ? (
               <div className="flex flex-col gap-1">
                 <span className="text-sm font-bold text-ink">Tồn kho</span>
-                <span className="flex min-h-12 items-center gap-2 tabular-nums"><b className="text-ink">{r.stock}</b><small className="text-muted">(giữ {r.reserved})</small></span>
+                <span className="flex min-h-12 flex-wrap items-center gap-2 tabular-nums">
+                  <b className="text-ink">{r.stock}</b><small className="text-muted">(giữ {r.reserved})</small>
+                  {onStockChange && (
+                    <button type="button" onClick={() => setAdjusting(r.id)} aria-label={`Điều chỉnh tồn kho ${r.label || r.sku}`}
+                      className={`${BUTTON} border border-brand-ink text-brand-ink`}>Điều chỉnh</button>
+                  )}
+                </span>
               </div>
             ) : (
               <TextField name={`variants-${i}-stock`} label="Tồn đầu" inputMode="numeric" value={r.stock} error={err(i, 'stock')} onChange={(e) => set(i, { stock: e.target.value })} />
@@ -75,7 +86,16 @@ export function VariantRows({ mode, rows, errors, onChange, onRemoveSaved }: Pro
         ))}
       </ul>
       <button type="button" onClick={() => onChange([...rows, { ...EMPTY }])} className={`${BUTTON} self-start border border-line text-ink`}>+ Thêm biến thể</button>
-      {mode === 'edit' && <p className="text-xs text-muted">Biến thể mới được lưu khi bấm “Lưu thay đổi”. Điều chỉnh tồn kho sẽ có ở bước sau.</p>}
+      {mode === 'edit' && <p className="text-xs text-muted">Biến thể mới được lưu khi bấm “Lưu thay đổi”. Tồn kho của biến thể đã lưu thay đổi qua nút “Điều chỉnh”.</p>}
+      {adjusting && onStockChange && (() => {
+        const row = rows.find((r) => r.id === adjusting);
+        if (!row?.id) return null;
+        const id = row.id;
+        return (
+          <StockDialog variant={{ id, label: row.label, sku: row.sku, stock: Number(row.stock), reserved: row.reserved }}
+            onClose={() => setAdjusting(null)} onSaved={(stock, reserved) => onStockChange(id, stock, reserved)} />
+        );
+      })()}
     </fieldset>
   );
 }

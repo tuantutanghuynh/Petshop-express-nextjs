@@ -69,6 +69,11 @@ export function ProductForm(p: Props) {
     if (result?.message) setMessage(result.message);
   }
 
+  // A stock adjustment is already saved in the ledger: only the numbers shown change, the rest of the
+  // form stays as typed (stock is never part of "Lưu thay đổi").
+  const updateStock = (id: string, stock: number, reserved: number) =>
+    setValues((v) => ({ ...v, variants: v.variants.map((r) => (r.id === id ? { ...r, stock: String(stock), reserved } : r)) }));
+
   // A saved variant is deleted at once; its row then leaves the form, the rest stays as typed.
   const removeVariant = p.onRemoveVariant
     ? async (id: string) => {
@@ -104,7 +109,7 @@ export function ProductForm(p: Props) {
         </fieldset>
         <AttributeFields defs={defs} values={values.attributes} onChange={(attributes) => set({ attributes })} />
         <VariantRows mode={p.mode} rows={values.variants} errors={errors} onChange={(variants) => set({ variants })}
-          onRemoveSaved={removeVariant} />
+          onRemoveSaved={removeVariant} onStockChange={p.mode === 'edit' ? updateStock : undefined} />
         <ImageList images={images} onChange={setImages} ops={p.imageOps} />
       </div>
       <ProductSidebar status={values.status} categoryId={values.categoryId} categoryError={errors.categoryId} options={categories?.options ?? null}

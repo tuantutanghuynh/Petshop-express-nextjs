@@ -236,3 +236,17 @@ export interface NewsletterSubscriber {
   unsubscribedAt: string | null;
   createdAt: string;
 }
+
+// GET /products/variants/:id/stock-movements rows (stock history in the product form). order is
+// set for SALE / CANCEL_RESTOCK; user for movements made by an admin.
+export interface StockMovement {
+  id: string;
+  delta: number;
+  quantityAfter: number;
+  reason: string;
+  note: string | null;
+  orderId: string | null;
+  order: { code: string } | null;
+  createdAt: string;
+  user: { id: string; fullName: string | null; email: string } | null;
+}
