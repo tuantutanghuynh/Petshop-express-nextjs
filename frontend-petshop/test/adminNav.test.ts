@@ -6,7 +6,7 @@ import { ADMIN_NAV, activeNavItem, isNavReady } from '../lib/adminNav';
 describe('admin nav', () => {
   it('lists the wireframe sections in order', () => {
     expect(ADMIN_NAV.map((i) => i.label)).toEqual([
-      'Tổng quan', 'Đơn hàng', 'Yêu cầu báo giá', 'Sản phẩm', 'Danh mục & thông số', 'Bài viết', 'Thư viện ảnh', 'Tin nhắn liên hệ', 'Cấu hình trang chủ',
+      'Tổng quan', 'Đơn hàng', 'Yêu cầu báo giá', 'Sản phẩm', 'Danh mục & thông số', 'Bài viết', 'Thư viện ảnh', 'Tin nhắn liên hệ', 'Đăng ký nhận tin', 'Cấu hình trang chủ',
     ]);
   });
 
@@ -23,5 +23,10 @@ describe('admin nav', () => {
     expect(isNavReady('/admin/bao-gia')).toBe(true); // shipped in wave C
     expect(isNavReady('/admin/don-hang')).toBe(true); // shipped in wave B
     expect(isNavReady('/admin/cau-hinh')).toBe(true);
+  });
+
+  it('lists the newsletter page and owns its URL', () => {
+    expect(isNavReady('/admin/dang-ky-nhan-tin')).toBe(true);
+    expect(activeNavItem('/admin/dang-ky-nhan-tin')?.label).toBe('Đăng ký nhận tin');
   });
 });

@@ -225,3 +225,14 @@ export interface AdminContactMessage {
   isRead: boolean;
   createdAt: string;
 }
+
+// GET /newsletter/subscribers rows (admin newsletter page). Token hashes are never sent.
+export interface NewsletterSubscriber {
+  id: string;
+  email: string;
+  status: 'PENDING' | 'CONFIRMED' | 'UNSUBSCRIBED';
+  consentAt: string;
+  confirmedAt: string | null;
+  unsubscribedAt: string | null;
+  createdAt: string;
+}
