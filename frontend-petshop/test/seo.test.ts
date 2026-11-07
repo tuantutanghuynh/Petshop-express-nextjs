@@ -61,6 +61,11 @@ describe('robots', () => {
     expect(disallow.some((p) => p.startsWith('/_next'))).toBe(false);
   });
 
+  it('keeps the newsletter confirm / unsubscribe pages out of search (their links carry tokens)', () => {
+    const disallow = ([] as string[]).concat(rules[0].disallow ?? []);
+    expect(disallow).toEqual(expect.arrayContaining(['/xac-nhan-dang-ky', '/huy-dang-ky']));
+  });
+
   it('points to the sitemap on the configured domain', () => {
     expect(robots.sitemap).toBe('https://example.vn/sitemap.xml');
   });

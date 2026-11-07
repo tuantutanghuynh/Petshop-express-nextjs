@@ -26,7 +26,7 @@ export function fieldErrors(details: unknown): FieldErrors {
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const SPECIAL = /[!@#$%^&*(),.?":{}|<>]/; // same set as the backend rule
 
-function emailError(email: string): string | undefined {
+export function emailError(email: string): string | undefined {
   if (!email.trim()) return 'Nhập email';
   if (!EMAIL.test(email.trim())) return 'Email không hợp lệ';
   return undefined;

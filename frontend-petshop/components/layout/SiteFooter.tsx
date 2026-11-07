@@ -3,7 +3,7 @@ import { categoryPath } from '../../lib/seo/structuredData';
 import { SITE_DESCRIPTION, SITE_NAME } from '../../lib/site';
 import type { Category } from '../../lib/types';
 import type { ShopInfo } from '../../services/content';
-import { CommunityBand, communityLinks } from './CommunityBand';
+import { CommunityBand } from './CommunityBand';
 import { Logo } from './Logo';
 
 type Props = { shop: ShopInfo; categories: Category[]; pages: { path: string; title: string }[] };
@@ -33,8 +33,8 @@ export function SiteFooter({ shop, categories, pages }: Props) {
   const contact = [shop.address && `📍 ${shop.address}`, shop.phone && `☎ ${shop.phone}`, shop.email && `✉ ${shop.email}`].filter(Boolean);
 
   return (
-    // With the community band, the mint starts halfway down it (wireframe); without, plain mint.
-    <footer className={`mt-12 ${communityLinks(shop).length > 0 ? 'bg-[linear-gradient(to_bottom,var(--surface)_3.5rem,var(--mint-soft)_3.5rem)]' : 'bg-mint-soft'}`}>
+    // The mint starts halfway down the community band (wireframe).
+    <footer className="mt-12 bg-[linear-gradient(to_bottom,var(--surface)_3.5rem,var(--mint-soft)_3.5rem)]">
       <CommunityBand shop={shop} />
       <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 md:px-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
         <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
