@@ -370,3 +370,30 @@ model InventoryMovement {
   @@index([orderId])
   @@index([userId])
 }
+
+// Newsletter signups (spec 2026-11-07). Double opt-in: a row is PENDING until the emailed link is
+// opened. Only SHA-256 hashes of the confirm / unsubscribe tokens are stored. consentText and
+// consentAt are the proof of consent (Decree 13/2023); PENDING rows are purged after 7 days.
+enum NewsletterStatus {
+  PENDING
+  CONFIRMED
+  UNSUBSCRIBED
+}
+
+model NewsletterSubscriber {
+  id                   String           @id @default(uuid())
+  email                String           @unique // trimmed, lower-cased
+  status               NewsletterStatus @default(PENDING)
+  confirmTokenHash     String?          @unique
+  confirmExpiresAt     DateTime?
+  confirmSentAt        DateTime?
+  unsubscribeTokenHash String?          @unique // set on confirm, sent in the welcome email
+  consentText          String
+  consentAt            DateTime
+  confirmedAt          DateTime?
+  unsubscribedAt       DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+
+  @@index([status, createdAt])
+}

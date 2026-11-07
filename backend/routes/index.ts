@@ -10,6 +10,7 @@ import blogRoute from './blog.route';
 import uploadRoute from './upload.route';
 import galleryRoute from './gallery.route';
 import contactRoute from './contact.route';
+import newsletterRoute from './newsletter.route';
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use('/blog', blogRoute);
 router.use('/uploads', uploadRoute);
 router.use('/gallery', galleryRoute);
 router.use('/contact', contactRoute);
+router.use('/newsletter', newsletterRoute);
 
 export default router;

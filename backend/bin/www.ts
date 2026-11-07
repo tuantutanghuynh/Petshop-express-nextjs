@@ -5,6 +5,7 @@ import prisma from '../services/prisma';
 import { isShuttingDown, markShuttingDown } from '../utils/lifecycle';
 import { logger } from '../utils/logger';
 import { startExpiredOrderSweeper } from '../workers/releaseExpiredOrders';
+import { startPendingSubscriberPurge } from '../workers/purgePendingSubscribers';
 
 // Longest a deploy waits for in-flight requests before the process is cut anyway.
 const SHUTDOWN_GRACE_MS = 15_000;
@@ -20,6 +21,7 @@ const server = app.listen(port, () => {
 // one instance, and the job claims each order with a conditional UPDATE so it stays correct if a
 // second instance ever appears. It should move to a real scheduler once the deployment grows.
 const sweeper = startExpiredOrderSweeper();
+const newsletterPurge = startPendingSubscriberPurge();
 
 // SIGTERM (platform stopping the instance on deploy) or SIGINT (Ctrl+C): /health/ready turns 503,
 // the sweeper stops, no new connections are accepted and the requests already running finish
@@ -30,6 +32,7 @@ function shutdown(signal: string): void {
   markShuttingDown();
   logger.info({ signal }, `${signal}: stopping — finishing in-flight requests`);
   clearInterval(sweeper);
+  clearInterval(newsletterPurge);
   server.close((err) => {
     if (err) logger.error({ err }, 'Closing the HTTP server failed');
     prisma.$disconnect().finally(() => process.exit(err ? 1 : 0));
