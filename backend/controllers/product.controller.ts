@@ -332,7 +332,12 @@ export const listStockMovements = asyncHandler(async (req: Request, res: Respons
       orderBy: { seq: 'desc' },
       skip,
       take,
-      select: { id: true, delta: true, quantityAfter: true, reason: true, note: true, orderId: true, createdAt: true, user: { select: { id: true, fullName: true, email: true } } },
+      // order.code: the admin orders page opens an order by its code (/admin/don-hang?ma=…).
+      select: {
+        id: true, delta: true, quantityAfter: true, reason: true, note: true, orderId: true, createdAt: true,
+        user: { select: { id: true, fullName: true, email: true } },
+        order: { select: { code: true } },
+      },
     }),
     prisma.inventoryMovement.count({ where }),
   ]);

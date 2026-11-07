@@ -295,4 +295,18 @@ describe('legacy absolute edit and history', () => {
     const u = await createUser();
     expect((await call('get', `/api/v1/products/variants/${variant.id}/stock-movements`, { token: u.token })).status).toBe(403);
   });
+
+  it('GET …/stock-movements carries the order code, so the history can link to the order', async () => {
+    const admin = await createAdmin();
+    const { variant } = await shop(10);
+    await adjust(admin.token, variant.id, { type: 'ADJUST', delta: 5, reason: 'PURCHASE' });
+    const u = await createUser();
+    await fillCart(u.id, [{ variantId: variant.id, quantity: 1 }]);
+    const order = await call('post', '/api/v1/orders', { token: u.token }).send(orderBody('COD'));
+    expect(order.status).toBe(201);
+
+    const res = await call('get', `/api/v1/products/variants/${variant.id}/stock-movements`, { token: admin.token });
+    expect(res.body.data[0]).toMatchObject({ reason: 'SALE', order: { code: order.body.data.code } });
+    expect(res.body.data[1]).toMatchObject({ reason: 'PURCHASE', order: null });
+  });
 });
