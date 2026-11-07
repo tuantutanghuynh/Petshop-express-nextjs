@@ -25,7 +25,7 @@ export function MobileMenu({ links, categories, phone }: Props) {
 
   return (
     <>
-      <button ref={trigger} type="button" aria-label="Mở menu" onClick={() => dialog.current?.showModal()} className="grid size-11 shrink-0 place-items-center rounded-full text-xl hover:bg-mint md:hidden">
+      <button ref={trigger} type="button" aria-label="Mở menu" onClick={() => dialog.current?.showModal()} className="grid size-11 shrink-0 place-items-center rounded-full text-xl hover:bg-mint lg:hidden">
         <span aria-hidden="true">☰</span>
       </button>
       <dialog

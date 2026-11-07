@@ -45,9 +45,10 @@ export function SiteHeader({ phone, announcements, categories, megaMenus }: Prop
             <CartLink />
           </div>
         </div>
-        <nav aria-label="Điều hướng chính" className="hidden border-t border-line md:block">
-          {/* Centred row; "safe" falls back to the start when the links overflow (768px), so the
-              first ones are never cut off. */}
+        {/* The menu row needs ~830px for its eight entries, so it starts at lg; from md to lg the ☰
+            drawer (MobileMenu) carries the same links. "safe" centring falls back to the start if
+            the links ever overflow, so the first ones are never cut off. */}
+        <nav aria-label="Điều hướng chính" className="hidden border-t border-line lg:block">
           <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-4 py-1.5 [justify-content:safe_center] md:px-6">
             {/* Trang chủ, then the species menus, then the other links. */}
             <MainNav links={links.slice(0, 1)} />

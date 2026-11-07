@@ -3,7 +3,8 @@ import type { Category } from '../../lib/types';
 type Props = { defaultValue?: string; compact?: boolean; categories?: Category[]; defaultCategory?: string };
 
 // Plain GET form to /tim-kiem (works before and without JavaScript; results have a real URL).
-// With categories it shows the wireframe's "Tất cả danh mục" select (?danh-muc=). 16px text so iOS
+// With categories it shows the wireframe's "Tất cả danh mục" select (?danh-muc=) — in the header
+// (compact) only from lg, where the input still has room beside it. 16px text so iOS
 // does not zoom on focus; enterKeyHint shows "Search" on phone keyboards.
 export function SearchForm({ defaultValue = '', compact = false, categories = [], defaultCategory = '' }: Props) {
   const id = compact ? 'q-header' : 'q-page';
@@ -31,7 +32,7 @@ export function SearchForm({ defaultValue = '', compact = false, categories = []
               id={`${id}-cat`}
               name="danh-muc"
               defaultValue={defaultCategory}
-              className="hidden min-h-11 max-w-44 shrink-0 border-l border-line bg-transparent px-3 text-sm text-ink sm:block"
+              className={`hidden min-h-11 max-w-44 shrink-0 border-l border-line bg-transparent px-3 text-sm text-ink ${compact ? 'lg:block' : 'sm:block'}`}
             >
               <option value="">Tất cả danh mục</option>
               {categories.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}
