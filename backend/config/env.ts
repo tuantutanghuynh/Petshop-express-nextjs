@@ -59,11 +59,19 @@ export const smtp = {
   from: process.env.MAIL_FROM || undefined,
 };
 
-const PRODUCTION_REQUIRED = ['PUBLIC_SITE_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM'] as const;
+const PRODUCTION_REQUIRED = [
+  // Emails (password reset, newsletter) and the links inside them.
+  'PUBLIC_SITE_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM',
+  // Without these the server boots and then fails per request: no database; logins answer 500;
+  // every visitor relayed by Next.js shares one rate-limit bucket (429 within minutes); CORS
+  // allows only localhost; uploads answer 500.
+  'DATABASE_URL', 'JWT_ACCESS_SECRET', 'INTERNAL_API_SECRET', 'FRONTEND_URLS',
+  'CLOUDINARY_CLOUD_NAME', 'CLOUDINARY_API_KEY', 'CLOUDINARY_API_SECRET',
+] as const;
 
 // Called before the server starts listening (bin/www.ts). In production a missing setting would
-// make "forgot password" silently send nothing, so the server refuses to start and names what is
-// missing — names only, never values. `env` is a parameter so tests need not touch process.env.
+// fail quietly (see the list above), so the server refuses to start and names what is missing —
+// names only, never values. `env` is a parameter so tests need not touch process.env.
 export function assertProductionConfig(env: NodeJS.ProcessEnv = process.env): void {
   if (env.NODE_ENV !== 'production') return;
   const missing = PRODUCTION_REQUIRED.filter((name) => !env[name]);
