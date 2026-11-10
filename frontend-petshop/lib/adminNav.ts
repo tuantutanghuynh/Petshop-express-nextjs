@@ -13,6 +13,7 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: '/admin/gallery', label: 'Thư viện ảnh', icon: '🖼', ready: true },
   { href: '/admin/lien-he', label: 'Tin nhắn liên hệ', icon: '✉', ready: true },
   { href: '/admin/dang-ky-nhan-tin', label: 'Đăng ký nhận tin', icon: '📮', ready: true },
+  { href: '/admin/ban-tin', label: 'Bản tin', icon: '📣', ready: true },
   { href: '/admin/cau-hinh', label: 'Cấu hình trang chủ', icon: '⚙', ready: true },
 ];
 

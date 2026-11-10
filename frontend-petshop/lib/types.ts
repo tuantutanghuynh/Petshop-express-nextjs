@@ -250,3 +250,29 @@ export interface StockMovement {
   createdAt: string;
   user: { id: string; fullName: string | null; email: string } | null;
 }
+
+// Newsletter campaigns (spec 2026-11-10). GET /newsletter/campaigns rows; GET …/:id adds content,
+// preheader, featured and featuredItems (the name of each item and whether the email would show it).
+export type CampaignStatus = 'DRAFT' | 'SCHEDULED' | 'SENDING' | 'SENT' | 'CANCELLED';
+export type FeaturedRef = { type: 'post' | 'product'; id: string };
+export interface CampaignSummary {
+  id: string;
+  subject: string;
+  status: CampaignStatus;
+  isAdvertising: boolean;
+  scheduledAt: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
+  recipientCount: number;
+  sentCount: number;
+  failedCount: number;
+  unsubscribeCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface Campaign extends CampaignSummary {
+  preheader: string | null;
+  content: string;
+  featured: FeaturedRef[];
+  featuredItems: (FeaturedRef & { title: string | null; available: boolean })[];
+}

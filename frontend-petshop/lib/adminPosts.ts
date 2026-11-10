@@ -1,15 +1,12 @@
 import type { FieldErrors } from './forms';
 import type { BlogPost } from './types';
+import { fromVietnamLocal, toVietnamLocal } from './vnTime';
 
 // Rules of the admin post form and list (test/adminPosts.test.ts). The backend enforces the same
 // limits and refuses a new slug on a published post (routes/blog.route.ts, blog.controller.ts).
 export const POST_LIMITS = { title: 200, slug: 200, excerpt: 500, seoTitle: 70, seoDescription: 160 } as const;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-// The shop is in Vietnam (UTC+7, no daylight saving): the date field is read and shown in that time,
-// whatever the admin's computer is set to.
-const VN_OFFSET_MS = 7 * 60 * 60 * 1000;
-const LOCAL_DATE_TIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/;
 
 export type PostFormValues = {
   title: string;
@@ -31,19 +28,6 @@ export const POST_STATE_LABELS: Record<PostState, string> = { draft: 'Nháp', pu
 
 export function emptyPost(): PostFormValues {
   return { title: '', slug: '', excerpt: '', coverImageUrl: '', categoryId: '', content: '', seoTitle: '', seoDescription: '', status: 'draft', publishedAt: '' };
-}
-
-function toVietnamLocal(iso: string): string {
-  return new Date(new Date(iso).getTime() + VN_OFFSET_MS).toISOString().slice(0, 16);
-}
-
-// null when the value is not a real date and time ("2026-02-30T10:00" rolls over in Date, so the
-// round trip has to give the same text back).
-function fromVietnamLocal(local: string): string | null {
-  if (!LOCAL_DATE_TIME.test(local)) return null;
-  const ms = Date.parse(`${local}:00.000Z`);
-  if (Number.isNaN(ms) || new Date(ms).toISOString().slice(0, 16) !== local) return null;
-  return new Date(ms - VN_OFFSET_MS).toISOString();
 }
 
 export function postToForm(post: BlogPost): PostFormValues {
