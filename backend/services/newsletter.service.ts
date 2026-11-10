@@ -65,12 +65,30 @@ export async function confirm(token: string, now = new Date()): Promise<{ email:
 }
 
 // Repeating it is fine (200 again): the token stays valid for an already unsubscribed row.
+// Two kinds of token: the one in the welcome email (on the subscriber), and the one in each
+// campaign email (on its delivery, spec 2026-11-10).
 export async function unsubscribe(token: string, now = new Date()): Promise<void> {
-  const row = await prisma.newsletterSubscriber.findUnique({ where: { unsubscribeTokenHash: hash(token) }, select: { id: true } });
-  if (!row) throw invalidToken();
-  await prisma.newsletterSubscriber.updateMany({
-    where: { id: row.id, status: 'CONFIRMED' },
-    data: { status: 'UNSUBSCRIBED', unsubscribedAt: now },
+  const tokenHash = hash(token);
+  const row = await prisma.newsletterSubscriber.findUnique({ where: { unsubscribeTokenHash: tokenHash }, select: { id: true } });
+  if (row) {
+    await prisma.newsletterSubscriber.updateMany({
+      where: { id: row.id, status: 'CONFIRMED' },
+      data: { status: 'UNSUBSCRIBED', unsubscribedAt: now },
+    });
+    return;
+  }
+  const delivery = await prisma.newsletterDelivery.findUnique({ where: { unsubscribeTokenHash: tokenHash }, select: { id: true, campaignId: true, subscriberId: true, createdAt: true } });
+  if (!delivery) throw invalidToken();
+  // Only a subscription confirmed before this email was queued: an old email's link must not end a
+  // later re-subscription. The campaign counts the people it actually made leave, once each.
+  await prisma.$transaction(async (tx) => {
+    const left = await tx.newsletterSubscriber.updateMany({
+      where: { id: delivery.subscriberId, status: 'CONFIRMED', confirmedAt: { lte: delivery.createdAt } },
+      data: { status: 'UNSUBSCRIBED', unsubscribedAt: now },
+    });
+    if (left.count !== 1) return;
+    const marked = await tx.newsletterDelivery.updateMany({ where: { id: delivery.id, unsubscribedAt: null }, data: { unsubscribedAt: now } });
+    if (marked.count === 1) await tx.newsletterCampaign.update({ where: { id: delivery.campaignId }, data: { unsubscribeCount: { increment: 1 } } });
   });
 }
 

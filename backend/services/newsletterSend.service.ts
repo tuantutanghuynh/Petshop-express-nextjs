@@ -32,10 +32,10 @@ const utc = (d: Date) => Prisma.sql`(${d.toISOString()}::timestamptz AT TIME ZON
 export type SendLimits = { dailyLimit: number; batchSize: number };
 export type TickResult = { claimed: number; sent: number; failed: number; finished: number };
 
-type FeaturedRef = { type: 'post' | 'product'; id: string };
+export type FeaturedRef = { type: 'post' | 'product'; id: string };
 type Context = { subject: string; preheader: string | null; content: string; isAdvertising: boolean; cards: CampaignCard[] };
 
-function featuredRefs(value: Prisma.JsonValue): FeaturedRef[] {
+export function featuredRefs(value: Prisma.JsonValue): FeaturedRef[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((v) =>
     v && typeof v === 'object' && !Array.isArray(v) && (v.type === 'post' || v.type === 'product') && typeof v.id === 'string'
