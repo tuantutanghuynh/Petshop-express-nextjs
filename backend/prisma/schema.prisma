@@ -381,19 +381,88 @@ enum NewsletterStatus {
 }
 
 model NewsletterSubscriber {
-  id                   String           @id @default(uuid())
-  email                String           @unique // trimmed, lower-cased
-  status               NewsletterStatus @default(PENDING)
-  confirmTokenHash     String?          @unique
+  id                   String               @id @default(uuid())
+  email                String               @unique // trimmed, lower-cased
+  status               NewsletterStatus     @default(PENDING)
+  confirmTokenHash     String?              @unique
   confirmExpiresAt     DateTime?
   confirmSentAt        DateTime?
-  unsubscribeTokenHash String?          @unique // set on confirm, sent in the welcome email
+  unsubscribeTokenHash String?              @unique // set on confirm, sent in the welcome email
   consentText          String
   consentAt            DateTime
   confirmedAt          DateTime?
   unsubscribedAt       DateTime?
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  deliveries           NewsletterDelivery[]
 
   @@index([status, createdAt])
+}
+
+// Newsletter campaigns (spec 2026-11-10, ADR-025). Every status change is a conditional UPDATE with
+// the expected status in the WHERE (services/newsletterCampaign.service.ts).
+enum NewsletterCampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENDING
+  SENT
+  CANCELLED
+}
+
+enum NewsletterDeliveryStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+}
+
+model NewsletterCampaign {
+  id               String                   @id @default(uuid())
+  subject          String
+  preheader        String?
+  content          String // Markdown
+  featured         Json                     @default("[]") // [{ type: 'post' | 'product', id }], ≤ 6
+  isAdvertising    Boolean                  @default(true) // subject gets "[QC] "
+  status           NewsletterCampaignStatus @default(DRAFT)
+  scheduledAt      DateTime?
+  startedAt        DateTime?
+  finishedAt       DateTime?
+  // Kept here, not counted from deliveries: the report must survive subscriber erasure and the
+  // 90-day delivery purge.
+  recipientCount   Int                      @default(0)
+  sentCount        Int                      @default(0)
+  failedCount      Int                      @default(0)
+  unsubscribeCount Int                      @default(0)
+  createdAt        DateTime                 @default(now())
+  updatedAt        DateTime                 @updatedAt
+  deliveries       NewsletterDelivery[]
+
+  // Worker: WHERE status = 'SCHEDULED' AND scheduledAt <= now; admin list: WHERE status = ? ORDER BY createdAt.
+  @@index([status, scheduledAt])
+  @@index([status, createdAt])
+}
+
+// One recipient of one campaign. The unsubscribe token's raw value exists only in that email.
+model NewsletterDelivery {
+  id                   String                   @id @default(uuid())
+  campaignId           String
+  campaign             NewsletterCampaign       @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+  // Erasure of a subscriber removes their deliveries too (the campaign counters stay).
+  subscriberId         String
+  subscriber           NewsletterSubscriber     @relation(fields: [subscriberId], references: [id], onDelete: Cascade)
+  email                String
+  status               NewsletterDeliveryStatus @default(PENDING)
+  attempts             Int                      @default(0)
+  error                String? // short SMTP reason, never message content
+  claimedAt            DateTime? // set when SENDING; a stale claim is released
+  sentAt               DateTime?
+  unsubscribeTokenHash String?                  @unique // set when the email is sent (raw token only in that email)
+  unsubscribedAt       DateTime?
+  createdAt            DateTime                 @default(now())
+
+  @@unique([campaignId, subscriberId])
+  @@index([campaignId, status])
+  // Daily limit: count SENT in the last 24 h.
+  @@index([status, sentAt])
+  @@index([subscriberId])
 }

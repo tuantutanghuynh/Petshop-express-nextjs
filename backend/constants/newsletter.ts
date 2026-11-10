@@ -13,3 +13,16 @@ export const PENDING_KEPT_DAYS = 7; // unconfirmed addresses are deleted after t
 
 export const ADMIN_PAGE_SIZE = 20;
 export const ADMIN_MAX_PAGE_SIZE = 100;
+
+// Campaigns (spec 2026-11-10, ADR-025).
+export const CAMPAIGN_LIMITS = { subject: 150, preheader: 150, content: 20_000, featured: 6 } as const;
+export const CAMPAIGN_PAGE_SIZE = 20;
+export const CAMPAIGN_MAX_PAGE_SIZE = 50;
+export const SCHEDULE_MAX_DAYS = 90; // a send time further ahead is almost certainly a typo
+export const DELIVERY_MAX_ATTEMPTS = 3; // transient SMTP failures are retried up to this
+export const DELIVERY_STUCK_MINUTES = 10; // a SENDING claim older than this (crash mid-send) is released
+export const DELIVERY_KEPT_DAYS = 90; // recipient rows of a finished campaign are deleted after this
+export const SEND_TICK_SECONDS = 60;
+// Nghị định 91/2020/NĐ-CP: advertising email is labelled in the subject. The owner confirms the rule.
+export const ADVERTISING_PREFIX = '[QC] ';
+export const TEST_SEND_PREFIX = '[Thử] ';

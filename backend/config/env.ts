@@ -59,6 +59,49 @@ export const smtp = {
   from: process.env.MAIL_FROM || undefined,
 };
 
+// Newsletter campaigns go through their own SMTP (Brevo), so bulk mail can never get the order and
+// password-reset sender blocked (ADR-025). Optional: without a host, production refuses to schedule
+// a campaign and development prints it to the console. Limits default to Brevo's free plan (300 a
+// day); a value that is missing, not a number or below 1 falls back to the default.
+const DEFAULT_NEWSLETTER_DAILY_LIMIT = 300;
+const MAX_NEWSLETTER_DAILY_LIMIT = 100_000;
+const DEFAULT_NEWSLETTER_BATCH_SIZE = 20;
+const MAX_NEWSLETTER_BATCH_SIZE = 200;
+
+function positiveInt(raw: string | undefined, fallback: number, max: number): number {
+  const n = Math.floor(Number(raw));
+  return Number.isFinite(n) && n >= 1 ? Math.min(n, max) : fallback;
+}
+
+export type NewsletterMailConfig = {
+  host: string | undefined;
+  port: number;
+  user: string | undefined;
+  pass: string | undefined;
+  from: string | undefined;
+  replyTo: string | undefined;
+  dailyLimit: number;
+  batchSize: number;
+  // Public origin of this API, for the one-click unsubscribe URL in the List-Unsubscribe header.
+  publicApiUrl: string | undefined;
+};
+
+export function parseNewsletterMail(env: NodeJS.ProcessEnv): NewsletterMailConfig {
+  return {
+    host: env.NEWSLETTER_SMTP_HOST || undefined,
+    port: Number(env.NEWSLETTER_SMTP_PORT) || 587,
+    user: env.NEWSLETTER_SMTP_USER || undefined,
+    pass: env.NEWSLETTER_SMTP_PASS || undefined,
+    from: env.NEWSLETTER_MAIL_FROM || undefined,
+    replyTo: env.NEWSLETTER_REPLY_TO || undefined,
+    dailyLimit: positiveInt(env.NEWSLETTER_DAILY_LIMIT, DEFAULT_NEWSLETTER_DAILY_LIMIT, MAX_NEWSLETTER_DAILY_LIMIT),
+    batchSize: positiveInt(env.NEWSLETTER_BATCH_SIZE, DEFAULT_NEWSLETTER_BATCH_SIZE, MAX_NEWSLETTER_BATCH_SIZE),
+    publicApiUrl: env.PUBLIC_API_URL ? env.PUBLIC_API_URL.replace(/\/+$/, '') : undefined,
+  };
+}
+
+export const newsletterMail: NewsletterMailConfig = parseNewsletterMail(process.env);
+
 const PRODUCTION_REQUIRED = [
   // Emails (password reset, newsletter) and the links inside them.
   'PUBLIC_SITE_URL', 'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS', 'MAIL_FROM',

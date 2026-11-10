@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { isDevelopment, isProduction, smtp } from '../config/env';
+import { isDevelopment, isProduction, newsletterMail, smtp } from '../config/env';
 import { CONFIRM_LINK_VALID_HOURS } from '../constants/newsletter';
 import { logger } from '../utils/logger';
 
@@ -11,14 +11,22 @@ import { logger } from '../utils/logger';
 // Production never gets here without SMTP: it refuses to start (assertProductionConfig).
 
 // Brand guide v1.0 (ADR-023). It contains "&", so the HTML parts use SHOP_NAME_HTML.
-const SHOP_NAME = 'Woofle & Meowcaron';
+export const SHOP_NAME = 'Woofle & Meowcaron';
 const RESET_LINK_VALID_MINUTES = 60; // matches the token lifetime in auth.controller.ts
 const DEV_SENDER = `${SHOP_NAME} <no-reply@localhost>`;
 
-export type MailMessage = { from: string; to: string; subject: string; text: string; html: string };
+export type MailMessage = {
+  from: string;
+  to: string;
+  subject: string;
+  text: string;
+  html: string;
+  replyTo?: string;
+  headers?: Record<string, string>;
+};
 export type MailTransport = { sendMail: (message: MailMessage) => Promise<unknown> };
 
-const escapeHtml = (s: string) =>
+export const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 const SHOP_NAME_HTML = escapeHtml(SHOP_NAME);
 
@@ -133,4 +141,36 @@ export async function sendNewsletterConfirm(to: string, link: string): Promise<v
 
 export async function sendNewsletterWelcome(to: string, unsubscribeLink: string): Promise<void> {
   await transport().sendMail({ from: smtp.from ?? DEV_SENDER, to, ...newsletterWelcomeEmail(unsubscribeLink) });
+}
+
+// Newsletter campaigns (spec 2026-11-10, ADR-025) use their own SMTP (Brevo), so bulk mail can never
+// get the order / password-reset sender blocked. Tests reuse the swapped transport above.
+let newsletterSmtpTransport: MailTransport | null = null;
+
+export function isNewsletterMailConfigured(): boolean {
+  return Boolean(newsletterMail.host && newsletterMail.from);
+}
+
+function newsletterTransport(): MailTransport {
+  if (testTransport) return testTransport;
+  if (!isNewsletterMailConfigured()) {
+    // Production never reaches this: scheduling is refused without the settings.
+    if (isProduction) throw new Error('Newsletter SMTP is not configured');
+    return isDevelopment ? consoleTransport : droppingTransport;
+  }
+  newsletterSmtpTransport ??= nodemailer.createTransport({
+    host: newsletterMail.host,
+    port: newsletterMail.port,
+    secure: newsletterMail.port === 465,
+    auth: newsletterMail.user ? { user: newsletterMail.user, pass: newsletterMail.pass } : undefined,
+  });
+  return newsletterSmtpTransport;
+}
+
+export async function sendNewsletterMessage(message: { to: string; subject: string; text: string; html: string; headers?: Record<string, string> }): Promise<void> {
+  await newsletterTransport().sendMail({
+    from: newsletterMail.from ?? DEV_SENDER,
+    ...(newsletterMail.replyTo && { replyTo: newsletterMail.replyTo }),
+    ...message,
+  });
 }
