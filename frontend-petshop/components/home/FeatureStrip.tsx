@@ -6,13 +6,15 @@ const FEATURES = [
   { icon: '💬', title: 'Tư vấn miễn phí', text: 'Gọi lại trong giờ làm việc', bg: 'bg-purple' },
 ];
 
+// Phones: one row of three (icon above, centred text), so the promises take one short band
+// instead of a screen; from md: icon beside the text, as before.
 export function FeatureStrip() {
   return (
-    <ul className="mx-auto grid max-w-[1200px] gap-3 px-4 py-4 md:grid-cols-3 md:px-6">
+    <ul className="mx-auto grid max-w-[1200px] grid-cols-3 gap-2 border-b border-line px-4 py-4 md:gap-3 md:border-b-0 md:px-6">
       {FEATURES.map((f) => (
-        <li key={f.title} className="flex items-center gap-3 text-sm md:justify-center">
-          <span aria-hidden="true" className={`grid size-10 shrink-0 place-items-center rounded-full text-white ${f.bg}`}>{f.icon}</span>
-          <span><b className="block text-ink">{f.title}</b>{f.text}</span>
+        <li key={f.title} className="flex min-w-0 flex-col items-center gap-2 text-center text-xs leading-[1.4] text-muted md:flex-row md:justify-center md:gap-3 md:text-left md:text-sm md:text-ink">
+          <span aria-hidden="true" className={`grid size-9 shrink-0 place-items-center rounded-full text-white md:size-10 ${f.bg}`}>{f.icon}</span>
+          <span className="min-w-0"><b className="block text-[13px] leading-[1.3] text-ink md:text-sm">{f.title}</b>{f.text}</span>
         </li>
       ))}
     </ul>
