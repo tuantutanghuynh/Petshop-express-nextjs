@@ -39,7 +39,7 @@ Nhịp: SMALL / MEDIUM đưa hết các bước một lần. LARGE chia đợt 2
 - **Người dùng:** khách mua hàng / người đọc (public), và tôi là admin duy nhất.
 - **Trang public cần SEO:** Có — trang chủ, blog, sản phẩm, danh mục, gallery, giới thiệu / liên hệ, chính sách.
 - **Domain & ngôn ngữ:** **chưa có domain** — mọi URL tuyệt đối lấy từ env `NEXT_PUBLIC_SITE_URL`, cấm hardcode (domain `miniecom-blog.vercel.app` trong code là di sản từ dự án cũ, phải bỏ). Ngôn ngữ: `vi`.
-- **Tên thương hiệu:** **Siêu thị của chó mèo** — viết đúng nguyên văn này ở mọi nơi (title template, Organization schema, OG `siteName`, footer, trang Giới thiệu). Tên "Petshop" / "Miniecom" trong code là tên tạm, phải thay.
+- **Tên thương hiệu:** **Woofle & Meowcaron**, dòng phụ **Siêu thị của chó mèo** (brand guide v1.0, ADR-023) — viết đúng nguyên văn ở mọi nơi (title template `%s | Woofle & Meowcaron`, Organization schema `name` + `alternateName`, OG `siteName`, footer, email, trang Giới thiệu). Logo dùng đúng file trong `frontend-petshop/public/brand/` (`lib/brand.ts`), không đổi màu / kéo méo / gõ lại chữ. Tên "Petshop" / "Miniecom" trong code là tên tạm, phải thay.
 - **Chủ đề / từ khoá:** thú cưng, chó, mèo, cún, miu; sức khỏe thú cưng, thú y, giun sán, ve rận; dinh dưỡng, thức ăn chó mèo, pate chó mèo; chăm sóc thú cưng; phụ kiện chó mèo.
 - **Chính sách AI crawler:** **cho phép tất cả** (bot tìm kiếm, trích dẫn và huấn luyện) — ADR-001.
 - **Tính năng cốt lõi:** catalog sản phẩm + biến thể; giỏ hàng; đặt hàng COD / chuyển khoản (giữ hàng 24h); yêu cầu tư vấn báo giá; blog; gallery; liên hệ; admin quản trị.

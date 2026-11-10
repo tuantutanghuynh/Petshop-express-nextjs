@@ -7,13 +7,26 @@ afterEach(() => setMailTransportForTests(null));
 
 const LINK = 'https://shop.example/dat-lai-mat-khau?token=abc123&email=an%40example.com';
 
+describe('shop name in the HTML part', () => {
+  // "Woofle & Meowcaron" carries an ampersand: in HTML it must be written &amp;.
+  it.each([
+    ['password reset', () => passwordResetEmail(LINK)],
+    ['newsletter confirm', () => newsletterConfirmEmail(LINK)],
+    ['newsletter welcome', () => newsletterWelcomeEmail(LINK)],
+  ])('is escaped in the %s email', (_name, build) => {
+    const { html } = build();
+    expect(html).toContain('Woofle &amp; Meowcaron');
+    expect(html).not.toContain('Woofle & Meowcaron');
+  });
+});
+
 describe('passwordResetEmail', () => {
   it('carries the link, how long it lasts and who sent it', () => {
     const mail = passwordResetEmail(LINK);
     expect(mail.subject).toMatch(/đặt lại mật khẩu/i);
     expect(mail.text).toContain(LINK);
     expect(mail.text).toContain('60 phút');
-    expect(mail.text).toContain('Siêu thị của chó mèo');
+    expect(mail.text).toContain('Woofle & Meowcaron');
   });
 
   it('escapes the link inside the HTML version', () => {
@@ -43,7 +56,7 @@ describe('newsletter emails', () => {
     expect(mail.subject).toMatch(/xác nhận/i);
     expect(mail.text).toContain(CONFIRM);
     expect(mail.text).toContain('48 giờ');
-    expect(mail.text).toContain('Siêu thị của chó mèo');
+    expect(mail.text).toContain('Woofle & Meowcaron');
     expect(mail.html).toContain('href="https://shop.example/xac-nhan-dang-ky?token=abc&amp;x=1"');
   });
 

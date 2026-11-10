@@ -79,7 +79,7 @@ export function zaloHref(raw: string | undefined): string | null {
 export type ContentPage = { key: string; path: string; title: string; description: string };
 
 export const ABOUT_PAGE: ContentPage = {
-  key: 'page_about', path: '/gioi-thieu', title: 'Giới thiệu', description: 'Câu chuyện và những người đứng sau Siêu thị của chó mèo.',
+  key: 'page_about', path: '/gioi-thieu', title: 'Giới thiệu', description: 'Câu chuyện và những người đứng sau Woofle & Meowcaron.',
 };
 
 export const CONTENT_PAGES: ContentPage[] = [

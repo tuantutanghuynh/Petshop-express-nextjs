@@ -5,7 +5,7 @@ import { emailError, type FieldErrors } from './forms';
 // Shown under the footer form. The backend keeps its own copy as proof of consent
 // (backend/constants/newsletter.ts NEWSLETTER_CONSENT_TEXT): change both together.
 export const NEWSLETTER_CONSENT_TEXT =
-  'Bằng việc đăng ký, bạn đồng ý nhận email mẹo chăm sóc và ưu đãi từ Siêu thị của chó mèo. Huỷ bất cứ lúc nào.';
+  'Bằng việc đăng ký, bạn đồng ý nhận email mẹo chăm sóc và ưu đãi từ Woofle & Meowcaron. Huỷ bất cứ lúc nào.';
 
 export function validateNewsletter(v: { email: string }): FieldErrors {
   const email = emailError(v.email);

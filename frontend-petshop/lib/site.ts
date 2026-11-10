@@ -3,8 +3,12 @@
 // NEXT_PUBLIC_SITE_URL — the project has no domain yet, and the legacy demo domain that used to be
 // hardcoded here would have told search engines that every page lives somewhere else.
 
-export const SITE_NAME = 'Siêu thị của chó mèo';
-export const SITE_TAGLINE = 'Yêu thương từng bé cưng';
+// Brand guide v1.0 (2026-11, ADR-023): the name is "Woofle & Meowcaron"; "Siêu thị của chó mèo" is
+// the tagline under it in the logo, and stays in titles as the words people search for.
+export const SITE_NAME = 'Woofle & Meowcaron';
+export const SITE_TAGLINE = 'Siêu thị của chó mèo';
+// Homepage / default title: the brand, then the tagline and the main product words people search for.
+export const HOME_TITLE = `${SITE_NAME} – ${SITE_TAGLINE}: pate, thức ăn, phụ kiện`;
 export const SITE_DESCRIPTION =
   'Thức ăn, pate, phụ kiện cho chó mèo và kiến thức chăm sóc, dinh dưỡng, sức khoẻ thú cưng từ người nuôi thật.';
 

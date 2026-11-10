@@ -26,13 +26,13 @@ describe('blogPostingJsonLd', () => {
       image: ['https://res.cloudinary.com/demo/a.jpg'],
       inLanguage: 'vi',
       author: { '@type': 'Person', name: 'Trần Hà' },
-      publisher: { '@type': 'Organization', name: 'Siêu thị của chó mèo', url: BASE },
+      publisher: { '@type': 'Organization', name: 'Woofle & Meowcaron', url: BASE },
     });
   });
 
   it('falls back to the shop as author, never "Miniecom"', () => {
     const ld = blogPostingJsonLd(BASE, post({ author: undefined }));
-    expect(ld.author).toEqual({ '@type': 'Organization', name: 'Siêu thị của chó mèo', url: BASE });
+    expect(ld.author).toEqual({ '@type': 'Organization', name: 'Woofle & Meowcaron', url: BASE });
     expect(JSON.stringify(ld)).not.toMatch(/miniecom/i);
   });
 

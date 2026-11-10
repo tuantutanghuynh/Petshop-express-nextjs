@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { SITE_NAME, absoluteUrl, siteUrl } from '../lib/site';
+import { SITE_NAME, SITE_TAGLINE, absoluteUrl, siteUrl } from '../lib/site';
 import { buildRobots } from '../lib/seo/robots';
 import { buildSitemap } from '../lib/seo/sitemap';
 
@@ -15,8 +15,10 @@ import { buildSitemap } from '../lib/seo/sitemap';
 afterEach(() => vi.unstubAllEnvs());
 
 describe('site', () => {
-  it('uses the exact brand name', () => {
-    expect(SITE_NAME).toBe('Siêu thị của chó mèo');
+  // Brand guide v1.0 (2026-11): the name is "Woofle & Meowcaron", "Siêu thị của chó mèo" its tagline.
+  it('uses the exact brand name and tagline', () => {
+    expect(SITE_NAME).toBe('Woofle & Meowcaron');
+    expect(SITE_TAGLINE).toBe('Siêu thị của chó mèo');
   });
 
   it('reads the site URL from NEXT_PUBLIC_SITE_URL and drops a trailing slash', () => {

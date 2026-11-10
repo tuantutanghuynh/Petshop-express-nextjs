@@ -5,7 +5,7 @@ import { BottomNav } from '../components/layout/BottomNav';
 import { SiteFooter } from '../components/layout/SiteFooter';
 import { SiteHeader } from '../components/layout/SiteHeader';
 import { StoreChrome } from '../components/layout/StoreChrome';
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
 import { getShopCategories } from '../services/catalog';
 import { getContentPages, getMegaMenus, getShopInfo } from '../services/content';
 import './globals.css';
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
   // Every relative canonical / Open Graph URL below is resolved against this — from
   // NEXT_PUBLIC_SITE_URL, never a hardcoded domain (lib/site.ts).
   metadataBase: new URL(siteUrl()),
-  title: { default: `${SITE_NAME} – Thức ăn, pate, phụ kiện chó mèo`, template: `%s | ${SITE_NAME}` },
+  title: { default: HOME_TITLE, template: `%s | ${SITE_NAME}` },
   description: SITE_DESCRIPTION,
   applicationName: SITE_NAME,
   openGraph: { siteName: SITE_NAME, locale: 'vi_VN', type: 'website' },

@@ -10,7 +10,8 @@ import { logger } from '../utils/logger';
 // subscriptions (a reset link is password-equivalent) and must not reach shared logs.
 // Production never gets here without SMTP: it refuses to start (assertProductionConfig).
 
-const SHOP_NAME = 'Siêu thị của chó mèo';
+// Brand guide v1.0 (ADR-023). It contains "&", so the HTML parts use SHOP_NAME_HTML.
+const SHOP_NAME = 'Woofle & Meowcaron';
 const RESET_LINK_VALID_MINUTES = 60; // matches the token lifetime in auth.controller.ts
 const DEV_SENDER = `${SHOP_NAME} <no-reply@localhost>`;
 
@@ -19,6 +20,7 @@ export type MailTransport = { sendMail: (message: MailMessage) => Promise<unknow
 
 const escapeHtml = (s: string) =>
   s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const SHOP_NAME_HTML = escapeHtml(SHOP_NAME);
 
 export function passwordResetEmail(link: string): { subject: string; text: string; html: string } {
   const subject = `Đặt lại mật khẩu — ${SHOP_NAME}`;
@@ -39,7 +41,7 @@ export function passwordResetEmail(link: string): { subject: string; text: strin
 <p><a href="${href}">Đặt mật khẩu mới</a></p>
 <p>Nếu nút không mở được, chép link này vào trình duyệt:<br>${href}</p>
 <p>Link có hiệu lực trong ${RESET_LINK_VALID_MINUTES} phút và chỉ dùng được một lần. Nếu bạn không yêu cầu, hãy bỏ qua email này — mật khẩu của bạn không thay đổi.</p>
-<p>${SHOP_NAME}</p>`;
+<p>${SHOP_NAME_HTML}</p>`;
   return { subject, text, html };
 }
 
@@ -102,7 +104,7 @@ export function newsletterConfirmEmail(link: string): { subject: string; text: s
 <p><a href="${href}">Xác nhận đăng ký</a></p>
 <p>Nếu nút không mở được, chép link này vào trình duyệt:<br>${href}</p>
 <p>Link có hiệu lực trong ${CONFIRM_LINK_VALID_HOURS} giờ. Nếu bạn không đăng ký, hãy bỏ qua email này — bạn sẽ không nhận thêm thư nào.</p>
-<p>${SHOP_NAME}</p>`;
+<p>${SHOP_NAME_HTML}</p>`;
   return { subject, text, html };
 }
 
@@ -121,7 +123,7 @@ export function newsletterWelcomeEmail(unsubscribeLink: string): { subject: stri
   const html = `<p>Cảm ơn bạn đã đăng ký!</p>
 <p>Bạn sẽ nhận mẹo chăm sóc thú cưng và ưu đãi mới từ chúng tôi.</p>
 <p>Muốn ngừng nhận thư: <a href="${href}">huỷ đăng ký</a>.</p>
-<p>${SHOP_NAME}</p>`;
+<p>${SHOP_NAME_HTML}</p>`;
   return { subject, text, html };
 }
 
