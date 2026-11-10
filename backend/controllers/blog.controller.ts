@@ -162,12 +162,29 @@ export const create = asyncHandler(async (req: Request, res: Response) => {
 // touching its slug would collide with itself and always fail. The `publishedAt` rules
 // mirror `create`: an explicit date wins, a first-time publish stamps now, and moving back
 // to draft clears the date so the post leaves the public listing.
+// One post of any status (draft, scheduled, published) for the admin edit form — the public
+// getBySlug hides drafts. Admin-only at the route.
+export const adminGetById = asyncHandler(async (req: Request, res: Response) => {
+  const post = await prisma.blogPost.findUnique({
+    where: { id: req.params.id as string },
+    include: { category: true, author: { select: { id: true, fullName: true } } },
+  });
+  if (!post) throw new ApiError(404, 'POST_NOT_FOUND', 'Không tìm thấy bài viết');
+  sendSuccess(res, post);
+});
+
 export const update = asyncHandler(async (req: Request, res: Response) => {
   const id = req.params.id as string;
   const existing = await prisma.blogPost.findUnique({ where: { id } });
   if (!existing) throw new ApiError(404, 'POST_NOT_FOUND', 'Không tìm thấy bài viết');
 
   const { title, slug, excerpt, content, coverImageUrl, categoryId, seoTitle, seoDescription, status, publishedAt } = req.body;
+
+  // A published post's slug is its public URL, already shared and indexed; there is no redirect
+  // table for posts, so it cannot change (spec 2026-11-10). A draft's slug is still free.
+  if (slug && slug !== existing.slug && existing.status === 'published') {
+    throw new ApiError(409, 'SLUG_LOCKED', 'Bài đã đăng không đổi được đường dẫn');
+  }
 
   // Kiểm tra trùng lặp Slug (nếu slug bị thay đổi)
   if (slug && slug !== existing.slug) {
@@ -216,4 +233,4 @@ export const remove = asyncHandler(async (req: Request, res: Response) => {
   sendSuccess(res, { message: 'Đã xoá bài viết' });
 });
 
-export default { list, getBySlug, adminList, create, update, remove };
+export default { list, getBySlug, adminList, adminGetById, create, update, remove };

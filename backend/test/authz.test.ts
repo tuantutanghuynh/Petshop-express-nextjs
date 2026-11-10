@@ -9,6 +9,7 @@ type Method = 'get' | 'post' | 'patch' | 'put' | 'delete';
 // before validation and before any controller, so none of these requests reach the database.
 const ADMIN_ENDPOINTS: Array<[Method, string]> = [
   ['get', '/api/v1/blog/admin/list'],
+  ['get', '/api/v1/blog/admin/some-id'],
   ['post', '/api/v1/blog'],
   ['patch', '/api/v1/blog/some-id'],
   ['delete', '/api/v1/blog/some-id'],
