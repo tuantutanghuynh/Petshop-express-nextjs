@@ -58,7 +58,8 @@ export function AddToCart({ variantId, available, priceLabel }: Props) {
           type="button"
           onClick={() => void onAdd()}
           disabled={pending || status === 'loading'}
-          className="min-h-12 flex-1 rounded-full bg-brand-ink px-6 font-bold text-white hover:bg-brand-deep disabled:opacity-60 sm:flex-none"
+          // One line at 320px: next to the stepper only ~156px is left, and px-6 wrapped the label.
+          className="min-h-12 flex-1 rounded-full bg-brand-ink px-4 font-bold whitespace-nowrap text-white hover:bg-brand-deep disabled:opacity-60 sm:flex-none sm:px-6"
         >
           {pending ? 'Đang thêm…' : 'Thêm vào giỏ'}
         </button>
