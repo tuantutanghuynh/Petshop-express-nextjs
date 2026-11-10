@@ -60,8 +60,8 @@ export function PostFields({ values, errors, categories, slugLocked, onChange, o
           {categories.map((c) => <option key={c.id} value={c.id}>{'— '.repeat(c.depth)}{c.name}</option>)}
         </select>
       </div>
-      <MarkdownField name="content" label="Nội dung (Markdown) *" value={values.content} error={errors.content} rows={16}
-        hint="## Tiêu đề mục (hiện trong mục lục), **đậm**, - gạch đầu dòng, [link](https://…), ![mô tả ảnh](link ảnh)."
+      <MarkdownField name="content" label="Nội dung *" value={values.content} error={errors.content} rows={16} onUploading={onUploading}
+        hint="Tiêu đề lớn (H2) hiện trong mục lục bài. Chèn ảnh cần mô tả ảnh."
         onChange={(content) => onChange({ content })} />
       <fieldset className="flex flex-col gap-4 rounded-card border border-line p-4">
         <legend className="px-1 text-sm font-bold text-ink">Hiển thị trên Google</legend>
