@@ -27,7 +27,7 @@ export function MarkdownField({ value, error, onChange }: Props) {
         className="w-full rounded-[var(--radius-sm)] border border-line bg-surface p-3 text-base text-ink" />
       {preview &&
         (value.trim() ? (
-          // Sanitised by DOMPurify in renderMarkdown.
+          // Sanitised in renderMarkdown (lib/sanitize.ts).
           <div className={PREVIEW} dangerouslySetInnerHTML={{ __html: renderMarkdown(value) }} />
         ) : (
           <p className={`${PREVIEW} text-muted`}>Chưa có mô tả.</p>

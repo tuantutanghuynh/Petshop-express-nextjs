@@ -8,7 +8,7 @@ import { TopicBadge } from '../../../components/blog/TopicBadge';
 import { JsonLd } from '../../../components/seo/JsonLd';
 import { Breadcrumb } from '../../../components/ui/Breadcrumb';
 import { blogListHref, formatDate, readingMinutes, renderArticle } from '../../../lib/blog';
-import { excerptFromContent } from '../../../lib/markdown';
+import { excerptFromContent } from '../../../lib/excerpt';
 import { blogPath, blogPostingJsonLd, breadcrumbJsonLd, type Crumb } from '../../../lib/seo/structuredData';
 import { SITE_NAME, siteUrl } from '../../../lib/site';
 import { imageSrc } from '../../../lib/storefront';
@@ -112,7 +112,7 @@ export default async function BlogDetailPage({ params }: Props) {
               </div>
             )}
             <TableOfContents items={toc} variant="inline" />
-            {/* Sanitised by DOMPurify in renderArticle. */}
+            {/* Sanitised in renderArticle (lib/sanitize.ts). */}
             <div className="article-prose" dangerouslySetInnerHTML={{ __html: html }} />
             {/* Pet health content is YMYL (seo.md): every article carries this line. */}
             <p className="max-w-[68ch] rounded-card bg-yellow-bg px-4 py-3 text-sm text-yellow-ink">

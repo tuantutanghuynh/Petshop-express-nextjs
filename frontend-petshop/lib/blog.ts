@@ -1,4 +1,4 @@
-import DOMPurify from 'isomorphic-dompurify';
+import { sanitizeHtml } from './sanitize';
 import { Marked, type Tokens } from 'marked';
 import type { BlogPost } from './types';
 
@@ -30,7 +30,7 @@ const plainText = (raw: string) => raw.replace(/<[^>]*>/g, '').replace(/[*_`]/g,
 
 // Article HTML with an id on every H2, plus the matching table of contents. A fresh Marked instance
 // per call keeps the id counter (for repeated headings) local to one article. The HTML still goes
-// through DOMPurify, exactly like renderMarkdown.
+// through the same sanitiser as renderMarkdown (lib/sanitize.ts).
 export function renderArticle(content: string | null | undefined): { html: string; toc: TocItem[] } {
   const toc: TocItem[] = [];
   const seen = new Map<string, number>();
@@ -49,7 +49,7 @@ export function renderArticle(content: string | null | undefined): { html: strin
       },
     },
   });
-  const html = DOMPurify.sanitize(marked.parse(content || '', { async: false }));
+  const html = sanitizeHtml(marked.parse(content || '', { async: false }));
   return { html, toc };
 }
 

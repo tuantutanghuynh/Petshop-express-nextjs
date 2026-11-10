@@ -99,7 +99,7 @@ export default async function ProductPage({ params }: Props) {
         {product.description && (
           <section aria-labelledby="desc-title">
             <h2 id="desc-title" className="mb-3 text-lg font-extrabold">Mô tả sản phẩm</h2>
-            {/* Sanitised by DOMPurify in renderMarkdown. */}
+            {/* Sanitised in renderMarkdown (lib/sanitize.ts). */}
             <div
               className="max-w-prose [&_a]:text-brand-ink [&_a]:underline [&_blockquote]:border-l-4 [&_blockquote]:border-line [&_blockquote]:pl-3 [&_blockquote]:text-muted [&_li]:ml-5 [&_ol]:list-decimal [&_p]:mb-3 [&_ul]:list-disc"
               dangerouslySetInnerHTML={{ __html: renderMarkdown(product.description) }}

@@ -1,4 +1,4 @@
-import { excerptFromContent } from '../markdown';
+import { excerptFromContent } from '../excerpt';
 import { imageSrc, priceSummary } from '../storefront';
 import { SITE_NAME } from '../site';
 import type { BlogPost, Product } from '../types';
