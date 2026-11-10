@@ -114,12 +114,18 @@ export interface Product {
   category: Category;
   images: ProductImage[];
   variants: ProductVariant[];
+  // GET /products/:slug only: "Thường mua kèm" picked by the admin, on sale, in order (ADR-026).
+  related?: RelatedProduct[];
 }
 
+export type RelatedProduct = Pick<Product, 'id' | 'name' | 'slug' | 'brand' | 'images' | 'variants'>;
+
 // GET /products/admin/:id — any status, with the category's spec fields (text or number).
-export interface AdminProduct extends Omit<Product, 'category'> {
+export interface AdminProduct extends Omit<Product, 'category' | 'related'> {
   categoryId: string;
   category: Category & { attributes: (CategoryAttribute & { attributeType: string })[] };
+  // Every linked product whatever its status, so a hidden one can be seen and removed.
+  related?: { id: string; name: string; slug: string; status: string }[];
 }
 
 // GET /api/v1/settings → { key: value } (values are strings; JSON for structured settings).

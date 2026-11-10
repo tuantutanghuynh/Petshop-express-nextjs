@@ -21,6 +21,7 @@ import {
   resolveProductSlug,
   variantInShop,
 } from '../services/productAdmin.service';
+import { adminRelated, publicRelated, setRelated } from '../services/productRelated.service';
 
 // Every read and write path for products, serving both the storefront and the admin dashboard.
 // A product is a catalogue entry; the sellable things with a price and a stock count are its
@@ -88,7 +89,8 @@ export const getBySlug = asyncHandler(async (req: Request, res: Response) => {
     throw new ApiError(404, 'PRODUCT_NOT_FOUND', 'Không tìm thấy sản phẩm');
   }
 
-  sendSuccess(res, product);
+  // "Thường mua kèm" (ADR-026): an added field; only suggestions that are on sale.
+  sendSuccess(res, { ...product, related: await publicRelated(product.id) });
 });
 
 // Every admin route runs resolveBrand, so req.brand.categoryIds is the shop's category tree; the
@@ -133,7 +135,13 @@ export const adminList = asyncHandler(async (req: Request, res: Response) => {
 
 // One product of the shop in any status, with the category's spec fields, for the admin form.
 export const adminGet = asyncHandler(async (req: Request, res: Response) => {
-  sendSuccess(res, await getShopProduct(scope(req), req.params.id as string));
+  const product = await getShopProduct(scope(req), req.params.id as string);
+  sendSuccess(res, { ...product, related: await adminRelated(product.id) });
+});
+
+// Replaces the product's "Thường mua kèm" list (ADR-026). The route checked its shape.
+export const updateRelated = asyncHandler(async (req: Request, res: Response) => {
+  sendSuccess(res, await setRelated(scope(req), req.params.id as string, req.body.ids as string[]));
 });
 
 // Public: where a renamed product lives now (ADR-018). The storefront answers its old URL with 308.

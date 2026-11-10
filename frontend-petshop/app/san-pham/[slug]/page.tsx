@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { BuyingPromises } from '../../../components/product/BuyingPromises';
+import { FrequentlyBought } from '../../../components/product/FrequentlyBought';
 import { ProductGallery } from '../../../components/product/ProductGallery';
 import { ProductGrid } from '../../../components/product/ProductGrid';
 import { SpecTable } from '../../../components/product/SpecTable';
@@ -99,6 +100,13 @@ export default async function ProductPage({ params }: Props) {
           <BuyingPromises shippingPolicyPath={shippingPolicyPath} zalo={shop.zalo} />
         </div>
       </div>
+
+      {product.related && product.related.length > 0 && product.variants.length > 0 && (
+        <FrequentlyBought
+          main={{ id: product.id, name: product.name, slug: product.slug, brand: product.brand, images: product.images, variants: product.variants }}
+          related={product.related}
+        />
+      )}
 
       <div className="mt-10 grid gap-8 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
         {product.description && (

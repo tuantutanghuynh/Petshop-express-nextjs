@@ -8,7 +8,7 @@ export function productApi<T>(path: string, init: RequestInit = {}): Promise<Api
   return authFetch<T>(`/products${path}`, { ...init, headers: { 'X-Brand-Slug': BRAND_SLUG } });
 }
 
-export const jsonBody = (method: 'POST' | 'PATCH', body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });
+export const jsonBody = (method: 'POST' | 'PATCH' | 'PUT', body: unknown): RequestInit => ({ method, body: JSON.stringify(body) });
 
 // Product, category and home pages (featured products) all show product data.
 export const refreshProducts = () => revalidateStorefront(['products', 'categories']);

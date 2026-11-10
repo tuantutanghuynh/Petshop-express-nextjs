@@ -8,6 +8,7 @@ import { productPath } from '../../../lib/seo/structuredData';
 import type { AdminProduct, ProductImage } from '../../../lib/types';
 import type { ImageItem, ImageOps } from './ImageList';
 import { ProductForm } from './ProductForm';
+import { RelatedPicker } from './RelatedPicker';
 import { jsonBody, productApi, refreshProducts } from './productApi';
 import { errorResult, productFields, variantBody } from './productSave';
 
@@ -136,6 +137,7 @@ export function ProductEditor({ id }: { id: string }) {
           return null;
         }}
       />
+      <RelatedPicker productId={product.id} initial={product.related ?? []} />
     </div>
   );
 }

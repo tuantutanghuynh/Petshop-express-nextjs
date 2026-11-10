@@ -6,6 +6,7 @@ import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
 import resolveBrand from '../middlewares/resolveBrand';
 import * as ctrl from '../controllers/product.controller';
+import { MAX_RELATED } from '../services/productRelated.service';
 import { PRODUCT_STATUS_VALUES, MAX_DB_INT } from '../constants/product';
 import { ADJUST_REASONS, STOCK_MOVEMENT_TYPE } from '../constants/inventory';
 
@@ -193,6 +194,21 @@ router.patch(
 );
 
 router.delete('/images/:imageId', ...admin, resolveBrand, ctrl.removeImage);
+
+// "Thường mua kèm" (ADR-026): the whole list at once, ≤ 4, unique, never the product itself.
+router.put(
+  '/:id/related',
+  ...admin,
+  [
+    body('ids').isArray({ max: MAX_RELATED }).withMessage(`Chọn tối đa ${MAX_RELATED} sản phẩm`).bail()
+      .custom((ids: unknown[]) => new Set(ids).size === ids.length).withMessage('Có sản phẩm bị chọn trùng').bail()
+      .custom((ids: unknown[], { req }) => !ids.includes(req.params?.id)).withMessage('Không chọn chính sản phẩm này'),
+    body('ids.*').isString().withMessage('Mã sản phẩm không hợp lệ').bail().isLength({ min: 1, max: 64 }).withMessage('Mã sản phẩm không hợp lệ'),
+    validate,
+  ],
+  resolveBrand,
+  ctrl.updateRelated
+);
 
 router.delete('/:id', ...admin, resolveBrand, ctrl.remove);
 

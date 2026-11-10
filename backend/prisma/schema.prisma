@@ -94,12 +94,30 @@ model Product {
   variants      ProductVariant[]
   images        ProductImage[]
   slugRedirects ProductSlugRedirect[]
+  // "Thường mua kèm" (ADR-026): what this product suggests, and where it is suggested.
+  related       ProductRelated[]      @relation("RelatedFrom")
+  relatedTo     ProductRelated[]      @relation("RelatedTo")
 
   @@index([categoryId])
   // Storefront list: WHERE status = 'active' ORDER BY createdAt DESC, id DESC (id = tie-breaker).
   @@index([status, createdAt, id])
   // Storefront list sorted by price: WHERE status = 'active' ORDER BY minPrice, id.
   @@index([status, minPrice, id])
+}
+
+// "Thường mua kèm" (spec 2026-11-10, ADR-026): one-way — product A suggests B on A's page only. The
+// admin picks up to 4, in order. Deleting either product removes the link.
+model ProductRelated {
+  productId        String
+  product          Product  @relation("RelatedFrom", fields: [productId], references: [id], onDelete: Cascade)
+  relatedProductId String
+  relatedProduct   Product  @relation("RelatedTo", fields: [relatedProductId], references: [id], onDelete: Cascade)
+  position         Int
+  createdAt        DateTime @default(now())
+
+  @@id([productId, relatedProductId])
+  // Cascade on delete of the suggested product looks rows up by it.
+  @@index([relatedProductId])
 }
 
 model ProductVariant {

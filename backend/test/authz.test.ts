@@ -25,6 +25,7 @@ const ADMIN_ENDPOINTS: Array<[Method, string]> = [
   ['post', '/api/v1/products'],
   ['post', '/api/v1/products/some-id/variants'],
   ['patch', '/api/v1/products/some-id'],
+  ['put', '/api/v1/products/some-id/related'],
   ['patch', '/api/v1/products/variants/some-id'],
   ['delete', '/api/v1/products/some-id'],
   ['delete', '/api/v1/products/variants/some-id'],
