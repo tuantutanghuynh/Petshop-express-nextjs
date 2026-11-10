@@ -12,9 +12,9 @@ type ViewProps = { content: HeroContent; headingId: string; level: 'h1' | 'h2'; 
 export function HeroSlideView({ content, headingId, level: Heading, priority, textClassName = '' }: ViewProps) {
   return (
     <div className="grid lg:min-h-[420px] lg:grid-cols-2">
-      {/* Text column aligned with the 1200px page frame, like the art column. Padding % is relative
-          to this column, which is half the page, so the frame's side margin is 100% - 600px (no
-          100vw, which counts the scrollbar). */}
+      {/* Text column aligned with the 1200px page frame; the art column runs to the screen edge, as in
+          the wireframe. Padding % is relative to this column, which is half the page, so the frame's
+          side margin is 100% - 600px (no 100vw, which counts the scrollbar). */}
       <div className={`flex flex-col justify-center gap-4 px-4 py-6 md:px-6 lg:py-10 lg:pr-10 lg:pl-[max(1.5rem,calc(100%-600px+1.5rem))] ${textClassName}`}>
         {content.badge && <span className="w-fit rounded-full bg-pink-bg px-3 py-1 text-xs font-bold text-pink-ink">{content.badge}</span>}
         <Heading id={headingId} className="text-[clamp(1.75rem,1.2rem+2.6vw,3rem)] leading-[1.3] font-extrabold">
@@ -34,20 +34,14 @@ export function HeroSlideView({ content, headingId, level: Heading, priority, te
         </div>
       </div>
       {/* Yellow + coral panels with the photo on top (the LCP element when set). Decorative without
-          a photo, but kept on phones too, as in the wireframe. The panels sit inside the same 1200px
-          frame as the header and the text column (right padding mirrors the text column's left
-          padding), so the photo is never cut at the screen edge and both columns line up with the
-          rest of the page; only the mint background runs edge to edge. */}
-      <div aria-hidden={content.image ? undefined : true}
-        className="px-4 pb-6 md:px-6 lg:py-10 lg:pr-[max(1.5rem,calc(100%-600px+1.5rem))] lg:pl-0">
-        <div className="relative grid h-full min-h-60 grid-cols-2 overflow-hidden rounded-panel sm:min-h-80 lg:min-h-[340px]">
-          <div className="bg-yellow-hero" />
-          <div className="bg-coral" />
-          {content.image && (
-            <Image src={content.image} alt="" fill sizes="(min-width: 1200px) 576px, (min-width: 1024px) 50vw, 100vw" className="object-contain p-4"
-              {...(priority ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} />
-          )}
-        </div>
+          a photo, but kept on phones too, as in the wireframe. */}
+      <div aria-hidden={content.image ? undefined : true} className="relative grid min-h-60 grid-cols-2 sm:min-h-80 lg:min-h-[420px]">
+        <div className="bg-yellow-hero" />
+        <div className="bg-coral" />
+        {content.image && (
+          <Image src={content.image} alt="" fill sizes="(min-width: 1024px) 50vw, 100vw" className="object-contain p-4"
+            {...(priority ? { fetchPriority: 'high' as const } : { loading: 'lazy' as const })} />
+        )}
       </div>
     </div>
   );
