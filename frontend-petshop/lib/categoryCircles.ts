@@ -1,6 +1,6 @@
 import { isSafeHref } from './storefront';
 
-// "Mua theo bé cưng" circles on the homepage, edited in /admin/cau-hinh and stored as a JSON list in
+// "Tìm theo phân loại" circles on the homepage, edited in /admin/cau-hinh and stored as a JSON list in
 // homepage_category_circles (test/settings.test.ts). Each circle is a name, a link and an optional
 // image, so a circle can point at any category (Pate exists for dogs and for cats). Until the owner
 // saves a list, the six wireframe circles show.

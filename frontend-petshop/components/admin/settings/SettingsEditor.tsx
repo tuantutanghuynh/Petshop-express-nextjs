@@ -126,7 +126,7 @@ export function SettingsEditor() {
         ))}
       </Section>
 
-      <Section title="Vòng tròn “Mua theo bé cưng”" hint="Tối đa 8 vòng, theo thứ tự. Xoá hết tên và link của một vòng để bỏ vòng đó; để trống tất cả thì trang chủ hiện 6 vòng mặc định.">
+      <Section title="Vòng tròn “Tìm theo phân loại”" hint="Tối đa 8 vòng, theo thứ tự. Xoá hết tên và link của một vòng để bỏ vòng đó; để trống tất cả thì trang chủ hiện 6 vòng mặc định.">
         <CircleFields rows={form.circles} categories={allCategories} errors={errors} onChange={(circles) => update({ ...form, circles })} />
       </Section>
 

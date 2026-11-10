@@ -58,7 +58,7 @@ export type SettingsForm = {
   pages: Record<string, string>;
   // Keyed by species slug (MEGA_MENU_SLUGS).
   megaMenus: Record<string, MegaMenuForm>;
-  // "Mua theo bé cưng" circles, always MAX_CATEGORY_CIRCLES rows (empty rows are dropped when saving).
+  // "Tìm theo phân loại" circles, always MAX_CATEGORY_CIRCLES rows (empty rows are dropped when saving).
   circles: CircleForm[];
 };
 

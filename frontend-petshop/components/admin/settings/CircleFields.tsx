@@ -9,7 +9,7 @@ import { ImageField } from './ImageField';
 
 type Props = { rows: CircleForm[]; categories: CategoryNode[]; errors: FieldErrors; onChange: (rows: CircleForm[]) => void };
 
-// "Mua theo bé cưng" circles: name, link and image per row. The link field suggests every category
+// "Tìm theo phân loại" circles: name, link and image per row. The link field suggests every category
 // page (a <datalist>), but any shop path or https link is accepted. Input names mirror the error
 // keys (circles.0.href → circles-0-href).
 export function CircleFields({ rows, categories, errors, onChange }: Props) {

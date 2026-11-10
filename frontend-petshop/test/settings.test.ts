@@ -64,7 +64,7 @@ describe('parseCategoryImages', () => {
   });
 });
 
-// "Mua theo bé cưng" circles (wireframe: Mèo, Chó, Thức ăn, Pate, Phụ kiện, Sức khoẻ), edited in
+// "Tìm theo phân loại" circles (wireframe: Mèo, Chó, Thức ăn, Pate, Phụ kiện, Sức khoẻ), edited in
 // /admin/cau-hinh. Until the owner saves a list, the six wireframe circles show, keeping any Chó /
 // Mèo image uploaded under the older per-category setting.
 describe('parseCategoryCircles', () => {

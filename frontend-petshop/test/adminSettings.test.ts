@@ -112,7 +112,7 @@ describe('mega menu settings', () => {
 });
 
 describe('category circles settings', () => {
-  it('edits the "Mua theo bé cưng" circles: 8 rows, defaults until saved', () => {
+  it('edits the "Tìm theo phân loại" circles: 8 rows, defaults until saved', () => {
     expect(ADMIN_SETTING_KEYS).toContain('homepage_category_circles');
     const form = settingsToForm({});
     expect(form.circles).toHaveLength(8);
