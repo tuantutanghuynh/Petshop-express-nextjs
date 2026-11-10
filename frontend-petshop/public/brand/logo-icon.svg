@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="368" height="240" viewBox="0 0 368.00 240.00" role="img" aria-label="Woofle &amp; Meowcaron">
+<title>Woofle &amp; Meowcaron</title>
+<rect width="368" height="240" rx="72" fill="#009E91"/><g transform="translate(30.00 50.00) scale(1.10000)">
+<ellipse cx="28" cy="60" rx="13" ry="24" transform="rotate(18 28 60)" fill="#064E4A"/>
+<ellipse cx="112" cy="60" rx="13" ry="24" transform="rotate(-18 112 60)" fill="#064E4A"/>
+<rect x="26" y="32" width="88" height="86" rx="24" fill="#FFC727"/>
+<path d="M55 42 V108 M85 42 V108 M36 57 H104 M36 93 H104" stroke="#064E4A" stroke-opacity="0.22" stroke-width="6" stroke-linecap="round" fill="none"/>
+<circle cx="55" cy="74" r="7" fill="#064E4A"/>
+<circle cx="85" cy="74" r="7" fill="#064E4A"/>
+<g transform="translate(140 0)">
+<path d="M34 62 L 40 22 L 68 54 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+<path d="M106 62 L 100 22 L 72 54 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="6" stroke-linejoin="round"/>
+<path d="M18 78 C 18 44, 122 44, 122 78 Z" fill="#FFFFFF"/>
+<rect x="22" y="80" width="96" height="14" rx="7" fill="#FF6B5B"/>
+<path d="M18 96 L 122 96 C 122 120, 18 120, 18 96 Z" fill="#FFFFFF"/>
+<circle cx="55" cy="66" r="7" fill="#064E4A"/>
+<circle cx="85" cy="66" r="7" fill="#064E4A"/>
+</g>
+</g>
+</svg>

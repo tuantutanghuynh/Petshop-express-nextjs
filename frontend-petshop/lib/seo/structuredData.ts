@@ -1,6 +1,7 @@
 import { excerptFromContent } from '../excerpt';
 import { imageSrc, priceSummary } from '../storefront';
-import { SITE_NAME } from '../site';
+import { BRAND_LOGO } from '../brand';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '../site';
 import type { BlogPost, Product } from '../types';
 
 // JSON-LD builders. Each describes only what the page shows (.claude/rules/seo.md): prices are
@@ -68,6 +69,23 @@ export function breadcrumbJsonLd(base: string, crumbs: Crumb[]): Record<string, 
       name: c.name,
       ...(c.path && { item: `${base}${c.path}` }),
     })),
+  };
+}
+
+// The shop as an Organization, for the homepage. The logo is the real brand file (PNG, as search
+// engines expect); sameAs only from configured social links; a contact point only with a phone.
+export function organizationJsonLd(base: string, shop: { socialLinks: string[]; phone?: string }): Record<string, unknown> {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    '@id': `${base}/#organization`,
+    name: SITE_NAME,
+    alternateName: SITE_TAGLINE,
+    url: base,
+    logo: `${base}${BRAND_LOGO.iconPng}`,
+    description: SITE_DESCRIPTION,
+    ...(shop.socialLinks.length > 0 && { sameAs: shop.socialLinks }),
+    ...(shop.phone && { contactPoint: { '@type': 'ContactPoint', telephone: shop.phone, contactType: 'customer service', availableLanguage: 'vi' } }),
   };
 }
 

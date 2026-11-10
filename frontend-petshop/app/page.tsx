@@ -8,7 +8,8 @@ import { LatestPosts } from '../components/home/LatestPosts';
 import { PromoCards } from '../components/home/PromoCards';
 import { TrustStrip } from '../components/home/TrustStrip';
 import { JsonLd } from '../components/seo/JsonLd';
-import { SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
+import { organizationJsonLd } from '../lib/seo/structuredData';
+import { HOME_TITLE, SITE_DESCRIPTION, SITE_NAME, siteUrl } from '../lib/site';
 import { HERO_SLIDES_KEY, LEGACY_HERO_KEYS, parseHeroSlides } from '../lib/heroSlides';
 import { CATEGORY_CIRCLES_KEY, parseCategoryCircles } from '../lib/categoryCircles';
 import { SETTING_KEYS, parseCategoryImages } from '../lib/settings';
@@ -19,7 +20,7 @@ import { getLatestPosts, getSettings, getShopInfo } from '../services/content';
 // Search intent: navigational. Title comes from the root layout's default.
 export const metadata: Metadata = {
   alternates: { canonical: '/' },
-  openGraph: { url: '/', title: `${SITE_NAME} – Thức ăn, pate, phụ kiện chó mèo`, description: SITE_DESCRIPTION },
+  openGraph: { url: '/', title: HOME_TITLE, description: SITE_DESCRIPTION },
 };
 
 const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
@@ -40,18 +41,9 @@ export default async function HomePage() {
   const heroSlides = parseHeroSlides(settings);
   const base = siteUrl();
 
-  // Schema describes only what the page shows: no logo until a real logo file exists, sameAs
-  // only from configured social links, no SearchAction because there is no public search yet.
-  const organization = {
-    '@context': 'https://schema.org',
-    '@type': 'Organization',
-    '@id': `${base}/#organization`,
-    name: SITE_NAME,
-    url: base,
-    description: SITE_DESCRIPTION,
-    ...(shop.socialLinks.length > 0 && { sameAs: shop.socialLinks }),
-    ...(shop.phone && { contactPoint: { '@type': 'ContactPoint', telephone: shop.phone, contactType: 'customer service', availableLanguage: 'vi' } }),
-  };
+  // Schema describes only what the page shows: sameAs only from configured social links, no
+  // SearchAction because there is no public search yet.
+  const organization = organizationJsonLd(base, shop);
   const website = {
     '@context': 'https://schema.org',
     '@type': 'WebSite',

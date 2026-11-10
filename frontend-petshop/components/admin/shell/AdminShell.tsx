@@ -1,9 +1,12 @@
 'use client';
 
+import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { authFetch, clearTokens, getRefreshToken, getToken } from '../../../lib/adminAuth';
 import { activeNavItem } from '../../../lib/adminNav';
+import { BRAND_LOGO, LOGO_HORIZONTAL_WHITE_SIZE } from '../../../lib/brand';
+import { SITE_NAME, SITE_TAGLINE } from '../../../lib/site';
 import { AdminNavList } from './AdminNavList';
 
 // Shared admin chrome (wireframe layout.js / wf.css .admin*): a dark 240px sidebar from 1024px, a ☰
@@ -53,9 +56,11 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
   const title = activeNavItem(pathname)?.label ?? 'Quản trị';
   const brand = (
-    <div className="mb-4 flex items-center gap-2 px-3 text-white">
-      <span aria-hidden="true" className="text-xl">🐾</span>
-      <span className="leading-[1.3] font-extrabold">Quản trị<small className="block text-xs font-normal text-white/60">Siêu thị của chó mèo</small></span>
+    // The one-colour white logo: the guide's version for dark backgrounds.
+    <div className="mb-4 flex flex-col gap-1 px-3 text-white">
+      <Image src={BRAND_LOGO.horizontalWhite} alt={`${SITE_NAME} – ${SITE_TAGLINE}`} width={LOGO_HORIZONTAL_WHITE_SIZE.width}
+        height={LOGO_HORIZONTAL_WHITE_SIZE.height} unoptimized className="h-8 w-auto max-w-full self-start" />
+      <span className="text-xs font-bold tracking-wide text-white/70 uppercase">Quản trị</span>
     </div>
   );
 
