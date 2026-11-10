@@ -20,7 +20,7 @@ export function TextField({ name, label, error, hint, className = '', ...input }
         name={name}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`min-h-12 w-full min-w-0 rounded-[var(--radius-sm)] border bg-surface px-3 text-base text-ink ${error ? 'border-pink-ink' : 'border-line'}`}
+        className={`min-h-12 w-full min-w-0 rounded-[var(--radius-sm)] border bg-surface px-3 text-base text-ink read-only:bg-surface-alt read-only:text-muted ${error ? 'border-pink-ink' : 'border-line'}`}
         {...input}
       />
       {hint && <p id={`${id}-hint`} className="text-xs text-muted">{hint}</p>}
