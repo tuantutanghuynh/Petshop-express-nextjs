@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
+import { BuyingPromises } from '../../../components/product/BuyingPromises';
 import { ProductGallery } from '../../../components/product/ProductGallery';
 import { ProductGrid } from '../../../components/product/ProductGrid';
 import { SpecTable } from '../../../components/product/SpecTable';
@@ -12,7 +13,7 @@ import { breadcrumbJsonLd, productJsonLd, productPath } from '../../../lib/seo/s
 import { SITE_NAME, siteUrl } from '../../../lib/site';
 import { imageSrc } from '../../../lib/storefront';
 import { getCategoryProducts, getCategoryTrail, getShopProduct, resolveProductSlug } from '../../../services/catalog';
-import { getShopInfo } from '../../../services/content';
+import { getContentPages, getShopInfo } from '../../../services/content';
 
 // Product detail. Search intent: transactional.
 type Props = { params: Promise<{ slug: string }> };
@@ -57,7 +58,7 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  const [shop, trail, related] = await Promise.all([
+  const [shop, trail, related, pages] = await Promise.all([
     getShopInfo(),
     getCategoryTrail(product.category.slug).catch((err: unknown) => {
       // The breadcrumb then shows just the product's own category.
@@ -71,7 +72,10 @@ export default async function ProductPage({ params }: Props) {
         console.error('product page: could not load related products', err);
         return [];
       }),
+    getContentPages(), // never throws (no pages on failure)
   ]);
+  // Linked under the buy button only when the owner has written it (an empty policy is a 404).
+  const shippingPolicyPath = pages.find((p) => p.key === 'policy_giao-hang-doi-tra')?.path ?? null;
 
   const base = siteUrl();
   const crumbs = categoryCrumbs(trail.length > 0 ? trail : [product.category], product.name);
@@ -92,6 +96,7 @@ export default async function ProductPage({ params }: Props) {
           ) : (
             <p className="text-sm text-muted">Sản phẩm đang cập nhật giá.</p>
           )}
+          <BuyingPromises shippingPolicyPath={shippingPolicyPath} zalo={shop.zalo} />
         </div>
       </div>
 

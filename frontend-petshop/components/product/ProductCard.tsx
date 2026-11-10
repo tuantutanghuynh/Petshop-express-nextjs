@@ -5,7 +5,7 @@ import { formatVnd, imageSrc, priceSummary } from '../../lib/storefront';
 import { CardAction } from './CardAction';
 import type { Product } from '../../lib/types';
 
-// Product tile: first image, name, cheapest price ("từ" when variants differ), a real discount
+// Product tile: first image, brand, name, cheapest price ("từ" when variants differ), a real discount
 // tag only when compareAtPrice is higher, and "Hết hàng" from stock minus reservations.
 // No star rating (there are no reviews). The whole card is one link (the name is the link text, so
 // screen readers hear the product name); the corner action is a separate button above it.
@@ -28,6 +28,8 @@ export function ProductCard({ product }: { product: Product }) {
           <span className="absolute top-2 right-2 rounded-full bg-ink px-2 py-0.5 text-xs font-bold text-white">Hết hàng</span>
         )}
       </div>
+      {/* Brand first, as shoppers compare by it (Royal Canin, Me-O…). Plain text: the card link covers it. */}
+      {product.brand && <p className="truncate text-xs leading-[1.3] font-bold tracking-wide text-brand-ink uppercase">{product.brand}</p>}
       <h3 className="line-clamp-2 text-sm font-bold">
         {/* The ::after overlay stretches this link over the whole card (one tab stop, big target). */}
         <Link href={productPath(product.slug)} className="after:absolute after:inset-0 after:rounded-card">{product.name}</Link>

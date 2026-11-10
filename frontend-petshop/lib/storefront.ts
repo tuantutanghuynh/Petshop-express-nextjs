@@ -31,9 +31,34 @@ export function priceSummary(variants: ProductVariant[]): PriceSummary | null {
   return {
     price: cheapest.price,
     compareAtPrice: isDiscounted ? compareAt : null,
-    discountPercent: isDiscounted ? Math.round((1 - cheapest.price / compareAt) * 100) : null,
+    discountPercent: discountPercent(cheapest.price, compareAt),
     hasRange: variants.some((v) => v.price !== cheapest.price),
     isOutOfStock: variants.every((v) => v.stockQuantity - v.reservedQuantity <= 0),
+  };
+}
+
+// Whole percent saved against a higher compare-at price; null when there is no real discount, and
+// also when it rounds to 0 (a "-0%" tag would be a fake promotion).
+export function discountPercent(price: number, compareAtPrice: number | null): number | null {
+  if (compareAtPrice === null || compareAtPrice <= price) return null;
+  const percent = Math.round((1 - price / compareAtPrice) * 100);
+  return percent > 0 ? percent : null;
+}
+
+// "Chỉ còn N" appears at this many or fewer: real stock, shown only when it helps decide.
+export const LOW_STOCK_THRESHOLD = 5;
+
+export type VariantOffer = { available: number; inStock: boolean; discountPercent: number | null; lowStock: number | null };
+
+// What the product page says about one variant. Available = stock minus reservations, the rule
+// the checkout uses.
+export function variantOffer(v: ProductVariant): VariantOffer {
+  const available = Math.max(0, v.stockQuantity - v.reservedQuantity);
+  return {
+    available,
+    inStock: available > 0,
+    discountPercent: discountPercent(v.price, v.compareAtPrice),
+    lowStock: available > 0 && available <= LOW_STOCK_THRESHOLD ? available : null,
   };
 }
 
