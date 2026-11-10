@@ -2,6 +2,7 @@ import { buildAdminTree, type AdminNode } from './adminCategories';
 import type { FieldErrors } from './forms';
 import { formatVnd } from './storefront';
 import type { AdminCategory } from './types';
+import { TEMPLATE_HINT, hasTemplateHints } from './productTemplates';
 
 // Rules of the /admin/san-pham screens (test/adminProducts.test.ts). The backend checks the same
 // limits (routes/product.route.ts); these show mistakes on the field before a round trip.
@@ -95,6 +96,8 @@ export function validateProductForm(v: ProductFormValues, mode: 'create' | 'edit
   if (!name || name.length > 200) e.name = 'Nhập tên sản phẩm (tối đa 200 ký tự)';
   if (!SLUG.test(v.slug) || v.slug.length > 120) e.slug = 'Slug chỉ gồm a-z, 0-9 và dấu - giữa các chữ';
   if (!v.categoryId) e.categoryId = 'Chọn danh mục';
+  // A hint line from a description outline (lib/productTemplates.ts) must never be published.
+  if (hasTemplateHints(v.description)) e.description = `Còn dòng gợi ý (${TEMPLATE_HINT}) chưa thay bằng nội dung thật`;
   const seen = new Set<string>();
   v.variants.forEach((x, i) => {
     const sku = x.sku.trim();

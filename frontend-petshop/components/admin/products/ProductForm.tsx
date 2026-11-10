@@ -11,6 +11,7 @@ import { MarkdownField } from './MarkdownField';
 import { ProductSidebar } from './ProductSidebar';
 import { useCategoryData } from './useCategoryData';
 import { VariantRows } from './VariantRows';
+import { DESCRIPTION_TEMPLATES } from '../../../lib/productTemplates';
 
 export type SaveResult = { errors?: FieldErrors; message?: string } | null;
 
@@ -105,7 +106,8 @@ export function ProductForm(p: Props) {
             <TextField name="brand" label="Thương hiệu" maxLength={100} value={values.brand} hint="Ghi giống tên thương hiệu trong menu để lọc đúng."
               onChange={(e) => set({ brand: e.target.value })} />
           </div>
-          <MarkdownField value={values.description} error={errors.description} onChange={(d) => set({ description: d })} />
+          <MarkdownField value={values.description} error={errors.description} templates={DESCRIPTION_TEMPLATES}
+            hint="Chọn khung có sẵn rồi thay các dòng ✎ bằng thông tin thật trên bao bì. Tối đa 20.000 ký tự." onChange={(d) => set({ description: d })} />
         </fieldset>
         <AttributeFields defs={defs} values={values.attributes} onChange={(attributes) => set({ attributes })} />
         <VariantRows mode={p.mode} rows={values.variants} errors={errors} onChange={(variants) => set({ variants })}
