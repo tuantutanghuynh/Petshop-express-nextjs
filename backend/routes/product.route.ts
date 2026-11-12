@@ -6,6 +6,8 @@ import authenticate from '../middlewares/authenticate';
 import requireRole from '../middlewares/requireRole';
 import resolveBrand from '../middlewares/resolveBrand';
 import * as ctrl from '../controllers/product.controller';
+import * as reviewCtrl from '../controllers/review.controller';
+import { REVIEW_SORTS } from '../constants/review';
 import { MAX_RELATED } from '../services/productRelated.service';
 import { PRODUCT_STATUS_VALUES, MAX_DB_INT } from '../constants/product';
 import { ADJUST_REASONS, STOCK_MOVEMENT_TYPE } from '../constants/inventory';
@@ -61,6 +63,17 @@ router.get('/admin/list', ...admin, resolveBrand, ctrl.adminList);
 router.get('/admin/:id', ...admin, resolveBrand, ctrl.adminGet);
 // Former slug → current slug of a product on sale, for the storefront's 308 (ADR-018).
 router.get('/resolve/:slug', ctrl.resolve);
+// Approved reviews of a product on sale, with the star summary (ADR-027).
+router.get(
+  '/:slug/reviews',
+  [
+    query('rating').optional({ values: 'falsy' }).isInt({ min: 1, max: 5 }).withMessage('Số sao không hợp lệ'),
+    query('hasImages').optional({ values: 'falsy' }).isIn(['true', 'false']).withMessage('Giá trị không hợp lệ'),
+    query('sort').optional({ values: 'falsy' }).isIn([...REVIEW_SORTS]).withMessage('Cách sắp xếp không hợp lệ'),
+    validate,
+  ],
+  reviewCtrl.publicList
+);
 router.get('/:slug', ctrl.getBySlug);
 
 // Prices are validated as integers because the column is `Int` and money is never stored as a

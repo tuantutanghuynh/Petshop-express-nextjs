@@ -19,6 +19,7 @@ model User {
   passwordResetTokens PasswordResetToken[]
   quoteRequests       QuoteRequest[]
   inventoryMovements  InventoryMovement[]
+  reviews             ProductReview[]
 }
 
 model Category {
@@ -89,6 +90,11 @@ model Product {
   // aggregate of a relation). Both null until the first write fills them.
   searchName    String?
   minPrice      Int?
+  // Approved reviews only (ADR-027), kept current in the same transaction as every status change
+  // (services/reviewModeration.service.ts). Average = ratingSum / reviewCount.
+  reviewCount   Int                   @default(0)
+  ratingSum     Int                   @default(0)
+  reviews       ProductReview[]
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   variants      ProductVariant[]
@@ -483,4 +489,36 @@ model NewsletterDelivery {
   // Daily limit: count SENT in the last 24 h.
   @@index([status, sentAt])
   @@index([subscriberId])
+}
+
+// Reviews from verified buyers (spec 2026-11-10, ADR-027). Shown only when APPROVED; every status
+// change is a conditional UPDATE plus the product counters in the same transaction.
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  HIDDEN
+}
+
+model ProductReview {
+  id           String       @id @default(uuid())
+  productId    String
+  product      Product      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rating       Int
+  content      String
+  images       Json         @default("[]") // https URLs on our Cloudinary, ≤ 3
+  status       ReviewStatus @default(PENDING)
+  adminReply   String?
+  adminReplyAt DateTime?
+  approvedAt   DateTime?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@unique([productId, userId])
+  // Public list: WHERE productId AND status = APPROVED ORDER BY createdAt DESC.
+  @@index([productId, status, createdAt])
+  // Admin queue: WHERE status ORDER BY createdAt.
+  @@index([status, createdAt])
+  @@index([userId])
 }

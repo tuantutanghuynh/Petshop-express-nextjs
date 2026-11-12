@@ -22,10 +22,11 @@ cloudinary.config({
 // is stored, resized, and made available at a signed HTTPS URL. The stream-based approach
 // avoids buffering the entire file into a second place; it flows straight from `req.file.buffer`
 // → Cloudinary without occupying more RAM than needed.
-function uploadBufferToCloudinary(buffer: Buffer): Promise<UploadApiResponse> {
+// `subfolder` keeps customer photos (reviews) apart from the shop's own images.
+export function uploadBufferToCloudinary(buffer: Buffer, subfolder?: string): Promise<UploadApiResponse> {
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: process.env.CLOUDINARY_FOLDER || 'miniecom-petshop' },
+      { folder: [process.env.CLOUDINARY_FOLDER || 'miniecom-petshop', subfolder].filter(Boolean).join('/') },
       (error: UploadApiErrorResponse | undefined, result: UploadApiResponse | undefined) => {
         if (error) return reject(error);
         resolve(result as UploadApiResponse);

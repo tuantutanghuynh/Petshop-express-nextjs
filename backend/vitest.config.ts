@@ -17,6 +17,8 @@ export default defineConfig({
       JWT_ACCESS_SECRET: 'test_access_secret_do_not_use_elsewhere',
       JWT_REFRESH_SALT: 'test_refresh_secret_do_not_use_elsewhere',
       FRONTEND_URLS: 'http://localhost:3000',
+      // Review photos must be on this cloud (services/review.service.ts); never the real one from .env.
+      CLOUDINARY_CLOUD_NAME: 'test-cloud',
     },
     coverage: {
       provider: 'v8',
