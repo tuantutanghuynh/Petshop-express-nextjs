@@ -179,3 +179,16 @@ describe('public list', () => {
     expect((await publicList(product.slug)).body.data[0].authorName).toBe('Khách hàng');
   });
 });
+
+describe('order detail for the review button', () => {
+  it('tells which product each line is (null once its variant is gone), without the variant itself', async () => {
+    const { product, user } = await buyer();
+    const order = await prisma.order.findFirstOrThrow({ where: { userId: user.id } });
+    const res = await call('get', `/api/v1/orders/${order.code}`, { token: user.token });
+    expect(res.status).toBe(200);
+    expect(res.body.data.items[0].product).toEqual({ id: product.id, slug: product.slug });
+    expect(res.body.data.items[0]).not.toHaveProperty('variant');
+    await prisma.orderItem.updateMany({ where: { orderId: order.id }, data: { variantId: null } });
+    expect((await call('get', `/api/v1/orders/${order.code}`, { token: user.token })).body.data.items[0].product).toBeNull();
+  });
+});

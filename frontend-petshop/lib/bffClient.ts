@@ -17,13 +17,15 @@ const NETWORK_ERROR: BffError = { code: 'NETWORK_ERROR', message: 'Không kết 
 
 async function send<T>(path: string, options: Options): Promise<BffResponse<T>> {
   const headers = new Headers(options.headers);
-  if (options.body !== undefined) headers.set('Content-Type', 'application/json');
+  // FormData (review photos): the browser sets the multipart Content-Type with its boundary.
+  const isForm = options.body instanceof FormData;
+  if (options.body !== undefined && !isForm) headers.set('Content-Type', 'application/json');
   let res: Response;
   try {
     res = await fetch(path, {
       method: options.method ?? 'GET',
       headers,
-      body: options.body === undefined ? undefined : JSON.stringify(options.body),
+      body: options.body === undefined ? undefined : isForm ? (options.body as FormData) : JSON.stringify(options.body),
       credentials: 'same-origin',
       cache: 'no-store',
     });

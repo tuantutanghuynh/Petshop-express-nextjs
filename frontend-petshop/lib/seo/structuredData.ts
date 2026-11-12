@@ -2,7 +2,8 @@ import { excerptFromContent } from '../excerpt';
 import { imageSrc, priceSummary } from '../storefront';
 import { BRAND_LOGO } from '../brand';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_TAGLINE } from '../site';
-import type { BlogPost, Product } from '../types';
+import { averageOf } from '../reviews';
+import type { BlogPost, Product, PublicReview } from '../types';
 
 // JSON-LD builders. Each describes only what the page shows (.claude/rules/seo.md): prices are
 // the real VND integers, availability comes from stock minus reservations, and there is never an
@@ -23,7 +24,9 @@ export function categoryPath(slug: string): string {
   return `/danh-muc/${encodeURIComponent(slug)}`;
 }
 
-export function productJsonLd(base: string, product: Product): Record<string, unknown> {
+// `reviews` are the approved ones the page shows (first page): the schema describes only those, and
+// the rating appears only when approved reviews exist (ADR-027, .claude/rules/seo.md).
+export function productJsonLd(base: string, product: Product, reviews: PublicReview[] = []): Record<string, unknown> {
   const url = `${base}${productPath(product.slug)}`;
   const summary = priceSummary(product.variants);
   const availability = summary && !summary.isOutOfStock ? IN_STOCK : OUT_OF_STOCK;
@@ -53,6 +56,26 @@ export function productJsonLd(base: string, product: Product): Record<string, un
     ...(single && { sku: single.sku }),
     ...(product.brand && { brand: { '@type': 'Brand', name: product.brand } }),
     ...(product.variants.length > 0 && { offers }),
+    ...ratingJsonLd(product, reviews),
+  };
+}
+
+const RATING_SCALE = { bestRating: 5, worstRating: 1 } as const;
+
+function ratingJsonLd(product: Product, reviews: PublicReview[]): Record<string, unknown> {
+  const average = averageOf(product);
+  if (average === null || !product.reviewCount) return {};
+  return {
+    aggregateRating: { '@type': 'AggregateRating', ratingValue: average, reviewCount: product.reviewCount, ...RATING_SCALE },
+    ...(reviews.length > 0 && {
+      review: reviews.map((r) => ({
+        '@type': 'Review',
+        author: { '@type': 'Person', name: r.authorName },
+        datePublished: r.createdAt.slice(0, 10),
+        reviewBody: r.content,
+        reviewRating: { '@type': 'Rating', ratingValue: r.rating, ...RATING_SCALE },
+      })),
+    }),
   };
 }
 

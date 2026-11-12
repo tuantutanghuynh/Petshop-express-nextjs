@@ -54,6 +54,25 @@ describe('productJsonLd', () => {
     expect(productJsonLd(BASE, product({ brand: 'Acme' })).brand).toEqual({ '@type': 'Brand', name: 'Acme' });
   });
 
+  it('adds the rating and the reviews shown on the page once approved reviews exist (ADR-027)', () => {
+    const reviews = [
+      { id: 'r1', rating: 5, content: 'Mèo rất thích.', images: [], authorName: 'Tú', adminReply: null, adminReplyAt: null, createdAt: '2026-11-02T03:00:00.000Z', updatedAt: '2026-11-02T03:00:00.000Z' },
+      { id: 'r2', rating: 4, content: 'Giao nhanh.', images: [], authorName: 'Mai', adminReply: null, adminReplyAt: null, createdAt: '2026-11-01T03:00:00.000Z', updatedAt: '2026-11-01T03:00:00.000Z' },
+    ];
+    const ld = productJsonLd(BASE, product({ reviewCount: 2, ratingSum: 9 }), reviews);
+    expect(ld.aggregateRating).toEqual({ '@type': 'AggregateRating', ratingValue: 4.5, reviewCount: 2, bestRating: 5, worstRating: 1 });
+    expect(ld.review).toEqual([
+      { '@type': 'Review', author: { '@type': 'Person', name: 'Tú' }, datePublished: '2026-11-02', reviewBody: 'Mèo rất thích.', reviewRating: { '@type': 'Rating', ratingValue: 5, bestRating: 5, worstRating: 1 } },
+      { '@type': 'Review', author: { '@type': 'Person', name: 'Mai' }, datePublished: '2026-11-01', reviewBody: 'Giao nhanh.', reviewRating: { '@type': 'Rating', ratingValue: 4, bestRating: 5, worstRating: 1 } },
+    ]);
+  });
+
+  it('has no rating while the counters are zero, even with a list passed', () => {
+    const ld = productJsonLd(BASE, product({ reviewCount: 0, ratingSum: 0 }), []);
+    expect(ld).not.toHaveProperty('aggregateRating');
+    expect(ld).not.toHaveProperty('review');
+  });
+
   it('lists only images next/image can serve', () => {
     const ld = productJsonLd(BASE, product({ images: [
       { id: '1', url: 'https://res.cloudinary.com/x/a.jpg', altText: null, position: 0 },

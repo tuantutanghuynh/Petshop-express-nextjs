@@ -1,16 +1,18 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { productPath } from '../../lib/seo/structuredData';
+import { averageOf, formatRating } from '../../lib/reviews';
 import { formatVnd, imageSrc, priceSummary } from '../../lib/storefront';
 import { CardAction } from './CardAction';
 import type { Product } from '../../lib/types';
 
 // Product tile: first image, brand, name, cheapest price ("từ" when variants differ), a real discount
 // tag only when compareAtPrice is higher, and "Hết hàng" from stock minus reservations.
-// No star rating (there are no reviews). The whole card is one link (the name is the link text, so
+// Stars only from approved reviews of real buyers (ADR-027), never otherwise. The whole card is one link (the name is the link text, so
 // screen readers hear the product name); the corner action is a separate button above it.
 export function ProductCard({ product }: { product: Product }) {
   const summary = priceSummary(product.variants);
+  const rating = averageOf(product);
   const cover = product.images[0];
   const src = imageSrc(cover?.url ?? product.variants[0]?.imageUrl);
   return (
@@ -34,6 +36,11 @@ export function ProductCard({ product }: { product: Product }) {
         {/* The ::after overlay stretches this link over the whole card (one tab stop, big target). */}
         <Link href={productPath(product.slug)} className="after:absolute after:inset-0 after:rounded-card">{product.name}</Link>
       </h3>
+      {rating !== null && (
+        <p className="text-xs text-muted tabular-nums">
+          <span aria-hidden="true" className="text-yellow">★</span> <span className="sr-only">Đánh giá </span><b className="text-ink">{formatRating(rating)}</b> ({product.reviewCount})
+        </p>
+      )}
       {summary && (
         <div className="mt-auto flex items-end justify-between gap-2">
           <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 tabular-nums">

@@ -232,10 +232,13 @@ export const getMyOrder = asyncHandler(async (req: Request, res: Response) => {
   const code = req.params.code as string;
   const order = await prisma.order.findFirst({
     where: { code, userId: req.user.id },
-    include: { items: true },
+    include: { items: { include: { variant: { select: { product: { select: { id: true, slug: true } } } } } } },
   });
   if (!order) throw new ApiError(404, 'ORDER_NOT_FOUND', 'Không tìm thấy đơn hàng');
-  sendSuccess(res, order);
+  // Each line says which product it is (for "Viết đánh giá", ADR-027); null once its variant was
+  // deleted. The variant itself stays out of the answer.
+  const items = order.items.map(({ variant, ...item }) => ({ ...item, product: variant?.product ?? null }));
+  sendSuccess(res, { ...order, items });
 });
 
 // Admin listing across all customers for one brand, filterable by order and payment status and

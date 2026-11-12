@@ -128,6 +128,17 @@ describe('proxy', () => {
     expect(second).not.toBe(first);
   });
 
+  it('relays a FormData body as is (review photos), letting fetch set the multipart boundary', async () => {
+    backend([201, { data: { url: 'u' }, meta: null, error: null }]);
+    const jar = new MemoryJar();
+    jar.set(names.access, 'AT');
+    const form = new FormData();
+    form.append('image', new Blob([new Uint8Array([0xff, 0xd8, 0xff])], { type: 'image/jpeg' }), 'a.jpg');
+    await proxy(jar, { path: '/reviews/images', method: 'POST', body: form }, ctx);
+    expect(calls[0].init.body).toBe(form);
+    expect(header(calls[0], 'Content-Type')).toBeNull();
+  });
+
   it('forwards an Idempotency-Key when given', async () => {
     backend([201, { data: {}, meta: null, error: null }]);
     const jar = new MemoryJar();

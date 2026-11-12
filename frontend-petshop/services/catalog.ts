@@ -2,7 +2,8 @@ import { ApiRequestError, apiFetch } from '../lib/apiClient';
 import { DEFAULT_SORT, type ProductSort } from '../lib/catalogParams';
 import { BRAND_SLUG } from '../lib/site';
 import { buildCategoryTree, categoryTrail, flattenTree, type CategoryNode } from '../lib/categoryTree';
-import type { Category, PageMeta, Product } from '../lib/types';
+import { reviewsApiPath } from '../lib/reviews';
+import type { Category, PageMeta, Product, PublicReview, ReviewSummary } from '../lib/types';
 
 // Catalogue reads for public pages. Every call is cached by Next (ISR) for REVALIDATE_SECONDS:
 // the storefront is served from the cache and the Express API is asked at most once per window,
@@ -131,5 +132,21 @@ export async function getAllProductEntries(): Promise<{ slug: string; updatedAt:
     const { products, total } = await listProducts(BRAND_SLUG, page, MAX_PAGE_SIZE);
     out.push(...products.map((p) => ({ slug: p.slug, updatedAt: p.updatedAt })));
     if (products.length === 0 || page * MAX_PAGE_SIZE >= total) return out;
+  }
+}
+
+export type ProductReviewsPage = { items: PublicReview[]; total: number; summary: ReviewSummary };
+const NO_REVIEWS: ProductReviewsPage = { items: [], total: 0, summary: { count: 0, average: 0, distribution: { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 }, withImages: 0 } };
+
+// First page of approved reviews for the product page HTML (ADR-027). Cached like the product and
+// refreshed with it (tag product:<slug>) when the admin approves or hides one. Optional block: a
+// failure logs and the page renders without reviews.
+export async function getProductReviews(slug: string): Promise<ProductReviewsPage> {
+  try {
+    const { data, meta } = await apiFetch<PublicReview[], PageMeta & { summary: ReviewSummary }>(reviewsApiPath(slug, {}), cached(['reviews', `product:${slug}`]));
+    return { items: data, total: meta?.total ?? data.length, summary: meta?.summary ?? NO_REVIEWS.summary };
+  } catch (err) {
+    console.error('getProductReviews: could not load reviews', err);
+    return NO_REVIEWS;
   }
 }

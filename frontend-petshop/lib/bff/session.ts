@@ -48,7 +48,9 @@ type BackendCall = {
 // by our server: it is rate limited by that visitor (backend/middlewares/rateLimitKeys.ts).
 async function callBackend(call: BackendCall, ctx: RequestContext): Promise<BffResult> {
   const headers = new Headers({ Accept: 'application/json', 'X-Brand-Slug': BRAND_SLUG });
-  if (call.body !== undefined) headers.set('Content-Type', 'application/json');
+  // FormData (review photos) goes as is: fetch sets the multipart Content-Type with its boundary.
+  const isForm = call.body instanceof FormData;
+  if (call.body !== undefined && !isForm) headers.set('Content-Type', 'application/json');
   if (call.accessToken) headers.set('Authorization', `Bearer ${call.accessToken}`);
   if (call.idempotencyKey) headers.set('Idempotency-Key', call.idempotencyKey);
   const secret = process.env.INTERNAL_API_SECRET;
@@ -65,7 +67,7 @@ async function callBackend(call: BackendCall, ctx: RequestContext): Promise<BffR
     res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${call.path}`, {
       method: call.method,
       headers,
-      body: call.body === undefined ? undefined : JSON.stringify(call.body),
+      body: call.body === undefined ? undefined : isForm ? (call.body as FormData) : JSON.stringify(call.body),
       cache: 'no-store',
     });
   } catch (err) {

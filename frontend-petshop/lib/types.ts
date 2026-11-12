@@ -114,6 +114,9 @@ export interface Product {
   category: Category;
   images: ProductImage[];
   variants: ProductVariant[];
+  // Approved reviews only (ADR-027): average = ratingSum / reviewCount. Optional in old fixtures.
+  reviewCount?: number;
+  ratingSum?: number;
   // GET /products/:slug only: "Thường mua kèm" picked by the admin, on sale, in order (ADR-026).
   related?: RelatedProduct[];
 }
@@ -162,6 +165,8 @@ export interface ShippingAddress {
 
 export interface OrderItem {
   id: string;
+  // GET /orders/:code only: which product the line is (for "Viết đánh giá"); null once deleted.
+  product?: { id: string; slug: string } | null;
   productName: string;
   sku: string;
   unitPrice: number;
@@ -281,4 +286,35 @@ export interface Campaign extends CampaignSummary {
   content: string;
   featured: FeaturedRef[];
   featuredItems: (FeaturedRef & { title: string | null; available: boolean })[];
+}
+
+// Product reviews (ADR-027). Public rows never carry the author's email.
+export type ReviewStatus = 'PENDING' | 'APPROVED' | 'HIDDEN';
+export interface PublicReview {
+  id: string;
+  rating: number;
+  content: string;
+  images: string[];
+  authorName: string;
+  adminReply: string | null;
+  adminReplyAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export interface ReviewSummary {
+  count: number;
+  average: number;
+  distribution: Record<'1' | '2' | '3' | '4' | '5', number>;
+  withImages: number;
+}
+export interface OwnReview {
+  id: string;
+  productId: string;
+  rating: number;
+  content: string;
+  images: string[];
+  status: ReviewStatus;
+  adminReply: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

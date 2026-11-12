@@ -27,6 +27,16 @@ describe('bffFetch', () => {
     await expect(bffFetch('/api/cart')).resolves.toEqual({ ok: true, status: 200, data: { items: [] }, error: null });
   });
 
+  it('sends FormData without a JSON content type', async () => {
+    const fn = stubFetch(() => ({ status: 201, body: envelope({ url: 'u' }) }));
+    const form = new FormData();
+    form.append('image', new Blob(['x'], { type: 'image/png' }), 'a.png');
+    await bffFetch('/api/reviews/images', { method: 'POST', body: form });
+    const init = fn.mock.calls[0][1] as RequestInit;
+    expect(init.body).toBe(form);
+    expect(new Headers(init.headers).get('Content-Type')).toBeNull();
+  });
+
   it('shares one refresh between concurrent calls, then retries each once', async () => {
     let refreshed = false;
     const fn = stubFetch((url) => {

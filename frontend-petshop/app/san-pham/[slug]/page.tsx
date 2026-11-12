@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { notFound, permanentRedirect } from 'next/navigation';
 import { BuyingPromises } from '../../../components/product/BuyingPromises';
 import { FrequentlyBought } from '../../../components/product/FrequentlyBought';
+import { ReviewSection } from '../../../components/reviews/ReviewSection';
 import { ProductGallery } from '../../../components/product/ProductGallery';
 import { ProductGrid } from '../../../components/product/ProductGrid';
 import { SpecTable } from '../../../components/product/SpecTable';
@@ -13,7 +14,7 @@ import { categoryCrumbs } from '../../../lib/seo/categoryCrumbs';
 import { breadcrumbJsonLd, productJsonLd, productPath } from '../../../lib/seo/structuredData';
 import { SITE_NAME, siteUrl } from '../../../lib/site';
 import { imageSrc } from '../../../lib/storefront';
-import { getCategoryProducts, getCategoryTrail, getShopProduct, resolveProductSlug } from '../../../services/catalog';
+import { getCategoryProducts, getCategoryTrail, getProductReviews, getShopProduct, resolveProductSlug } from '../../../services/catalog';
 import { getContentPages, getShopInfo } from '../../../services/content';
 
 // Product detail. Search intent: transactional.
@@ -59,7 +60,7 @@ export default async function ProductPage({ params }: Props) {
     notFound();
   }
 
-  const [shop, trail, related, pages] = await Promise.all([
+  const [shop, trail, related, pages, reviews] = await Promise.all([
     getShopInfo(),
     getCategoryTrail(product.category.slug).catch((err: unknown) => {
       // The breadcrumb then shows just the product's own category.
@@ -74,6 +75,7 @@ export default async function ProductPage({ params }: Props) {
         return [];
       }),
     getContentPages(), // never throws (no pages on failure)
+    getProductReviews(product.slug), // never throws (no reviews on failure)
   ]);
   // Linked under the buy button only when the owner has written it (an empty policy is a 404).
   const shippingPolicyPath = pages.find((p) => p.key === 'policy_giao-hang-doi-tra')?.path ?? null;
@@ -83,7 +85,7 @@ export default async function ProductPage({ params }: Props) {
 
   return (
     <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8 max-md:pb-24 md:px-6">
-      <JsonLd data={productJsonLd(base, product)} />
+      <JsonLd data={productJsonLd(base, product, reviews.items)} />
       <JsonLd data={breadcrumbJsonLd(base, crumbs)} />
       <Breadcrumb crumbs={crumbs} />
 
@@ -121,6 +123,8 @@ export default async function ProductPage({ params }: Props) {
         )}
         <SpecTable attributes={product.category.attributes ?? []} values={product.attributes} />
       </div>
+
+      <ReviewSection productId={product.id} slug={product.slug} items={reviews.items} total={reviews.total} summary={reviews.summary} />
 
       {related.length > 0 && (
         <section aria-labelledby="related-title" className="mt-12">
