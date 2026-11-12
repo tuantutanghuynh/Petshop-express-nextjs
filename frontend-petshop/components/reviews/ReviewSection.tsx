@@ -14,7 +14,7 @@ export function ReviewSection({ productId, slug, items, total, summary }: Props)
   return (
     <section id="danh-gia" aria-labelledby="reviews-title" className="mt-12 scroll-mt-24">
       <h2 id="reviews-title" className="mb-4 text-xl leading-[1.3] font-extrabold">Đánh giá sản phẩm</h2>
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-10">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,18rem)_minmax(0,1fr)] lg:gap-10">
         <div className="flex flex-col gap-4">
           {summary.count > 0 ? (
             <>
