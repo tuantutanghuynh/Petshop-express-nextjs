@@ -5,7 +5,8 @@ import { ADMIN_NAV, activeNavItem } from '../../../lib/adminNav';
 
 // The admin menu (sidebar on desktop, drawer on phones). Pages not built yet are plain text marked
 // "Sắp có" — never a link to a 404.
-export function AdminNavList({ pathname }: { pathname: string }) {
+// `badges`: a count per page (reviews waiting), shown only when above 0.
+export function AdminNavList({ pathname, badges = {} }: { pathname: string; badges?: Record<string, number> }) {
   const current = activeNavItem(pathname);
   return (
     <ul className="flex flex-col gap-1">
@@ -26,6 +27,11 @@ export function AdminNavList({ pathname }: { pathname: string }) {
             <Link href={item.href} aria-current={active ? 'page' : undefined}
               className={`${row} ${active ? 'bg-white/10 font-bold text-white' : 'text-white/80 hover:bg-white/5 hover:text-white'}`}>
               <span aria-hidden="true" className="w-6 shrink-0 text-center text-base">{item.icon}</span>{item.label}
+              {(badges[item.href] ?? 0) > 0 && (
+                <span className="ml-auto rounded-full bg-yellow px-2 text-xs leading-[1.6] font-bold text-ink tabular-nums">
+                  {badges[item.href]}<span className="sr-only"> đang chờ</span>
+                </span>
+              )}
             </Link>
           </li>
         );

@@ -318,3 +318,18 @@ export interface OwnReview {
   createdAt: string;
   updatedAt: string;
 }
+// GET /reviews/admin rows (admin moderation): the customer's email is shown to the admin only.
+export interface AdminReview {
+  id: string;
+  rating: number;
+  content: string;
+  images: string[];
+  status: ReviewStatus;
+  adminReply: string | null;
+  adminReplyAt: string | null;
+  approvedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  product: { id: string; name: string; slug: string };
+  user: { id: string; fullName: string | null; email: string };
+}

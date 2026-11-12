@@ -6,7 +6,7 @@ import type { RequestContext } from './session';
 // backend who it belongs to — the role is never read from the request itself. Only known cache
 // tags can be refreshed; anything else is refused before the backend is called.
 
-export const REVALIDATE_TAGS = ['blog', 'gallery', 'products', 'categories', 'settings'] as const;
+export const REVALIDATE_TAGS = ['blog', 'gallery', 'products', 'categories', 'settings', 'reviews'] as const;
 type Tag = (typeof REVALIDATE_TAGS)[number];
 
 export type RevalidateDecision = { ok: true; tags: Tag[] } | { ok: false; status: number; code: string };

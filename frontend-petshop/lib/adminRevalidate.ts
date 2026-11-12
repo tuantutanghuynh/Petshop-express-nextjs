@@ -4,7 +4,7 @@ import { getToken } from './adminAuth';
 // which checks with the backend that this token belongs to an admin). Called right after a
 // successful authFetch, so the token has just been used or refreshed. A failure is only logged:
 // the save itself succeeded, and the cache expires on its own within 5 minutes.
-export async function revalidateStorefront(tags: Array<'blog' | 'gallery' | 'products' | 'categories' | 'settings'>): Promise<void> {
+export async function revalidateStorefront(tags: Array<'blog' | 'gallery' | 'products' | 'categories' | 'settings' | 'reviews'>): Promise<void> {
   try {
     const res = await fetch('/api/revalidate', {
       method: 'POST',

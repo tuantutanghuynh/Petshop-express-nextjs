@@ -21,6 +21,11 @@ afterEach(() => { vi.unstubAllEnvs(); vi.unstubAllGlobals(); });
 const admin = { data: { id: 'a', role: 'admin' }, meta: null, error: null };
 
 describe('authorizeRevalidate', () => {
+  it('accepts the reviews tag (admin moderation refreshes the product page reviews)', async () => {
+    backend(200, admin);
+    expect(await authorizeRevalidate('Bearer AT', { tags: ['reviews', 'products'] }, {})).toEqual({ ok: true, tags: ['reviews', 'products'] });
+  });
+
   it('accepts an admin token and known tags', async () => {
     backend(200, admin);
     const res = await authorizeRevalidate('Bearer AT', { tags: ['blog', 'gallery'] }, {});

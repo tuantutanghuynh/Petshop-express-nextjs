@@ -41,6 +41,20 @@ export function AdminShell({ children }: { children: ReactNode }) {
     drawer.current?.close();
   }, [pathname]);
 
+  // Reviews waiting for moderation (ADR-027), shown next to "Đánh giá"; re-read on every page change
+  // so it drops right after the admin works through the queue. A failure just shows no badge.
+  const [badges, setBadges] = useState<Record<string, number>>({});
+  useEffect(() => {
+    if (isLogin || !hydrated || !hasToken) return;
+    let active = true;
+    authFetch<{ pending: number }>('/reviews/admin/pending-count').then((res) => {
+      if (active && res.data) setBadges({ '/admin/danh-gia': res.data.pending });
+    }).catch(() => undefined);
+    return () => {
+      active = false;
+    };
+  }, [isLogin, hydrated, hasToken, pathname]);
+
   if (isLogin) return <>{children}</>;
 
   async function logout() {
@@ -68,7 +82,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
     <div className="grid min-h-dvh grid-cols-[minmax(0,1fr)] bg-surface-alt lg:grid-cols-[240px_minmax(0,1fr)]">
       <aside className="sticky top-0 hidden h-dvh overflow-y-auto bg-ink px-3 py-4 lg:block">
         {brand}
-        <nav aria-label="Quản trị"><AdminNavList pathname={pathname} /></nav>
+        <nav aria-label="Quản trị"><AdminNavList pathname={pathname} badges={badges} /></nav>
       </aside>
       <div className="min-w-0">
         <header className="sticky top-0 z-30 flex min-h-14 items-center gap-3 border-b border-line bg-surface px-4">
@@ -87,7 +101,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             {brand}
             <button type="button" aria-label="Đóng menu" onClick={() => drawer.current?.close()} className="grid size-11 place-items-center rounded-full text-xl text-white">✕</button>
           </div>
-          <nav aria-label="Quản trị"><AdminNavList pathname={pathname} /></nav>
+          <nav aria-label="Quản trị"><AdminNavList pathname={pathname} badges={badges} /></nav>
         </div>
       </dialog>
     </div>
