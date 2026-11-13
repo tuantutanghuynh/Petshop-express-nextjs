@@ -7,6 +7,7 @@ import { logger } from '../utils/logger';
 import { startExpiredOrderSweeper } from '../workers/releaseExpiredOrders';
 import { startPendingSubscriberPurge } from '../workers/purgePendingSubscribers';
 import { startNewsletterSender } from '../workers/sendNewsletters';
+import { startReviewImageCleanup } from '../workers/cleanupReviewImages';
 
 // Longest a deploy waits for in-flight requests before the process is cut anyway.
 const SHUTDOWN_GRACE_MS = 15_000;
@@ -24,6 +25,7 @@ const server = app.listen(port, () => {
 const sweeper = startExpiredOrderSweeper();
 const newsletterPurge = startPendingSubscriberPurge();
 const newsletterSender = startNewsletterSender();
+const reviewImageCleanup = startReviewImageCleanup(); // production only (see the worker)
 
 // SIGTERM (platform stopping the instance on deploy) or SIGINT (Ctrl+C): /health/ready turns 503,
 // the sweeper stops, no new connections are accepted and the requests already running finish
@@ -36,6 +38,7 @@ function shutdown(signal: string): void {
   clearInterval(sweeper);
   clearInterval(newsletterPurge);
   clearInterval(newsletterSender);
+  if (reviewImageCleanup) clearInterval(reviewImageCleanup);
   server.close((err) => {
     if (err) logger.error({ err }, 'Closing the HTTP server failed');
     prisma.$disconnect().finally(() => process.exit(err ? 1 : 0));
