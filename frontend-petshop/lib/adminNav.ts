@@ -24,3 +24,7 @@ export function activeNavItem(pathname: string): AdminNavItem | undefined {
 }
 
 export const isNavReady = (href: string) => ADMIN_NAV.some((i) => i.href === href && i.ready);
+
+// Fired by a page whose action changes a menu count (approving a review): the shell re-reads the
+// badges at once instead of on the next page change.
+export const ADMIN_BADGES_CHANGED = 'admin:badges-changed';

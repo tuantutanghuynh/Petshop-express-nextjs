@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { authFetch, clearTokens, getRefreshToken, getToken } from '../../../lib/adminAuth';
-import { activeNavItem } from '../../../lib/adminNav';
+import { ADMIN_BADGES_CHANGED, activeNavItem } from '../../../lib/adminNav';
 import { BRAND_LOGO, LOGO_HORIZONTAL_WHITE_SIZE } from '../../../lib/brand';
 import { SITE_NAME, SITE_TAGLINE } from '../../../lib/site';
 import { AdminNavList } from './AdminNavList';
@@ -47,11 +47,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (isLogin || !hydrated || !hasToken) return;
     let active = true;
-    authFetch<{ pending: number }>('/reviews/admin/pending-count').then((res) => {
-      if (active && res.data) setBadges({ '/admin/danh-gia': res.data.pending });
-    }).catch(() => undefined);
+    const read = () => {
+      authFetch<{ pending: number }>('/reviews/admin/pending-count').then((res) => {
+        if (active && res.data) setBadges({ '/admin/danh-gia': res.data.pending });
+      }).catch(() => undefined);
+    };
+    read();
+    window.addEventListener(ADMIN_BADGES_CHANGED, read);
     return () => {
       active = false;
+      window.removeEventListener(ADMIN_BADGES_CHANGED, read);
     };
   }, [isLogin, hydrated, hasToken, pathname]);
 

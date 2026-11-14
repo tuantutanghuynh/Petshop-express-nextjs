@@ -75,7 +75,7 @@ export function ReviewModerationCard({ review, busy, onMove, onReply }: Props) {
           className={`w-full rounded-[var(--radius-sm)] border bg-surface p-2 text-base text-ink ${replyError ? 'border-pink-ink' : 'border-line'}`} />
         {replyError && <p id={`${uid}-reply-error`} className="text-sm text-pink-ink">{replyError}</p>}
         <button type="button" disabled={saving || reply === (review.adminReply ?? '')} onClick={() => void saveReply()}
-          className={`${ACTION} self-start border border-brand-ink text-brand-ink`}>{saving ? 'Đang lưu…' : reply.trim() ? 'Lưu phản hồi' : 'Xoá phản hồi'}</button>
+          className={`${ACTION} self-start border border-brand-ink text-brand-ink`}>{saving ? 'Đang lưu…' : !reply.trim() && review.adminReply ? 'Xoá phản hồi' : 'Lưu phản hồi'}</button>
       </div>
     </article>
   );

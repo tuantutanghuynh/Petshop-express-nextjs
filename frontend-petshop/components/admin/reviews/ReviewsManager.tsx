@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { authFetch } from '../../../lib/adminAuth';
+import { ADMIN_BADGES_CHANGED } from '../../../lib/adminNav';
 import { REVIEWS_ADMIN_PAGE_SIZE, REVIEW_TABS, parseReviewsQuery, reviewsAdminApiPath, reviewsAdminHref, type ReviewTab } from '../../../lib/adminReviews';
 import { revalidateStorefront } from '../../../lib/adminRevalidate';
 import type { AdminReview, PageMeta } from '../../../lib/types';
@@ -51,6 +52,7 @@ export function ReviewsManager() {
       setNotice({ ok: false, text: res.error.message || 'Chưa thực hiện được.' });
     } else {
       setNotice({ ok: true, text: action === 'approve' ? 'Đã duyệt, đánh giá đang hiện trên web.' : 'Đã ẩn đánh giá.' });
+      window.dispatchEvent(new Event(ADMIN_BADGES_CHANGED)); // the menu count drops at once
       await refresh();
     }
     setList(await loadList(key));
