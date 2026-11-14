@@ -26,11 +26,12 @@ type Slot = { promo: Promo; slot: number };
 // whitespace-nowrap: "Mua ngay" must not break in two on a 320px phone.
 const BUTTON = 'mt-2 inline-flex min-h-11 items-center whitespace-nowrap rounded-full px-5 text-[0.95rem] font-bold';
 
-// Right half: the photo, or a translucent block so every card keeps the wireframe's shape.
+// Right half: the photo, cropped to fill the box whatever its size (object-cover: a photo that only
+// fitted inside left bare strips around it), or a translucent block so every card keeps its shape.
 function Art({ src, sizes, minHeight }: { src: string | null; sizes: string; minHeight: string }) {
   return (
     <div className={`relative h-full ${minHeight} overflow-hidden rounded-card bg-white/40`}>
-      {src ? <Image src={src} alt="" fill sizes={sizes} className="object-contain" /> : <span aria-hidden="true" className="grid h-full place-items-center text-4xl opacity-30">🐾</span>}
+      {src ? <Image src={src} alt="" fill sizes={sizes} className="object-cover" /> : <span aria-hidden="true" className="grid h-full place-items-center text-4xl opacity-30">🐾</span>}
     </div>
   );
 }
