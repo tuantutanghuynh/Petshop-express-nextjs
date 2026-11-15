@@ -1,4 +1,4 @@
-// Logo files from the brand kit (logo-branding/woofle-meowcaron-brand-kit, guide v1.0), served
+// Logo files from the brand kit (docs/brand/woofle-meowcaron-brand-kit, guide v1.0), served
 // from public/. Use them as they are: the guide forbids recolouring, stretching, rotating, shadows
 // and retyping the name in another font. Width / height are the files' own viewBox, so a logo
 // scaled by height keeps its proportions.

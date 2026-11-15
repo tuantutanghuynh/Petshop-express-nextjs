@@ -3,8 +3,12 @@ node_modules/
 .next/
 dist/
 .DS_Store
-docs/
+# Local-only material inside docs/: runtime logs and screen recordings
+docs/logs/
+*.mov
 project-docs/
 # Separate git clone (Medusa learning repo), not part of this project
 ecom-learning/
 
+# macOS AppleDouble metadata
+._*

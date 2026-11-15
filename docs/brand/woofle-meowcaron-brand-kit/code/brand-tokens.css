@@ -1,0 +1,26 @@
+/* Woofle & Meowcaron — brand tokens */
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Be+Vietnam+Pro:wght@400;500;600;700&display=swap');
+
+:root {
+  --wm-cyan: #009E91;
+  --wm-dark: #064E4A;
+  --wm-yellow: #FFC727;
+  --wm-coral: #FF6B5B;
+  --wm-teal: #00796F;
+  --wm-mint: #E3F8F5;
+  --wm-paper: #F5FAF8;
+  --wm-white: #FFFFFF;
+
+  --wm-font-brand: 'Fredoka', 'Be Vietnam Pro', sans-serif;  /* chỉ chữ không dấu: tên thương hiệu, số */
+  --wm-font-body: 'Be Vietnam Pro', system-ui, sans-serif;   /* mọi chữ tiếng Việt, kể cả tiêu đề */
+
+  --wm-radius-sm: 8px;
+  --wm-radius-md: 16px;
+  --wm-radius-lg: 24px;
+  --wm-radius-pill: 999px;
+}
+
+.wm-btn-primary   { background: var(--wm-teal); color: #fff; border-radius: var(--wm-radius-pill); font: 600 16px/1 var(--wm-font-body); padding: 14px 24px; border: 0; }
+.wm-btn-accent    { background: var(--wm-yellow); color: var(--wm-dark); border-radius: var(--wm-radius-pill); font: 600 16px/1 var(--wm-font-body); padding: 14px 24px; border: 0; }
+.wm-btn-secondary { background: transparent; color: var(--wm-dark); border: 2px solid var(--wm-dark); border-radius: var(--wm-radius-pill); font: 600 16px/1 var(--wm-font-body); padding: 12px 22px; }
+.wm-badge-sale    { background: var(--wm-coral); color: #3B0B05; border-radius: var(--wm-radius-pill); font: 700 13px/1 var(--wm-font-body); padding: 6px 12px; }

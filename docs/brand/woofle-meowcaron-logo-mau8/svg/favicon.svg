@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64.00 64.00" role="img" aria-label="Woofle &amp; Meowcaron">
+<title>Woofle &amp; Meowcaron</title>
+<rect width="64" height="64" rx="16" fill="#009E91"/><g transform="translate(8.00 6.00) scale(0.34286)">
+<path d="M30 62 L 38 14 L 66 44 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+<path d="M110 62 L 102 14 L 74 44 Z" fill="#FFFFFF" stroke="#FFFFFF" stroke-width="8" stroke-linejoin="round"/>
+<path d="M14 78 C 14 38, 126 38, 126 78 Z" fill="#FFFFFF"/>
+<rect x="18" y="80" width="104" height="16" rx="8" fill="#FF6B5B"/>
+<path d="M14 100 L 126 100 C 126 124, 14 124, 14 100 Z" fill="#FFFFFF"/>
+</g>
+</svg>
