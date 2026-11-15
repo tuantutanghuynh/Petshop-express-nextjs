@@ -12,10 +12,10 @@ type ViewProps = { content: HeroContent; headingId: string; level: 'h1' | 'h2'; 
 export function HeroSlideView({ content, headingId, level: Heading, priority, textClassName = '' }: ViewProps) {
   return (
     <div className="grid lg:min-h-[420px] lg:grid-cols-2">
-      {/* Text column aligned with the 1200px page frame; the art column runs to the screen edge, as in
-          the wireframe. Padding % is relative to this column, which is half the page, so the frame's
-          side margin is 100% - 600px (no 100vw, which counts the scrollbar). */}
-      <div className={`flex flex-col justify-center gap-4 px-4 py-6 md:px-6 lg:py-10 lg:pr-10 lg:pl-[max(1.5rem,calc(100%-600px+1.5rem))] ${textClassName}`}>
+      {/* Text column aligned with the page frame (--container-page); the art column runs to the screen
+          edge, as in the wireframe. Padding % is relative to this column, which is half the page, so
+          the frame's side margin is 100% - half the frame (no 100vw, which counts the scrollbar). */}
+      <div className={`flex flex-col justify-center gap-4 px-4 py-6 md:px-6 lg:py-10 lg:pr-10 lg:pl-[max(1.5rem,calc(100%-var(--container-page)/2+1.5rem))] ${textClassName}`}>
         {content.badge && <span className="w-fit rounded-full bg-pink-bg px-3 py-1 text-xs font-bold text-pink-ink">{content.badge}</span>}
         <Heading id={headingId} className="text-[clamp(1.75rem,1.2rem+2.6vw,3rem)] leading-[1.3] font-extrabold">
           {content.title}

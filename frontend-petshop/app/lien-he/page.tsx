@@ -20,7 +20,7 @@ export default async function ContactPage() {
   const crumbs: Crumb[] = [{ name: 'Trang chủ', path: '/' }, { name: 'Liên hệ' }];
   const row = 'flex min-h-11 items-center gap-3';
   return (
-    <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8 md:px-6">
+    <main id="main" className="mx-auto max-w-page px-4 pb-8 md:px-6">
       <JsonLd data={breadcrumbJsonLd(siteUrl(), crumbs)} />
       <Breadcrumb crumbs={crumbs} />
       <h1 className="mb-6 text-[clamp(1.5rem,1.1rem+1.6vw,2.1rem)] font-extrabold">Liên hệ</h1>

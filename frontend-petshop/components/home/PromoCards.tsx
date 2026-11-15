@@ -59,7 +59,7 @@ function Card({ promo, slot }: Slot) {
         {promo.subtitle && <p className={`text-sm ${s.sub}`}>{promo.subtitle}</p>}
         <span className={`${BUTTON} ${s.btn}`}>{promo.cta ?? 'Mua ngay'}</span>
       </div>
-      <Art src={imageSrc(promo.image)} sizes="(min-width: 1024px) 180px, (min-width: 768px) 30vw, 40vw" minHeight="min-h-35 md:min-h-28 lg:min-h-35" />
+      <Art src={imageSrc(promo.image)} sizes="(min-width: 1024px) 220px, (min-width: 768px) 30vw, 40vw" minHeight="min-h-35 md:min-h-28 lg:min-h-35" />
     </Link>
   );
 }
@@ -80,7 +80,7 @@ function Banner({ promo, slot }: Slot) {
         {promo.subtitle && <p className={`text-sm ${s.sub}`}>{promo.subtitle}</p>}
         <span className={`${BUTTON} ${s.btn}`}>{promo.cta ?? 'Khám phá'}</span>
       </div>
-      <Art src={imageSrc(promo.image)} sizes="(min-width: 768px) 280px, 45vw" minHeight="min-h-32" />
+      <Art src={imageSrc(promo.image)} sizes="(min-width: 768px) 340px, 45vw" minHeight="min-h-32" />
     </Link>
   );
 }
@@ -91,7 +91,7 @@ export function PromoCards({ promos }: { promos: (Promo | null)[] }) {
   const cards = slots.filter((s) => s.slot < 3);
   const banners = slots.filter((s) => s.slot >= 3);
   return (
-    <section aria-label="Ưu đãi và bộ sưu tập" className="mx-auto flex max-w-[1200px] flex-col gap-4 px-4 py-2 md:px-6">
+    <section aria-label="Ưu đãi và bộ sưu tập" className="mx-auto flex max-w-page flex-col gap-4 px-4 py-2 md:px-6">
       {cards.length > 0 && <div className="grid gap-4 md:grid-cols-3">{cards.map((s) => <Card key={s.slot} {...s} />)}</div>}
       {banners.length > 0 && <div className="grid gap-4 md:grid-cols-2">{banners.map((s) => <Banner key={s.slot} {...s} />)}</div>}
     </section>

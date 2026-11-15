@@ -19,7 +19,7 @@ export function ProductCard({ product }: { product: Product }) {
     <article className="relative flex h-full flex-col gap-2 rounded-card bg-surface p-3 shadow-card transition-shadow hover:shadow-md">
       <div className="relative aspect-square overflow-hidden rounded-card bg-surface-alt">
         {src ? (
-          <Image src={src} alt={cover?.altText || product.name} fill sizes="(min-width: 1024px) 220px, (min-width: 768px) 30vw, 45vw" className="object-cover" />
+          <Image src={src} alt={cover?.altText || product.name} fill sizes="(min-width: 1280px) 240px, (min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw" className="object-cover" />
         ) : (
           <span aria-hidden="true" className="grid h-full place-items-center text-4xl">🐾</span>
         )}

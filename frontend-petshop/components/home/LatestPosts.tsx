@@ -11,7 +11,7 @@ const DATE = new Intl.DateTimeFormat('vi-VN', { day: '2-digit', month: '2-digit'
 // Not in the mock-up: links the homepage to the care articles (topical authority, seo.md).
 export function LatestPosts({ posts }: { posts: BlogPost[] | null }) {
   return (
-    <section aria-labelledby="posts-title" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
+    <section aria-labelledby="posts-title" className="mx-auto max-w-page px-4 md:px-6 py-6">
       <SectionHeading id="posts-title" title="📖 Kiến thức chăm sóc" moreHref="/blog" />
       {posts === null ? (
         <EmptyState tone="error" message="Chưa tải được bài viết. Vui lòng thử lại sau ít phút." />
@@ -26,7 +26,7 @@ export function LatestPosts({ posts }: { posts: BlogPost[] | null }) {
               <li key={post.id}>
                 <Link href={`/blog/${encodeURIComponent(post.slug)}`} className="group flex h-full flex-col gap-2 rounded-card border border-line bg-surface p-3">
                   <div className="relative aspect-video overflow-hidden rounded-card bg-mint">
-                    {src && <Image src={src} alt="" fill sizes="(min-width: 768px) 380px, 100vw" className="object-cover" />}
+                    {src && <Image src={src} alt="" fill sizes="(min-width: 1024px) 460px, (min-width: 768px) 33vw, 100vw" className="object-cover" />}
                   </div>
                   <h3 className="text-base font-bold group-hover:underline">{post.title}</h3>
                   <small className="mt-auto text-xs text-muted">

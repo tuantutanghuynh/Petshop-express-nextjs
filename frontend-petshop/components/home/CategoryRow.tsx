@@ -8,7 +8,7 @@ import { CategoryScroller } from './CategoryScroller';
 // circles until a list is saved), swipeable on phones. A circle without an image shows its first letter.
 export function CategoryRow({ circles }: { circles: CategoryCircle[] }) {
   return (
-    <section aria-labelledby="cat-title" className="mx-auto max-w-[1200px] px-4 md:px-6 py-6">
+    <section aria-labelledby="cat-title" className="mx-auto max-w-page px-4 md:px-6 py-6">
       <h2 id="cat-title" className="mb-5 text-center text-xl font-extrabold sm:text-2xl">🐾 Tìm theo phân loại 🐾</h2>
       <CategoryScroller>
         <ul className="flex w-max min-w-full snap-x snap-mandatory justify-center gap-4 pb-2 lg:gap-8">

@@ -11,7 +11,7 @@ const ITEMS = [
 // alone); from md: five cards in one row, icon above the text.
 export function TrustStrip() {
   return (
-    <section aria-label="Cam kết của cửa hàng" className="mx-auto max-w-[1200px] px-4 py-6 md:px-6">
+    <section aria-label="Cam kết của cửa hàng" className="mx-auto max-w-page px-4 py-6 md:px-6">
       <ul className="flex flex-col divide-y divide-line rounded-card bg-surface-alt md:grid md:grid-cols-5 md:gap-3 md:divide-y-0 md:bg-transparent">
         {ITEMS.map((item) => (
           <li key={item.title} className="flex items-center gap-3 px-4 py-3 text-xs leading-[1.4] md:flex-col md:rounded-card md:bg-surface-alt md:p-3.5 md:text-center">

@@ -33,7 +33,7 @@ export function SiteHeader({ phone, announcements, categories, megaMenus }: Prop
       <AnnouncementBar items={announcements} />
       <header className="sticky top-0 z-40 border-b border-line bg-surface/95 backdrop-blur">
         {/* Below 240px (200% zoom on a phone) the four 44px buttons only fit without gaps. */}
-        <div className="mx-auto flex min-h-14 max-w-[1200px] items-center gap-2 px-4 max-[239px]:gap-0 max-[239px]:px-2 md:gap-6 md:px-6 lg:min-h-[76px]">
+        <div className="mx-auto flex min-h-14 max-w-page items-center gap-2 px-4 max-[239px]:gap-0 max-[239px]:px-2 md:gap-6 md:px-6 lg:min-h-[76px]">
           <MobileMenu links={links} categories={categories} phone={phone} />
           <Logo />
           <div className="hidden min-w-0 flex-1 md:block"><SearchForm compact categories={categories} /></div>
@@ -49,7 +49,7 @@ export function SiteHeader({ phone, announcements, categories, megaMenus }: Prop
             drawer (MobileMenu) carries the same links. "safe" centring falls back to the start if
             the links ever overflow, so the first ones are never cut off. */}
         <nav aria-label="Điều hướng chính" className="hidden border-t border-line lg:block">
-          <div className="mx-auto flex max-w-[1200px] items-center gap-3 px-4 py-1.5 [justify-content:safe_center] md:px-6">
+          <div className="mx-auto flex max-w-page items-center gap-3 px-4 py-1.5 [justify-content:safe_center] md:px-6">
             {/* Trang chủ, then the species menus, then the other links. */}
             <MainNav links={links.slice(0, 1)} />
             {species.length > 0 && <MegaMenu items={species} />}

@@ -23,6 +23,8 @@ export const metadata: Metadata = {
   openGraph: { url: '/', title: HOME_TITLE, description: SITE_DESCRIPTION },
 };
 
+// Two full rows of the 6-column grid on wide screens (also full rows at 2, 3 and 4 columns).
+const FEATURED_COUNT = 12;
 const PROMO_KEYS = [1, 2, 3, 4, 5].map((n) => `homepage_promo_${n}`);
 // A failed section must not take the page down: it is logged and shown as an error state, and
 // the rest of the homepage still renders.
@@ -34,7 +36,7 @@ function settled<T>(result: PromiseSettledResult<T>, label: string): T | null {
 
 export default async function HomePage() {
   const [[settingsRes, productsRes, postsRes], shop] = await Promise.all([
-    Promise.allSettled([getSettings([...LEGACY_HERO_KEYS, HERO_SLIDES_KEY, ...PROMO_KEYS, SETTING_KEYS.categoryImages, CATEGORY_CIRCLES_KEY]), getNewestProducts(5), getLatestPosts(3)]),
+    Promise.allSettled([getSettings([...LEGACY_HERO_KEYS, HERO_SLIDES_KEY, ...PROMO_KEYS, SETTING_KEYS.categoryImages, CATEGORY_CIRCLES_KEY]), getNewestProducts(FEATURED_COUNT), getLatestPosts(3)]),
     getShopInfo(), // never throws (falls back to no contact details)
   ]);
   const settings = settled(settingsRes, 'settings') ?? {};

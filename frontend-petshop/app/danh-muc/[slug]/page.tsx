@@ -68,7 +68,7 @@ export default async function CategoryPage({ params, searchParams }: Props) {
   const crumbs = categoryCrumbs(trail.length > 0 ? trail : [category]);
 
   return (
-    <main id="main" className="mx-auto max-w-[1200px] px-4 md:px-6 pb-8">
+    <main id="main" className="mx-auto max-w-page px-4 md:px-6 pb-8">
       <JsonLd data={breadcrumbJsonLd(siteUrl(), crumbs)} />
       <Breadcrumb crumbs={crumbs} />
       <header className="mb-6 flex flex-col gap-2">

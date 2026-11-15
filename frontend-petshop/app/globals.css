@@ -59,6 +59,13 @@
 }
 
 /* Tailwind v4 utilities from the tokens: bg-brand-ink, text-ink, bg-pink-bg, rounded-card … */
+/* The page frame every storefront section lines up with (header, sections, footer, <main>). Kept
+   out of the inline block so it also exists as a CSS variable: the hero computes its text column
+   from it. 90rem = 1440px, so on wide screens the page uses about 80% of the width. */
+@theme {
+  --container-page: 90rem;
+}
+
 @theme inline {
   --color-brand: var(--brand-teal);
   --color-brand-hover: var(--brand-teal-hover);

@@ -12,7 +12,7 @@ export function PostCard({ post }: { post: BlogPost }) {
   return (
     <article className="relative flex h-full flex-col gap-2 rounded-card bg-surface p-3 shadow-card">
       <div className="relative aspect-video overflow-hidden rounded-card bg-mint">
-        {src && <Image src={src} alt="" fill sizes="(min-width: 1024px) 380px, (min-width: 768px) 45vw, 100vw" className="object-cover" />}
+        {src && <Image src={src} alt="" fill sizes="(min-width: 1024px) 460px, (min-width: 768px) 45vw, 100vw" className="object-cover" />}
       </div>
       {post.category && <TopicBadge name={post.category.name} slug={post.category.slug} />}
       <h3 className="text-base font-bold">

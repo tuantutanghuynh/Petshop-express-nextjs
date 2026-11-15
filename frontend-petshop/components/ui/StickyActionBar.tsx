@@ -10,7 +10,7 @@ export function StickyActionBar({ children, label }: { children: ReactNode; labe
       aria-label={label}
       className="fixed inset-x-0 bottom-[calc(56px+env(safe-area-inset-bottom))] z-40 border-t border-line bg-surface/95 px-4 py-2 backdrop-blur md:hidden"
     >
-      <div className="mx-auto flex max-w-[1200px] items-center justify-between gap-3">{children}</div>
+      <div className="mx-auto flex max-w-page items-center justify-between gap-3">{children}</div>
     </div>
   );
 }

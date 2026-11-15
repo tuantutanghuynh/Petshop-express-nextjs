@@ -36,7 +36,7 @@ export function SiteFooter({ shop, categories, pages }: Props) {
     // The mint starts halfway down the community band (wireframe).
     <footer className="mt-12 bg-[linear-gradient(to_bottom,var(--surface)_3.5rem,var(--mint-soft)_3.5rem)]">
       <CommunityBand shop={shop} />
-      <div className="mx-auto grid max-w-[1200px] grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 md:px-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
+      <div className="mx-auto grid max-w-page grid-cols-2 gap-x-6 gap-y-8 px-4 py-10 md:px-6 lg:grid-cols-[1.6fr_1fr_1fr_1fr_1fr]">
         <div className="col-span-2 flex flex-col gap-3 lg:col-span-1">
           <Logo placement="footer" />
           <p className="max-w-prose text-sm">{SITE_DESCRIPTION}</p>

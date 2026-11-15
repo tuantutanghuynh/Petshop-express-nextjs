@@ -11,7 +11,7 @@ export function AnnouncementBar({ items }: { items: string[] | null }) {
   const lines = items ?? DEFAULTS;
   return (
     <div className="bg-brand-ink text-[0.8rem] font-bold text-white">
-      <div className="mx-auto flex min-h-8 max-w-[1200px] items-center justify-center gap-6 overflow-hidden px-4 whitespace-nowrap md:px-6 lg:justify-between">
+      <div className="mx-auto flex min-h-8 max-w-page items-center justify-center gap-6 overflow-hidden px-4 whitespace-nowrap md:px-6 lg:justify-between">
         {lines.map((line, i) => (
           // Phones show the first line only; the others join from 1024px.
           <span key={i} className={i === 0 ? 'truncate' : 'hidden truncate lg:inline'}>{line}</span>

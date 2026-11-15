@@ -14,7 +14,7 @@ export function MegaMenuPanel({ node, extras }: { node: CategoryNode; extras: Me
   const bannerSrc = extras.banner ? imageSrc(extras.banner.image) : null;
   return (
     // The banner column exists only when there is a banner, so the groups get the full width otherwise.
-    <div className={`mx-auto grid max-w-[1200px] gap-6 px-6 py-6 ${bannerSrc ? 'lg:grid-cols-[1fr_220px]' : ''}`}>
+    <div className={`mx-auto grid max-w-page gap-6 px-6 py-6 ${bannerSrc ? 'lg:grid-cols-[1fr_220px]' : ''}`}>
       <div className="min-w-0">
         <div className="grid grid-cols-[repeat(auto-fill,minmax(170px,1fr))] gap-x-6 gap-y-5">
           {node.children.map((group) => (

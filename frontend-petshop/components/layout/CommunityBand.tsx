@@ -21,7 +21,7 @@ export function communityLinks(shop: ShopInfo): { href: string; label: string }[
 export function CommunityBand({ shop }: { shop: ShopInfo }) {
   const links = communityLinks(shop);
   return (
-    <div className="mx-auto max-w-[1200px] px-4 md:px-6">
+    <div className="mx-auto max-w-page px-4 md:px-6">
       <section aria-labelledby="community-title" className="grid items-center gap-4 rounded-panel bg-brand-ink p-6 text-white md:grid-cols-[120px_minmax(0,1fr)] md:p-8 lg:grid-cols-[120px_minmax(0,1fr)_minmax(0,30rem)]">
         <span aria-hidden="true" className="hidden aspect-square place-items-center rounded-card bg-white/20 text-5xl md:row-span-2 md:grid lg:row-span-1">🐾</span>
         <div>

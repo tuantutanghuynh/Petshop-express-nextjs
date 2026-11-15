@@ -84,7 +84,7 @@ export default async function ProductPage({ params }: Props) {
   const crumbs = categoryCrumbs(trail.length > 0 ? trail : [product.category], product.name);
 
   return (
-    <main id="main" className="mx-auto max-w-[1200px] px-4 pb-8 max-md:pb-24 md:px-6">
+    <main id="main" className="mx-auto max-w-page px-4 pb-8 max-md:pb-24 md:px-6">
       <JsonLd data={productJsonLd(base, product, reviews.items)} />
       <JsonLd data={breadcrumbJsonLd(base, crumbs)} />
       <Breadcrumb crumbs={crumbs} />
